@@ -6,9 +6,9 @@ import { getApprovedVendors } from '../../../../data/vendors';
 
 const FeaturedVendorsSection = () => {
   const location = useLocation();
-  const isMobileApp = location.pathname.startsWith('/app');
-  const vendorsLink = isMobileApp ? '/app/search' : '/search';
-  
+  const isMobileApp = location.pathname.startsWith('/');
+  const vendorsLink = isMobileApp ? '/search' : '/search';
+
   const approvedVendors = getApprovedVendors();
   const featuredVendors = approvedVendors
     .filter(v => v.isVerified)
@@ -21,7 +21,7 @@ const FeaturedVendorsSection = () => {
     <div className="px-4 py-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Featured Vendors</h2>
+          <h2 className="text-xl font-bold text-gray-800">Best Sellers</h2>
           <p className="text-xs text-gray-600 mt-0.5">Shop from trusted stores</p>
         </div>
         <Link
@@ -32,7 +32,7 @@ const FeaturedVendorsSection = () => {
           <FiArrowRight className="text-sm" />
         </Link>
       </div>
-      
+
       <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
         {featuredVendors.map((vendor, index) => (
           <VendorShowcaseCard key={vendor.id} vendor={vendor} index={index} />

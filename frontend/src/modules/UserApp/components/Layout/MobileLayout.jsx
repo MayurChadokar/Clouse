@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import MobileHeader from './MobileHeader';
+import DesktopHeader from './DesktopHeader';
 import MobileBottomNav from './MobileBottomNav';
 import MobileCartBar from './MobileCartBar';
 import CartDrawer from '../../../../shared/components/Cart/CartDrawer';
@@ -10,18 +11,18 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
   const location = useLocation();
   const headerHeight = useMobileHeaderHeight();
   // Hide header and bottom nav on login, register, and verification pages
-  const isAuthPage = location.pathname === '/app/login' ||
-    location.pathname === '/app/register' ||
-    location.pathname === '/app/verification';
+  const isAuthPage = location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/verification';
 
   // Always show bottom nav on /app routes, except auth pages
-  const shouldShowBottomNav = location.pathname.startsWith('/app') && !isAuthPage ? true : (showBottomNav && !isAuthPage);
+  const shouldShowBottomNav = location.pathname.startsWith('/') && !isAuthPage ? true : (showBottomNav && !isAuthPage);
   // Hide header on categories, search, wishlist, profile, and auth pages
   const shouldShowHeader = !isAuthPage &&
-    location.pathname !== '/app/categories' &&
-    location.pathname !== '/app/search' &&
-    location.pathname !== '/app/wishlist' &&
-    location.pathname !== '/app/profile';
+    location.pathname !== '/categories' &&
+    location.pathname !== '/search' &&
+    location.pathname !== '/wishlist' &&
+    location.pathname !== '/profile';
 
   // Ensure body scroll is restored when component mounts
   useEffect(() => {
@@ -33,9 +34,10 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
 
   return (
     <>
+      {!isAuthPage && <DesktopHeader />}
       {shouldShowHeader && <MobileHeader />}
       <main
-        className={`min-h-screen w-full overflow-x-hidden ${shouldShowBottomNav ? 'pb-20' : ''} ${showCartBar ? 'pb-24' : ''}`}
+        className={`min-h-screen w-full overflow-x-hidden md:container md:mx-auto px-4 md:px-12 lg:px-24 xl:px-40 ${shouldShowBottomNav ? 'pb-20' : ''} ${showCartBar ? 'pb-24' : ''}`}
         style={{ paddingTop: shouldShowHeader ? `${headerHeight}px` : '0px' }}
       >
         {children}

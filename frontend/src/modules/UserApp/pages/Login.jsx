@@ -23,7 +23,7 @@ const MobileLogin = () => {
     formState: { errors },
   } = useForm();
 
-  const from = location.state?.from?.pathname || '/app';
+  const from = location.state?.from?.pathname || '/';
 
   const onSubmit = async (data) => {
     try {
@@ -201,7 +201,7 @@ const MobileLogin = () => {
                     <span className="ml-2 text-sm text-gray-700">Remember me</span>
                   </label>
                   <Link
-                    to="/app/forgot-password"
+                    to="/forgot-password"
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
                     Forget password?
@@ -265,7 +265,7 @@ const MobileLogin = () => {
                 <p className="text-sm text-gray-600">
                   Don't have an account?{' '}
                   <Link
-                    to="/app/register"
+                    to="/register"
                     className="text-primary-600 hover:text-primary-700 font-semibold"
                   >
                     Sign Up

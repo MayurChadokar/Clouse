@@ -15,7 +15,7 @@ const AnimatedBanner = () => {
       discount: "Up to 50% OFF",
       description: "Shop now before it ends!",
       gradient: "from-red-500 via-pink-500 to-orange-500",
-      link: "/app/flash-sale",
+      link: "/flash-sale",
       icon: FiZap,
     },
     {
@@ -25,7 +25,7 @@ const AnimatedBanner = () => {
       discount: "Save 30%",
       description: "Check out today's best deals",
       gradient: "from-blue-500 via-purple-500 to-indigo-500",
-      link: "/app/daily-deals",
+      link: "/daily-deals",
       icon: FiTag,
     },
     {
@@ -35,7 +35,7 @@ const AnimatedBanner = () => {
       discount: "Up to 40% OFF",
       description: "Don't miss out!",
       gradient: "from-green-500 via-teal-500 to-cyan-500",
-      link: "/app/offers",
+      link: "/offers",
       icon: FiTag,
     },
   ];

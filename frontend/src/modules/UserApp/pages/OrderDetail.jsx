@@ -21,7 +21,7 @@ const MobileOrderDetail = () => {
 
   useEffect(() => {
     if (!order) {
-      navigate('/app/orders');
+      navigate('/orders');
     }
   }, [order, navigate]);
 
@@ -33,7 +33,7 @@ const MobileOrderDetail = () => {
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Order Not Found</h2>
               <button
-                onClick={() => navigate('/app/orders')}
+                onClick={() => navigate('/orders')}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
               >
                 Back to Orders
@@ -65,7 +65,7 @@ const MobileOrderDetail = () => {
       });
     });
     toast.success('Items added to cart!');
-    navigate('/app/checkout');
+    navigate('/checkout');
   };
 
   const handleCancel = () => {
@@ -73,7 +73,7 @@ const MobileOrderDetail = () => {
       if (['pending', 'processing'].includes(order.status)) {
         cancelOrder(order.id);
         toast.success('Order cancelled successfully');
-        navigate('/app/orders');
+        navigate('/orders');
       } else {
         toast.error('This order cannot be cancelled');
       }

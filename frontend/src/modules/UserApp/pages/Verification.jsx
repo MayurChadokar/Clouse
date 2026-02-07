@@ -67,7 +67,7 @@ const MobileVerification = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       toast.success('Verification successful!');
-      navigate('/app');
+      navigate('/');
     } catch (error) {
       toast.error('Invalid verification code. Please try again.');
     } finally {

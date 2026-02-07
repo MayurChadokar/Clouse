@@ -49,7 +49,7 @@ const MobileCategories = () => {
 
   // Header is hidden on categories page, so use 0
   const headerHeight =
-    location.pathname === "/app/categories" ? 0 : defaultHeaderHeight;
+    location.pathname === "/categories" ? 0 : defaultHeaderHeight;
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     rootCategories[0]?.id || null
   );

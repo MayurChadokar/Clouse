@@ -5,23 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Home from "./modules/UserWeb/pages/Home";
-import ProductDetail from "./modules/UserWeb/pages/ProductDetail";
-import Checkout from "./modules/UserWeb/pages/Checkout";
-import Search from "./modules/UserWeb/pages/Search";
-import VendorStore from "./modules/UserWeb/pages/VendorStore";
-import Login from "./modules/UserWeb/pages/Login";
-import Register from "./modules/UserWeb/pages/Register";
-import Verification from "./modules/UserWeb/pages/Verification";
-import Profile from "./modules/UserWeb/pages/Profile";
-import Orders from "./modules/UserWeb/pages/Orders";
-import Addresses from "./modules/UserWeb/pages/Addresses";
-import Wishlist from "./modules/UserWeb/pages/Wishlist";
-import Offers from "./modules/UserWeb/pages/Offers";
-import DailyDeals from "./modules/UserWeb/pages/DailyDeals";
-import FlashSale from "./modules/UserWeb/pages/FlashSale";
-import CampaignPage from "./modules/UserWeb/pages/CampaignPage";
-import Category from "./modules/UserWeb/pages/Category";
+
 import CartDrawer from "./shared/components/Cart/CartDrawer";
 import ProtectedRoute from "./shared/components/Auth/ProtectedRoute";
 import ErrorBoundary from "./shared/components/ErrorBoundary/ErrorBoundary";
@@ -122,13 +106,13 @@ import PushConfig from "./modules/Admin/pages/firebase/PushConfig";
 import Authentication from "./modules/Admin/pages/firebase/Authentication";
 import RouteWrapper from "./shared/components/RouteWrapper";
 import ScrollToTop from "./shared/components/ScrollToTop";
-import OrderConfirmation from "./modules/UserWeb/pages/OrderConfirmation";
-import OrderDetailPage from "./modules/UserWeb/pages/OrderDetail";
-import TrackOrder from "./modules/UserWeb/pages/TrackOrder";
+
 // Mobile App Routes
 import MobileHome from "./modules/UserApp/pages/Home";
 import MobileProductDetail from "./modules/UserApp/pages/ProductDetail";
+import MobileSeller from "./modules/UserApp/pages/Seller";
 import MobileCategory from "./modules/UserApp/pages/Category";
+import MobileBrand from "./modules/UserApp/pages/Brand";
 import MobileCategories from "./modules/UserApp/pages/categories";
 import MobileCheckout from "./modules/UserApp/pages/Checkout";
 import MobileSearch from "./modules/UserApp/pages/Search";
@@ -200,7 +184,7 @@ const AppRoutes = () => {
         path="/"
         element={
           <RouteWrapper>
-            <Home />
+            <MobileHome />
           </RouteWrapper>
         }
       />
@@ -208,7 +192,15 @@ const AppRoutes = () => {
         path="/product/:id"
         element={
           <RouteWrapper>
-            <ProductDetail />
+            <MobileProductDetail />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/seller/:id"
+        element={
+          <RouteWrapper>
+            <MobileSeller />
           </RouteWrapper>
         }
       />
@@ -216,15 +208,23 @@ const AppRoutes = () => {
         path="/category/:id"
         element={
           <RouteWrapper>
-            <Category />
+            <MobileCategory />
           </RouteWrapper>
         }
       />
       <Route
-        path="/vendor/:id"
+        path="/brand/:id"
         element={
           <RouteWrapper>
-            <VendorStore />
+            <MobileBrand />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/categories"
+        element={
+          <RouteWrapper>
+            <MobileCategories />
           </RouteWrapper>
         }
       />
@@ -232,7 +232,7 @@ const AppRoutes = () => {
         path="/checkout"
         element={
           <RouteWrapper>
-            <Checkout />
+            <MobileCheckout />
           </RouteWrapper>
         }
       />
@@ -240,7 +240,7 @@ const AppRoutes = () => {
         path="/search"
         element={
           <RouteWrapper>
-            <Search />
+            <MobileSearch />
           </RouteWrapper>
         }
       />
@@ -248,7 +248,7 @@ const AppRoutes = () => {
         path="/login"
         element={
           <RouteWrapper>
-            <Login />
+            <MobileLogin />
           </RouteWrapper>
         }
       />
@@ -256,7 +256,7 @@ const AppRoutes = () => {
         path="/register"
         element={
           <RouteWrapper>
-            <Register />
+            <MobileRegister />
           </RouteWrapper>
         }
       />
@@ -264,7 +264,7 @@ const AppRoutes = () => {
         path="/verification"
         element={
           <RouteWrapper>
-            <Verification />
+            <MobileVerification />
           </RouteWrapper>
         }
       />
@@ -272,7 +272,7 @@ const AppRoutes = () => {
         path="/wishlist"
         element={
           <RouteWrapper>
-            <Wishlist />
+            <MobileWishlist />
           </RouteWrapper>
         }
       />
@@ -280,7 +280,7 @@ const AppRoutes = () => {
         path="/offers"
         element={
           <RouteWrapper>
-            <Offers />
+            <MobileOffers />
           </RouteWrapper>
         }
       />
@@ -288,7 +288,7 @@ const AppRoutes = () => {
         path="/daily-deals"
         element={
           <RouteWrapper>
-            <DailyDeals />
+            <MobileDailyDeals />
           </RouteWrapper>
         }
       />
@@ -296,23 +296,7 @@ const AppRoutes = () => {
         path="/flash-sale"
         element={
           <RouteWrapper>
-            <FlashSale />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/sale/:slug"
-        element={
-          <RouteWrapper>
-            <CampaignPage />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/campaign/:id"
-        element={
-          <RouteWrapper>
-            <CampaignPage />
+            <MobileFlashSale />
           </RouteWrapper>
         }
       />
@@ -320,7 +304,7 @@ const AppRoutes = () => {
         path="/order-confirmation/:orderId"
         element={
           <RouteWrapper>
-            <OrderConfirmation />
+            <MobileOrderConfirmation />
           </RouteWrapper>
         }
       />
@@ -328,7 +312,7 @@ const AppRoutes = () => {
         path="/orders/:orderId"
         element={
           <RouteWrapper>
-            <OrderDetailPage />
+            <MobileOrderDetail />
           </RouteWrapper>
         }
       />
@@ -336,7 +320,7 @@ const AppRoutes = () => {
         path="/track-order/:orderId"
         element={
           <RouteWrapper>
-            <TrackOrder />
+            <MobileTrackOrder />
           </RouteWrapper>
         }
       />
@@ -345,7 +329,7 @@ const AppRoutes = () => {
         element={
           <RouteWrapper>
             <ProtectedRoute>
-              <Profile />
+              <MobileProfile />
             </ProtectedRoute>
           </RouteWrapper>
         }
@@ -355,7 +339,7 @@ const AppRoutes = () => {
         element={
           <RouteWrapper>
             <ProtectedRoute>
-              <Orders />
+              <MobileOrders />
             </ProtectedRoute>
           </RouteWrapper>
         }
@@ -365,7 +349,7 @@ const AppRoutes = () => {
         element={
           <RouteWrapper>
             <ProtectedRoute>
-              <Addresses />
+              <MobileAddresses />
             </ProtectedRoute>
           </RouteWrapper>
         }
@@ -585,174 +569,9 @@ const AppRoutes = () => {
         <Route path="settings/shipping-settings" element={<VendorSettings />} />
         <Route path="profile" element={<VendorSettings />} />
       </Route>
-      {/* Mobile App Routes */}
-      <Route
-        path="/app"
-        element={
-          <RouteWrapper>
-            <MobileHome />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/product/:id"
-        element={
-          <RouteWrapper>
-            <MobileProductDetail />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/category/:id"
-        element={
-          <RouteWrapper>
-            <MobileCategory />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/categories"
-        element={
-          <RouteWrapper>
-            <MobileCategories />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/vendor/:id"
-        element={
-          <RouteWrapper>
-            <VendorStore />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/checkout"
-        element={
-          <RouteWrapper>
-            <MobileCheckout />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/search"
-        element={
-          <RouteWrapper>
-            <MobileSearch />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/login"
-        element={
-          <RouteWrapper>
-            <MobileLogin />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/register"
-        element={
-          <RouteWrapper>
-            <MobileRegister />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/verification"
-        element={
-          <RouteWrapper>
-            <MobileVerification />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/wishlist"
-        element={
-          <RouteWrapper>
-            <MobileWishlist />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/offers"
-        element={
-          <RouteWrapper>
-            <MobileOffers />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/daily-deals"
-        element={
-          <RouteWrapper>
-            <MobileDailyDeals />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/flash-sale"
-        element={
-          <RouteWrapper>
-            <MobileFlashSale />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/order-confirmation/:orderId"
-        element={
-          <RouteWrapper>
-            <MobileOrderConfirmation />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/orders/:orderId"
-        element={
-          <RouteWrapper>
-            <MobileOrderDetail />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/track-order/:orderId"
-        element={
-          <RouteWrapper>
-            <MobileTrackOrder />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/profile"
-        element={
-          <RouteWrapper>
-            <ProtectedRoute>
-              <MobileProfile />
-            </ProtectedRoute>
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/orders"
-        element={
-          <RouteWrapper>
-            <ProtectedRoute>
-              <MobileOrders />
-            </ProtectedRoute>
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/app/addresses"
-        element={
-          <RouteWrapper>
-            <ProtectedRoute>
-              <MobileAddresses />
-            </ProtectedRoute>
-          </RouteWrapper>
-        }
-      />
-    </Routes>
+
+
+    </Routes >
   );
 };
 

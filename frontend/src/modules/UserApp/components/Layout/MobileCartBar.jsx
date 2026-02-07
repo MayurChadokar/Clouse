@@ -32,7 +32,7 @@ const MobileCartBar = () => {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed right-4 z-[9998] safe-area-bottom"
+      className="fixed right-4 z-[9998] safe-area-bottom md:hidden"
       style={{ bottom: "calc(4rem + 10px)" }}>
       <motion.button
         data-cart-bar

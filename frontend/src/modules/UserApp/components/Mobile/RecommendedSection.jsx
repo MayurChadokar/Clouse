@@ -27,7 +27,7 @@ const RecommendedSection = () => {
           </div>
         </div>
         <Link
-          to="/app/search"
+          to="/search"
           className="flex items-center gap-1 text-sm text-primary-600 font-semibold hover:text-primary-700 transition-colors active:scale-95">
           <span>See All</span>
           <FiArrowRight className="text-sm" />

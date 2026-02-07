@@ -5,8 +5,7 @@ import LazyImage from '../../../../shared/components/LazyImage';
 
 const VendorShowcaseCard = ({ vendor, index = 0 }) => {
   const location = useLocation();
-  const isMobileApp = location.pathname.startsWith('/app');
-  const vendorLink = isMobileApp ? `/app/vendor/${vendor.id}` : `/vendor/${vendor.id}`;
+  const vendorLink = `/seller/${vendor.id}`;
 
   if (!vendor) return null;
 
@@ -56,11 +55,10 @@ const VendorShowcaseCard = ({ vendor, index = 0 }) => {
               {[...Array(5)].map((_, i) => (
                 <FiStar
                   key={i}
-                  className={`text-[10px] ${
-                    i < Math.floor(vendor.rating)
+                  className={`text-[10px] ${i < Math.floor(vendor.rating)
                       ? 'text-yellow-400 fill-yellow-400'
                       : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>

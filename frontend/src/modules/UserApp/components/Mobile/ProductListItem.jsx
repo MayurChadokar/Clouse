@@ -11,7 +11,7 @@ import { getVendorById } from '../../../../data/vendors';
 
 const ProductListItem = ({ product, index }) => {
   const location = window.location.pathname;
-  const isMobileApp = location.startsWith("/app");
+  const isMobileApp = location.startsWith("/");
   const productLink = isMobileApp
     ? `/app/product/${product.id}`
     : `/product/${product.id}`;

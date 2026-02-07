@@ -45,6 +45,7 @@ export const products = [
     reviewCount: 128,
     vendorId: 1,
     vendorName: "Fashion Hub",
+    brandId: 1,
   },
   {
     id: 2,
@@ -60,6 +61,7 @@ export const products = [
     reviewCount: 89,
     vendorId: 1,
     vendorName: "Fashion Hub",
+    brandId: 4,
   },
   {
     id: 3,
@@ -74,6 +76,7 @@ export const products = [
     reviewCount: 45,
     vendorId: 1,
     vendorName: "Fashion Hub",
+    brandId: 2,
   },
   {
     id: 4,
@@ -89,6 +92,7 @@ export const products = [
     reviewCount: 156,
     vendorId: 1,
     vendorName: "Fashion Hub",
+    brandId: 6,
   },
   {
     id: 5,
@@ -103,6 +107,7 @@ export const products = [
     reviewCount: 72,
     vendorId: 2,
     vendorName: "Tech Gear Pro",
+    brandId: 3,
   },
   {
     id: 6,
@@ -129,6 +134,7 @@ export const products = [
     reviewCount: 234,
     vendorId: 1,
     vendorName: "Fashion Hub",
+    brandId: 5,
   },
   {
     id: 7,
@@ -517,3 +523,11 @@ export const getRecommendedProducts = (limit = 6) => {
 
 // Get all products
 export const getAllProducts = () => products;
+
+export const getProductsByBrand = (brandId) => {
+  return products.filter((p) => p.brandId === parseInt(brandId));
+};
+
+export const getProductsByVendor = (vendorId) => {
+  return products.filter((p) => p.vendorId === parseInt(vendorId));
+};

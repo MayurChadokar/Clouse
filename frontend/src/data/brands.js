@@ -61,3 +61,5 @@ export const brands = [
     logo: pantaloonsLogo,
   },
 ];
+
+export const getBrandById = (id) => brands.find((b) => b.id === parseInt(id));

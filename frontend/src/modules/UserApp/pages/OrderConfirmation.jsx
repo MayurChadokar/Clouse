@@ -16,7 +16,7 @@ const MobileOrderConfirmation = () => {
 
   useEffect(() => {
     if (!order) {
-      navigate('/app');
+      navigate('/');
     }
   }, [order, navigate]);
 
@@ -28,7 +28,7 @@ const MobileOrderConfirmation = () => {
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Order Not Found</h2>
               <button
-                onClick={() => navigate('/app')}
+                onClick={() => navigate('/')}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
               >
                 Go Home
@@ -152,7 +152,7 @@ const MobileOrderConfirmation = () => {
                 </div>
               </Link>
               <button
-                onClick={() => navigate('/app')}
+                onClick={() => navigate('/')}
                 className="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
               >
                 Continue Shopping

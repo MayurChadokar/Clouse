@@ -121,7 +121,7 @@ const EmptyWishlistState = () => (
     </h3>
     <p className="text-gray-600 mb-6">Start adding items you love!</p>
     <Link
-      to="/app"
+      to="/"
       className="gradient-green text-white px-6 py-3 rounded-xl font-semibold inline-block">
       Continue Shopping
     </Link>

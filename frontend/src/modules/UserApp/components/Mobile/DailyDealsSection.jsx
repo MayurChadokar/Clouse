@@ -74,7 +74,7 @@ const DailyDealsSection = () => {
               </div>
             </div>
             <Link
-              to="/app/daily-deals"
+              to="/daily-deals"
               className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all">
               See All
             </Link>

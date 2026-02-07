@@ -155,7 +155,7 @@ const MobileCategory = () => {
                 Category Not Found
               </h2>
               <button
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/")}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                 Go Back Home
               </button>

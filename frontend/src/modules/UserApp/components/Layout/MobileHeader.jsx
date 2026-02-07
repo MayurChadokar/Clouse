@@ -66,19 +66,19 @@ const MobileHeader = () => {
   // Get current page from location
   const getCurrentPage = () => {
     const path = location.pathname;
-    if (path === "/app" || path === "/app/") return "home";
-    if (path.startsWith("/app/product/")) return "product";
-    if (path.startsWith("/app/category/")) return "category";
-    if (path === "/app/search") return "search";
-    if (path === "/app/wishlist") return "wishlist";
-    if (path === "/app/profile") return "profile";
-    if (path === "/app/orders") return "orders";
-    if (path.startsWith("/app/orders/")) return "orderDetail";
-    if (path === "/app/checkout") return "checkout";
-    if (path === "/app/offers") return "offers";
-    if (path === "/app/daily-deals") return "dailyDeals";
-    if (path === "/app/flash-sale") return "flashSale";
-    if (path.startsWith("/app/vendor/")) return "vendor";
+    if (path === "/" || path === "/") return "home";
+    if (path.startsWith("/product/")) return "product";
+    if (path.startsWith("/category/")) return "category";
+    if (path === "/search") return "search";
+    if (path === "/wishlist") return "wishlist";
+    if (path === "/profile") return "profile";
+    if (path === "/orders") return "orders";
+    if (path.startsWith("/orders/")) return "orderDetail";
+    if (path === "/checkout") return "checkout";
+    if (path === "/offers") return "offers";
+    if (path === "/daily-deals") return "dailyDeals";
+    if (path === "/flash-sale") return "flashSale";
+    if (path.startsWith("/seller/")) return "vendor";
     return "default";
   };
 
@@ -242,7 +242,7 @@ const MobileHeader = () => {
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
-    navigate("/app");
+    navigate("/");
   };
 
   // Animation content - straight line movement only, starting from behind logo
@@ -299,7 +299,7 @@ const MobileHeader = () => {
   const headerContent = (
     <motion.header
       key="mobile-header" // Stable key to prevent re-mounting
-      className="fixed top-0 left-0 right-0 z-[9999] shadow-lg overflow-visible"
+      className="fixed top-0 left-0 right-0 z-[9999] shadow-lg overflow-visible md:hidden"
       style={{
         background: headerBackground,
         transition: "background 0.5s ease-in-out",
@@ -335,7 +335,7 @@ const MobileHeader = () => {
           {/* Logo and Marketplace Badge */}
           <div className="flex items-center gap-2 flex-shrink-0 overflow-visible relative z-[10001]">
             <Link
-              to="/app"
+              to="/"
               className="flex items-center overflow-visible relative z-[10002]">
               <div
                 ref={logoRef}
@@ -382,8 +382,8 @@ const MobileHeader = () => {
               animate={
                 cartAnimationTrigger > 0
                   ? {
-                      scale: [1, 1.2, 1],
-                    }
+                    scale: [1, 1.2, 1],
+                  }
                   : {}
               }
               transition={{ duration: 0.5, ease: "easeOut" }}>
@@ -427,7 +427,7 @@ const MobileHeader = () => {
                       </p>
                     </div>
                     <Link
-                      to="/app/profile"
+                      to="/profile"
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
                       <FiUser className="text-gray-600 text-base" />
@@ -436,7 +436,7 @@ const MobileHeader = () => {
                       </span>
                     </Link>
                     <Link
-                      to="/app/orders"
+                      to="/orders"
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
                       <FiPackage className="text-gray-600 text-base" />
@@ -445,7 +445,7 @@ const MobileHeader = () => {
                       </span>
                     </Link>
                     <Link
-                      to="/app/addresses"
+                      to="/addresses"
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
                       <FiMapPin className="text-gray-600 text-base" />
@@ -464,7 +464,7 @@ const MobileHeader = () => {
               </div>
             ) : (
               <Link
-                to="/app/login"
+                to="/login"
                 className="px-3 py-1.5 gradient-green text-white rounded-lg font-semibold text-sm hover:shadow-glow-green transition-all duration-300">
                 Login
               </Link>

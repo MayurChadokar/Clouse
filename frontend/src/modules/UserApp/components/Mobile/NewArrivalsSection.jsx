@@ -6,7 +6,7 @@ import { getNewArrivals } from "../../../../data/products";
 
 const NewArrivalsSection = () => {
   const location = useLocation();
-  const isMobileApp = location.pathname.startsWith("/app");
+  const isMobileApp = location.pathname.startsWith("/");
   const newArrivals = getNewArrivals(6);
 
   if (newArrivals.length === 0) {
@@ -126,7 +126,7 @@ const NewArrivalsSection = () => {
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
-              to="/app/search"
+              to="/search"
               className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all block">
               See All
             </Link>

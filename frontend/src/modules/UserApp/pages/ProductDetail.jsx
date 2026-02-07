@@ -60,7 +60,7 @@ const MobileProductDetail = () => {
                 Product Not Found
               </h2>
               <button
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/")}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                 Go Back Home
               </button>
@@ -186,7 +186,7 @@ const MobileProductDetail = () => {
             {vendor && (
               <div className="mb-4">
                 <Link
-                  to={`/app/vendor/${vendor.id}`}
+                  to={`/seller/${vendor.id}`}
                   className="inline-flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-primary-50 to-primary-100 hover:from-primary-100 hover:to-primary-200 text-primary-700 rounded-xl transition-all duration-300 border border-primary-200/50 shadow-sm hover:shadow-md">
                   {vendor.storeLogo && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-white border border-primary-200 flex-shrink-0">

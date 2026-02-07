@@ -160,7 +160,7 @@ const MobileCheckout = () => {
                 Your cart is empty
               </h2>
               <button
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/")}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                 Continue Shopping
               </button>
@@ -248,7 +248,7 @@ const MobileCheckout = () => {
                 </p>
                 <div className="flex gap-3">
                   <Link
-                    to="/app/login"
+                    to="/login"
                     className="flex-1 py-2.5 gradient-green text-white rounded-xl font-semibold text-center hover:shadow-glow-green transition-all">
                     Sign In
                   </Link>

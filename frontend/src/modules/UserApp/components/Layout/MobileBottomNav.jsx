@@ -11,25 +11,25 @@ const MobileBottomNav = () => {
   const { isAuthenticated } = useAuthStore();
 
   const navItems = [
-    { path: "/app", icon: FiHome, label: "Home" },
-    { path: "/app/categories", icon: FiGrid, label: "Categories" },
-    { path: "/app/search", icon: FiSearch, label: "Search" },
+    { path: "/", icon: FiHome, label: "Home" },
+    { path: "/categories", icon: FiGrid, label: "Categories" },
+    { path: "/search", icon: FiSearch, label: "Search" },
     {
-      path: "/app/wishlist",
+      path: "/wishlist",
       icon: FiHeart,
       label: "Wishlist",
       badge: wishlistCount > 0 ? wishlistCount : null,
     },
     {
-      path: isAuthenticated ? "/app/profile" : "/app/login",
+      path: isAuthenticated ? "/profile" : "/login",
       icon: FiUser,
       label: "Profile",
     },
   ];
 
   const isActive = (path) => {
-    if (path === "/app") {
-      return location.pathname === "/app";
+    if (path === "/") {
+      return location.pathname === "/";
     }
     return location.pathname.startsWith(path);
   };
@@ -51,7 +51,7 @@ const MobileBottomNav = () => {
   };
 
   const navContent = (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-l border-r border-accent-200/30 z-[9999] safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-l border-r border-accent-200/30 z-[9999] safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:hidden">
       <div className="flex items-center justify-around h-16 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;

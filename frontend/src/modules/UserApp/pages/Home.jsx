@@ -9,7 +9,7 @@ import NewArrivalsSection from "../components/Mobile/NewArrivalsSection";
 import DailyDealsSection from "../components/Mobile/DailyDealsSection";
 import RecommendedSection from "../components/Mobile/RecommendedSection";
 import FeaturedVendorsSection from "../components/Mobile/FeaturedVendorsSection";
-import BrandLogosScroll from "../../UserWeb/components/Home/BrandLogosScroll";
+import BrandLogosScroll from "../components/Mobile/BrandLogosScroll";
 import LazyImage from "../../../shared/components/LazyImage";
 import {
   getMostPopular,
@@ -27,7 +27,7 @@ import heroSlide4 from "../../../../data/hero/slide4.png";
 import heroBanner2 from "../../../../data/hero/banner2.png";
 import babycareBanner from "../../../../data/banners/babycare-WEB.avif";
 import pharmacyBanner from "../../../../data/banners/pharmacy-WEB.avif";
-import petCareBanner from "../../../../data/banners/Pet-Care_WEB.avif";
+import stylishWatchImg from "../../../../data/products/stylish watch.png";
 
 const MobileHome = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -152,71 +152,93 @@ const MobileHome = () => {
           }}>
           {/* Hero Banner */}
           <div className="px-4 py-4">
-            <div
-              className="relative w-full h-48 rounded-2xl overflow-hidden"
-              data-carousel
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-              style={{ touchAction: "pan-y", userSelect: "none" }}>
-              {/* Slider Container - All slides in a row */}
-              <motion.div
-                className="flex h-full"
-                style={{
-                  width: `${slides.length * 100}%`,
-                  height: "100%",
-                }}
-                animate={{
-                  x:
-                    dragOffset !== 0
-                      ? `calc(-${
-                          currentSlide * (100 / slides.length)
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div
+                className="relative w-full h-48 md:h-80 lg:h-[400px] xl:h-[450px] rounded-xl md:rounded-2xl overflow-hidden lg:col-span-2"
+                data-carousel
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                style={{ touchAction: "pan-y", userSelect: "none" }}>
+                {/* Slider Container - All slides in a row */}
+                <motion.div
+                  className="flex h-full"
+                  style={{
+                    width: `${slides.length * 100}%`,
+                    height: "100%",
+                  }}
+                  animate={{
+                    x:
+                      dragOffset !== 0
+                        ? `calc(-${currentSlide * (100 / slides.length)
                         }% - ${dragOffset}px)`
-                      : `-${currentSlide * (100 / slides.length)}%`,
-                }}
-                transition={{
-                  duration: dragOffset !== 0 ? 0 : 0.6,
-                  ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing
-                  type: "tween",
-                }}>
-                {slides.map((slide, index) => (
-                  <div
-                    key={index}
-                    className="flex-shrink-0"
-                    style={{
-                      width: `${100 / slides.length}%`,
-                      height: "100%",
-                    }}>
-                    <LazyImage
-                      src={slide.image}
-                      alt={`Slide ${index + 1}`}
-                      className="w-full h-full object-cover pointer-events-none select-none"
-                      draggable={false}
-                      onError={(e) => {
-                        e.target.src = `https://via.placeholder.com/400x200?text=Slide+${
-                          index + 1
-                        }`;
+                        : `-${currentSlide * (100 / slides.length)}%`,
+                  }}
+                  transition={{
+                    duration: dragOffset !== 0 ? 0 : 0.6,
+                    ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing
+                    type: "tween",
+                  }}>
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      className="flex-shrink-0"
+                      style={{
+                        width: `${100 / slides.length}%`,
+                        height: "100%",
+                      }}>
+                      <LazyImage
+                        src={slide.image}
+                        alt={`Slide ${index + 1}`}
+                        className="w-full h-full object-cover pointer-events-none select-none"
+                        draggable={false}
+                        onError={(e) => {
+                          e.target.src = `https://via.placeholder.com/400x200?text=Slide+${index + 1
+                            }`;
+                        }}
+                      />
+                    </div>
+                  ))}
+                </motion.div>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10 pointer-events-none">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentSlide(index);
+                        setAutoSlidePaused(true);
+                        setTimeout(() => setAutoSlidePaused(false), 2000);
                       }}
-                    />
-                  </div>
-                ))}
-              </motion.div>
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10 pointer-events-none">
-                {slides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setCurrentSlide(index);
-                      setAutoSlidePaused(true);
-                      setTimeout(() => setAutoSlidePaused(false), 2000);
-                    }}
-                    className={`h-1.5 rounded-full transition-all pointer-events-auto ${
-                      index === currentSlide
+                      className={`h-1.5 rounded-full transition-all pointer-events-auto ${index === currentSlide
                         ? "bg-white w-6"
                         : "bg-white/50 w-1.5"
-                    }`}
-                  />
-                ))}
+                        }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Side Banner for Large Screens */}
+              <div className="hidden lg:block lg:col-span-1 h-[400px] xl:h-[450px] rounded-2xl overflow-hidden relative bg-gray-900 group">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10" />
+                <LazyImage
+                  src={stylishWatchImg}
+                  alt="Premium Watch"
+                  className="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/400x400?text=Premium+Watch";
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 p-8 z-20 flex flex-col items-center text-center">
+                  <span className="text-yellow-400 font-bold text-3xl mb-2 tracking-wider drop-shadow-lg">PREMIUM</span>
+                  <p className="text-gray-300 text-sm mb-6 font-medium">Exclusive Collection</p>
+                  <Link
+                    to="/offers"
+                    className="bg-white text-gray-900 font-bold py-3.5 px-10 rounded-xl w-full hover:bg-gray-100 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-xl uppercase tracking-widest text-sm"
+                  >
+                    Shop Now
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -233,69 +255,14 @@ const MobileHome = () => {
           {/* New Arrivals */}
           <NewArrivalsSection />
 
-          {/* Promotional Banners */}
-          <div className="px-4 py-4">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-              <Link to="/app/offers" className="block flex-shrink-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="relative w-[calc(50vw-1.5rem)] h-32 rounded-xl overflow-hidden shadow-lg">
-                  <LazyImage
-                    src={babycareBanner}
-                    alt="Baby Care"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/400x200?text=Baby+Care";
-                    }}
-                  />
-                </motion.div>
-              </Link>
-              <Link to="/app/offers" className="block flex-shrink-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="relative w-[calc(50vw-1.5rem)] h-32 rounded-xl overflow-hidden shadow-lg">
-                  <LazyImage
-                    src={pharmacyBanner}
-                    alt="Pharmacy"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/400x200?text=Pharmacy";
-                    }}
-                  />
-                </motion.div>
-              </Link>
-              <Link to="/app/offers" className="block flex-shrink-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="relative w-[calc(50vw-1.5rem)] h-32 rounded-xl overflow-hidden shadow-lg">
-                  <LazyImage
-                    src={petCareBanner}
-                    alt="Pet Care"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/400x200?text=Pet+Care";
-                    }}
-                  />
-                </motion.div>
-              </Link>
-            </div>
-          </div>
+
 
           {/* Most Popular */}
           <div className="px-4 py-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-800">Most Popular</h2>
               <Link
-                to="/app/search"
+                to="/search"
                 className="text-sm text-primary-600 font-semibold">
                 See All
               </Link>
@@ -316,24 +283,7 @@ const MobileHome = () => {
           {/* Daily Deals */}
           <DailyDealsSection />
 
-          {/* Trending Banner */}
-          <div className="px-4 py-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="relative w-full h-40 rounded-xl overflow-hidden shadow-lg">
-              <LazyImage
-                src={heroBanner2}
-                alt="Trending Items Banner"
-                className="w-full h-full object-cover object-center"
-                onError={(e) => {
-                  e.target.src =
-                    "https://via.placeholder.com/1200x300?text=Banner";
-                }}
-              />
-            </motion.div>
-          </div>
+
 
           {/* Flash Sale */}
           {flashSale.length > 0 && (
@@ -346,7 +296,7 @@ const MobileHome = () => {
                   <p className="text-xs text-gray-600">Limited time offers</p>
                 </div>
                 <Link
-                  to="/app/flash-sale"
+                  to="/flash-sale"
                   className="text-sm text-primary-600 font-semibold">
                   See All
                 </Link>
@@ -370,7 +320,7 @@ const MobileHome = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-800">Trending Now</h2>
               <Link
-                to="/app/search"
+                to="/search"
                 className="text-sm text-primary-600 font-semibold">
                 See All
               </Link>

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiFilter, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiFilter, FiX, FiSearch } from "react-icons/fi";
 import MobileLayout from "../components/Layout/MobileLayout";
 import { categories as fallbackCategories } from "../../../data/categories";
 import { products } from "../../../data/products";
@@ -291,17 +291,33 @@ const MobileCategories = () => {
             <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
               <div
                 key={`header-${selectedCategoryId}`}
-                className="flex items-center gap-3">
+                className="flex items-center gap-2 md:gap-3">
                 <button
                   onClick={() => navigate(-1)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
                   <FiArrowLeft className="text-xl text-gray-700" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-gray-800 mb-1">
+                  <h2 className="text-lg font-bold text-gray-800 mb-0.5">
                     {selectedCategory.name}
                   </h2>
-                  <p className="text-xs text-gray-600">
+                  <div className="relative mb-0.5">
+                    <input
+                      type="text"
+                      placeholder="Search in category..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-2 py-1 bg-gray-100 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+                      <FiX
+                        className={`text-xs cursor-pointer ${searchQuery ? 'block' : 'hidden'}`}
+                        onClick={() => setSearchQuery('')}
+                      />
+                      {!searchQuery && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><FiSearch className="text-xs" /></motion.div>}
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">
                     {filteredProducts.length} product
                     {filteredProducts.length !== 1 ? "s" : ""} available
                   </p>
@@ -310,13 +326,11 @@ const MobileCategories = () => {
                   <div ref={filterButtonRef} className="relative">
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className={`p-2 hover:bg-gray-100 rounded-full transition-colors ${
-                        showFilters ? "bg-gray-100" : ""
-                      }`}>
+                      className={`p-2 hover:bg-gray-100 rounded-full transition-colors ${showFilters ? "bg-gray-100" : ""
+                        }`}>
                       <FiFilter
-                        className={`text-xl transition-colors ${
-                          hasActiveFilters ? "text-blue-600" : "text-gray-700"
-                        }`}
+                        className={`text-xl transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-700"
+                          }`}
                       />
                     </button>
 
@@ -422,7 +436,7 @@ const MobileCategories = () => {
                                           style={{
                                             backgroundImage:
                                               filters.minRating ===
-                                              rating.toString()
+                                                rating.toString()
                                                 ? "radial-gradient(circle, #10b981 40%, transparent 40%)"
                                                 : "none",
                                           }}
@@ -469,7 +483,7 @@ const MobileCategories = () => {
             {/* Left Panel - Vertical Category Sidebar */}
             <div
               ref={categoryListRef}
-              className="w-[22%] bg-gray-50 border-r border-gray-200 overflow-y-auto scrollbar-hide flex-shrink-0"
+              className="w-16 md:w-20 bg-gray-50 border-r border-gray-200 overflow-y-auto scrollbar-hide flex-shrink-0"
               style={{
                 maxHeight: `calc(${contentHeight} - ${headerSectionHeight}px)`,
               }}>
@@ -490,17 +504,15 @@ const MobileCategories = () => {
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
                         whileTap={{ scale: 0.95 }}
-                        className={`w-full px-2 py-3 text-left transition-all duration-200 relative ${
-                          isActive ? "bg-white shadow-sm" : "hover:bg-gray-100"
-                        }`}
+                        className={`w-full px-2 py-1.5 text-left transition-all duration-200 relative ${isActive ? "bg-white shadow-sm" : "hover:bg-gray-100"
+                          }`}
                         style={{ willChange: "transform" }}>
-                        <div className="flex flex-col items-center gap-1.5">
+                        <div className="flex flex-col items-center gap-0.5">
                           <div
-                            className={`w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 transition-all duration-200 ${
-                              isActive
-                                ? "ring-2 ring-primary-500 ring-offset-1 scale-105"
-                                : ""
-                            }`}
+                            className={`w-8 h-8 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 transition-all duration-200 ${isActive
+                              ? "ring-2 ring-primary-500 ring-offset-1 scale-105"
+                              : ""
+                              }`}
                             style={{
                               willChange: isActive ? "transform" : "auto",
                             }}>
@@ -514,9 +526,8 @@ const MobileCategories = () => {
                             />
                           </div>
                           <span
-                            className={`text-[10px] font-semibold text-center leading-tight transition-colors ${
-                              isActive ? "text-primary-600" : "text-gray-700"
-                            }`}>
+                            className={`text-[9px] font-semibold text-center leading-tight transition-colors ${isActive ? "text-primary-600" : "text-gray-700"
+                              }`}>
                             {category.name}
                           </span>
                         </div>
@@ -529,16 +540,16 @@ const MobileCategories = () => {
 
             {/* Right Panel - Products Grid */}
             <div
-              className="w-[78%] overflow-y-auto bg-white flex-shrink-0"
+              className="flex-1 overflow-y-auto bg-white flex-shrink-0"
               style={{
                 maxHeight: `calc(${contentHeight} - ${headerSectionHeight}px)`,
               }}>
-              <div className="p-3">
+              <div className="p-0 md:p-3">
                 {/* Subcategory Selector - Above product cards */}
                 {subcategories.length > 0 && (
                   <div className="mb-3 pb-3 border-b border-gray-200">
                     <div
-                      className="overflow-x-auto scrollbar-hide -mx-3 px-3"
+                      className="overflow-x-auto scrollbar-hide px-2 pt-2 md:pt-0 md:-mx-3 md:px-3"
                       style={{
                         scrollBehavior: "smooth",
                         WebkitOverflowScrolling: "touch",
@@ -554,11 +565,10 @@ const MobileCategories = () => {
                                 setSelectedSubcategory(subcategory.id)
                               }
                               whileTap={{ scale: 0.97 }}
-                              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap border ${
-                                isActive
-                                  ? "bg-white text-primary-600 border-primary-200 shadow-sm"
-                                  : "bg-gray-50 text-gray-600 border-gray-200 active:bg-gray-100"
-                              }`}
+                              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap border ${isActive
+                                ? "bg-white text-primary-600 border-primary-200 shadow-sm"
+                                : "bg-gray-50 text-gray-600 border-gray-200 active:bg-gray-100"
+                                }`}
                               style={{ willChange: "transform" }}>
                               {subcategory.name}
                             </motion.button>
@@ -588,7 +598,7 @@ const MobileCategories = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="grid grid-cols-2 gap-2"
+                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5 md:gap-4 p-1 md:p-0"
                     style={{
                       willChange: "opacity",
                       transform: "translateZ(0)",

@@ -11,6 +11,7 @@ import {
   FiShoppingBag,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiLock } from "react-icons/fi";
 import { useCartStore } from "../../../shared/store/useStore";
 import { useAuthStore } from "../../../shared/store/authStore";
 import { useAddressStore } from "../../../shared/store/addressStore";
@@ -20,7 +21,8 @@ import toast from "react-hot-toast";
 import MobileLayout from "../components/Layout/MobileLayout";
 import MobileCheckoutSteps from "../components/Mobile/MobileCheckoutSteps";
 import PageTransition from "../../../shared/components/PageTransition";
-// import successSound from '../../../data/sounds/success.mp3'; // File not found
+import OrderSummary from "../components/Mobile/CheckoutOrderSummary";
+
 
 const MobileCheckout = () => {
   const navigate = useNavigate();
@@ -211,14 +213,14 @@ const MobileCheckout = () => {
       // });
 
       toast.success("Order placed successfully!");
-      navigate(`/app/order-confirmation/${order.id}`);
+      navigate(`/order-confirmation/${order.id}`);
     }
   };
 
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full pb-24">
+        <div className="w-full pb-24 min-h-screen bg-gray-50">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
             {/* Title Bar */}
@@ -262,416 +264,387 @@ const MobileCheckout = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            {/* Step 1: Shipping Information */}
-            {step === 1 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="px-4 py-4">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FiTruck className="text-primary-600" />
-                  Shipping Information
-                </h2>
+          <form onSubmit={handleSubmit} className="lg:px-4 lg:py-6">
+            <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+              {/* Left Column - Steps */}
+              <div className="lg:col-span-8 space-y-6">
+                {/* Step 1: Shipping Information */}
+                {step === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="px-4 py-4 lg:p-0">
+                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <FiTruck className="text-primary-600" />
+                      Shipping Information
+                    </h2>
 
-                {/* Saved Addresses */}
-                {isAuthenticated && addresses.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                      Saved Addresses
-                    </h3>
-                    <div className="space-y-2 mb-3">
-                      {addresses.map((address) => (
-                        <div
-                          key={address.id}
-                          onClick={() => handleSelectAddress(address)}
-                          className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                            selectedAddressId === address.id
-                              ? "border-primary-500 bg-primary-50"
-                              : "border-gray-200"
-                          }`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-2 flex-1">
-                              <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <h4 className="font-bold text-gray-800 text-sm">
-                                  {address.name}
-                                </h4>
-                                <p className="text-xs text-gray-600">
-                                  {address.fullName}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {address.address}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {address.city}, {address.state}{" "}
-                                  {address.zipCode}
-                                </p>
-                              </div>
-                            </div>
-                            {selectedAddressId === address.id && (
-                              <FiCheck className="text-primary-600 text-xl flex-shrink-0" />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddressForm(true)}
-                      className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm">
-                      <FiPlus />
-                      Add New Address
-                    </button>
-                  </div>
-                )}
-
-                {/* Address Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Address
-                    </label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      required
-                      rows={3}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        ZIP Code
-                      </label>
-                      <input
-                        type="text"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 2: Payment */}
-            {step === 2 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="px-4 py-4">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FiCreditCard className="text-primary-600" />
-                  Payment Method
-                </h2>
-                <div className="space-y-3 mb-6">
-                  {["card", "cash", "bank"].map((method) => (
-                    <label
-                      key={method}
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        formData.paymentMethod === method
-                          ? "border-primary-500 bg-primary-50"
-                          : "border-gray-200"
-                      }`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={method}
-                        checked={formData.paymentMethod === method}
-                        onChange={handleInputChange}
-                        className="w-5 h-5 text-primary-500"
-                      />
-                      <span className="font-semibold text-gray-800 capitalize text-base">
-                        {method === "card"
-                          ? "Credit/Debit Card"
-                          : method === "cash"
-                          ? "Cash on Delivery"
-                          : "Bank Transfer"}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Shipping Options */}
-                {total < 100 && (
-                  <div className="mb-6">
-                    <h3 className="text-base font-semibold text-gray-800 mb-3">
-                      Shipping Options
-                    </h3>
-                    <div className="space-y-3">
-                      <label
-                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          shippingOption === "standard"
-                            ? "border-primary-500 bg-primary-50"
-                            : "border-gray-200"
-                        }`}>
-                        <div>
-                          <input
-                            type="radio"
-                            name="shippingOption"
-                            value="standard"
-                            checked={shippingOption === "standard"}
-                            onChange={(e) => setShippingOption(e.target.value)}
-                            className="w-5 h-5 text-primary-500 mr-3"
-                          />
-                          <span className="font-semibold text-gray-800 text-base">
-                            Standard Shipping
-                          </span>
-                          <p className="text-xs text-gray-600">
-                            5-7 business days
-                          </p>
-                        </div>
-                        <span className="font-bold text-gray-800">
-                          {formatPrice(50)}
-                        </span>
-                      </label>
-                      <label
-                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          shippingOption === "express"
-                            ? "border-primary-500 bg-primary-50"
-                            : "border-gray-200"
-                        }`}>
-                        <div>
-                          <input
-                            type="radio"
-                            name="shippingOption"
-                            value="express"
-                            checked={shippingOption === "express"}
-                            onChange={(e) => setShippingOption(e.target.value)}
-                            className="w-5 h-5 text-primary-500 mr-3"
-                          />
-                          <span className="font-semibold text-gray-800 text-base">
-                            Express Shipping
-                          </span>
-                          <p className="text-xs text-gray-600">
-                            2-3 business days
-                          </p>
-                        </div>
-                        <span className="font-bold text-gray-800">
-                          {formatPrice(100)}
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                {/* Coupon Code */}
-                <div className="mb-6">
-                  <h3 className="text-base font-semibold text-gray-800 mb-3">
-                    Coupon Code
-                  </h3>
-                  {!appliedCoupon ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Enter code"
-                        className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        className="px-4 py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all">
-                        Apply
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                      <div>
-                        <p className="text-sm font-semibold text-green-800">
-                          {appliedCoupon.name} Applied
-                        </p>
-                        <p className="text-xs text-green-600">
-                          Code: {couponCode}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAppliedCoupon(null);
-                          setCouponCode("");
-                        }}
-                        className="text-red-600 hover:text-red-700">
-                        <FiX className="text-lg" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Order Summary */}
-                <div className="glass-card rounded-xl p-4">
-                  <h3 className="text-base font-bold text-gray-800 mb-3">
-                    Order Summary
-                  </h3>
-                  <div className="space-y-3 mb-4">
-                    {itemsByVendor.map((vendorGroup) => (
-                      <div
-                        key={vendorGroup.vendorId}
-                        className="space-y-2 mb-4">
-                        {/* Vendor Header */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200/50 shadow-sm">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
-                            <FiShoppingBag className="text-white text-[10px]" />
-                          </div>
-                          <span className="text-sm font-bold text-primary-700 flex-1">
-                            {vendorGroup.vendorName}
-                          </span>
-                          <span className="text-xs font-semibold text-primary-600 bg-white px-2 py-0.5 rounded-md">
-                            {formatPrice(vendorGroup.subtotal)}
-                          </span>
-                        </div>
-                        {/* Vendor Items */}
-                        <div className="space-y-2 pl-2">
-                          {vendorGroup.items.map((item) => (
+                    {/* Saved Addresses */}
+                    {isAuthenticated && addresses.length > 0 && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                          Saved Addresses
+                        </h3>
+                        <div className="space-y-2 mb-3">
+                          {addresses.map((address) => (
                             <div
-                              key={item.id}
-                              className="flex items-center gap-2 text-xs">
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-10 h-10 rounded-lg object-cover"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-800 truncate text-xs">
-                                  {item.name}
-                                </p>
-                                <p className="text-gray-600 text-xs">
-                                  {formatPrice(item.price)} × {item.quantity}
-                                </p>
+                              key={address.id}
+                              onClick={() => handleSelectAddress(address)}
+                              className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedAddressId === address.id
+                                ? "border-primary-500 bg-primary-50"
+                                : "border-gray-200"
+                                }`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-2 flex-1">
+                                  <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <h4 className="font-bold text-gray-800 text-sm">
+                                      {address.name}
+                                    </h4>
+                                    <p className="text-xs text-gray-600">
+                                      {address.fullName}
+                                    </p>
+                                    <p className="text-xs text-gray-600">
+                                      {address.address}
+                                    </p>
+                                    <p className="text-xs text-gray-600">
+                                      {address.city}, {address.state}{" "}
+                                      {address.zipCode}
+                                    </p>
+                                  </div>
+                                </div>
+                                {selectedAddressId === address.id && (
+                                  <FiCheck className="text-primary-600 text-xl flex-shrink-0" />
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span>{formatPrice(total)}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Discount</span>
-                        <span>-{formatPrice(discount)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddressForm(true)}
+                          className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm">
+                          <FiPlus />
+                          Add New Address
+                        </button>
                       </div>
                     )}
-                    <div className="flex justify-between text-gray-600">
-                      <span>Shipping</span>
-                      <span>
-                        {shipping === 0 ? (
-                          <span className="text-green-600 font-semibold">
-                            FREE
+
+                    {/* Address Form */}
+                    <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm lg:p-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Address
+                        </label>
+                        <textarea
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          required
+                          rows={3}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            State
+                          </label>
+                          <input
+                            type="text"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            ZIP Code
+                          </label>
+                          <input
+                            type="text"
+                            name="zipCode"
+                            value={formData.zipCode}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Country
+                          </label>
+                          <input
+                            type="text"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Step 2: Payment */}
+                {step === 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="px-4 py-4 lg:p-0">
+                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <FiCreditCard className="text-primary-600" />
+                      Payment Method
+                    </h2>
+                    <div className="space-y-3 mb-6">
+                      {["card", "cash", "bank"].map((method) => (
+                        <label
+                          key={method}
+                          className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.paymentMethod === method
+                            ? "border-primary-500 bg-primary-50"
+                            : "border-gray-200"
+                            }`}>
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={method}
+                            checked={formData.paymentMethod === method}
+                            onChange={handleInputChange}
+                            className="w-5 h-5 text-primary-500"
+                          />
+                          <span className="font-semibold text-gray-800 capitalize text-base">
+                            {method === "card"
+                              ? "Credit/Debit Card"
+                              : method === "cash"
+                                ? "Cash on Delivery"
+                                : "Bank Transfer"}
                           </span>
-                        ) : (
-                          formatPrice(shipping)
-                        )}
-                      </span>
+                        </label>
+                      ))}
                     </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Tax</span>
-                      <span>{formatPrice(tax)}</span>
+
+                    {/* Shipping Options */}
+                    {total < 100 && (
+                      <div className="mb-6">
+                        <h3 className="text-base font-semibold text-gray-800 mb-3">
+                          Shipping Options
+                        </h3>
+                        <div className="space-y-3">
+                          <label
+                            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${shippingOption === "standard"
+                              ? "border-primary-500 bg-primary-50"
+                              : "border-gray-200"
+                              }`}>
+                            <div>
+                              <input
+                                type="radio"
+                                name="shippingOption"
+                                value="standard"
+                                checked={shippingOption === "standard"}
+                                onChange={(e) => setShippingOption(e.target.value)}
+                                className="w-5 h-5 text-primary-500 mr-3"
+                              />
+                              <span className="font-semibold text-gray-800 text-base">
+                                Standard Shipping
+                              </span>
+                              <p className="text-xs text-gray-600">
+                                5-7 business days
+                              </p>
+                            </div>
+                            <span className="font-bold text-gray-800">
+                              {formatPrice(50)}
+                            </span>
+                          </label>
+                          <label
+                            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${shippingOption === "express"
+                              ? "border-primary-500 bg-primary-50"
+                              : "border-gray-200"
+                              }`}>
+                            <div>
+                              <input
+                                type="radio"
+                                name="shippingOption"
+                                value="express"
+                                checked={shippingOption === "express"}
+                                onChange={(e) => setShippingOption(e.target.value)}
+                                className="w-5 h-5 text-primary-500 mr-3"
+                              />
+                              <span className="font-semibold text-gray-800 text-base">
+                                Express Shipping
+                              </span>
+                              <p className="text-xs text-gray-600">
+                                2-3 business days
+                              </p>
+                            </div>
+                            <span className="font-bold text-gray-800">
+                              {formatPrice(100)}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Coupon Code */}
+                    <div className="mb-6">
+                      <h3 className="text-base font-semibold text-gray-800 mb-3">
+                        Coupon Code
+                      </h3>
+                      {!appliedCoupon ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            placeholder="Enter code"
+                            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            className="px-4 py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all">
+                            Apply
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
+                          <div>
+                            <p className="text-sm font-semibold text-green-800">
+                              {appliedCoupon.name} Applied
+                            </p>
+                            <p className="text-xs text-green-600">
+                              Code: {couponCode}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAppliedCoupon(null);
+                              setCouponCode("");
+                            }}
+                            className="text-red-600 hover:text-red-700">
+                            <FiX className="text-lg" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-between text-lg font-bold text-gray-800 pt-2 border-t border-gray-200">
-                      <span>Total</span>
-                      <span className="text-primary-600">
-                        {formatPrice(finalTotal)}
-                      </span>
+
+                    {/* Order Summary (Mobile Only) */}
+                    <div className="glass-card rounded-xl p-4 lg:hidden">
+                      <OrderSummary
+                        itemsByVendor={itemsByVendor}
+                        total={total}
+                        discount={discount}
+                        shipping={shipping}
+                        tax={tax}
+                        finalTotal={finalTotal}
+                        formatPrice={formatPrice}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Right Column - Desktop Order Summary */}
+              <div className="hidden lg:block lg:col-span-4">
+                <div className="sticky top-24 space-y-4">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <OrderSummary
+                      itemsByVendor={itemsByVendor}
+                      total={total}
+                      discount={discount}
+                      shipping={shipping}
+                      tax={tax}
+                      finalTotal={finalTotal}
+                      formatPrice={formatPrice}
+                    />
+                    <div className="p-4 border-t border-gray-100 bg-gray-50">
+                      <button
+                        type="submit"
+                        className="w-full gradient-green text-white py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-glow-green transition-all duration-300 transform hover:-translate-y-0.5">
+                        {step === 2 ? "Place Order" : "Continue to Payment"}
+                      </button>
+                      {step === 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="w-full mt-3 py-2 text-gray-500 font-semibold hover:text-gray-700 transition-colors text-sm">
+                          Back to Shipping
+                        </button>
+                      )}
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
 
-            {/* Navigation Buttons */}
-            <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 safe-area-bottom">
+                  {/* Trust Badges or Info */}
+                  <div className="flex justify-center gap-4 text-gray-400 text-2xl pt-2 opacity-70">
+                    <FiLock className="w-6 h-6" />
+                    <span className="text-xs text-gray-500">Secure Checkout</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Buttons (Mobile Fixed Bottom) */}
+            <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 safe-area-bottom lg:hidden">
               <div className="flex gap-3">
                 {step > 1 && (
                   <button

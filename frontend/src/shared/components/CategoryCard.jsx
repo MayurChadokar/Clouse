@@ -8,13 +8,13 @@ const CategoryCard = ({ category }) => {
   const categoryLink = isMobileApp
     ? `/app/category/${category.id}`
     : `/category/${category.id}`;
-  
+
   return (
     <Link to={categoryLink} className="block h-full">
       <motion.div
         whileHover={{ scale: 1.05, y: -5 }}
         className="glass-card rounded-2xl overflow-hidden cursor-pointer hover-lift group h-full flex flex-col">
-        <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden relative">
+        <div className="w-full h-24 md:h-32 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden relative">
           <img
             src={category.image}
             alt={category.name}

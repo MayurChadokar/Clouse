@@ -61,15 +61,15 @@ const DailyDealsSection = () => {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-                <FiZap className="text-white text-lg" />
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 md:p-3">
+                <FiZap className="text-white text-lg md:text-2xl" />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-white drop-shadow-lg">
+                <h2 className="text-xl md:text-3xl font-extrabold text-white drop-shadow-lg uppercase tracking-tight">
                   Daily Deals
                 </h2>
-                <p className="text-xs text-white/90 font-medium">
-                  Limited time offers
+                <p className="text-xs md:text-sm text-white/90 font-medium">
+                  Limited time offers • Up to 70% OFF
                 </p>
               </div>
             </div>
@@ -121,15 +121,15 @@ const DailyDealsSection = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="flex flex-wrap md:flex-nowrap md:overflow-x-visible gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
           {dailyDeals.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="w-[calc(50%-0.75rem)] md:w-0 md:flex-1 md:min-w-0">
-              <ProductCard product={product} />
+              className="h-full">
+              <ProductCard product={product} isFlashSale={true} />
             </motion.div>
           ))}
         </div>

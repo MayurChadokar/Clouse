@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiFilter, FiArrowLeft, FiGrid, FiList, FiX } from "react-icons/fi";
+import { FiFilter, FiArrowLeft, FiGrid, FiList, FiX, FiSearch } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import MobileLayout from "../components/Layout/MobileLayout";
 import ProductCard from "../../../shared/components/ProductCard";
@@ -40,6 +40,7 @@ const MobileCategory = () => {
   }, [categoryId, categories, getCategoriesByParent]);
 
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [filters, setFilters] = useState({
     category: "",
@@ -79,6 +80,12 @@ const MobileCategory = () => {
       return keywords.some((keyword) => productName.includes(keyword));
     });
 
+    if (searchQuery) {
+      result = result.filter((product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     if (filters.minPrice) {
       result = result.filter(
         (product) => product.price >= parseFloat(filters.minPrice)
@@ -96,7 +103,7 @@ const MobileCategory = () => {
     }
 
     return result;
-  }, [categoryId, category, filters]);
+  }, [categoryId, category, filters, searchQuery]);
 
   const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } =
     useInfiniteScroll(categoryProducts, 10, 10);
@@ -114,6 +121,7 @@ const MobileCategory = () => {
       maxPrice: "",
       minRating: "",
     });
+    setSearchQuery("");
   };
 
   // Check if any filter is active
@@ -192,43 +200,57 @@ const MobileCategory = () => {
                 <h1 className="text-xl font-bold text-gray-800">
                   {category.name}
                 </h1>
-                <p className="text-sm text-gray-600">
+                <div className="relative mt-1">
+                  <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                  <input
+                    type="text"
+                    placeholder="Search in category..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-10 py-1.5 bg-gray-100 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                    >
+                      <FiX className="text-xs" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1">
                   {categoryProducts.length} product
-                  {categoryProducts.length !== 1 ? "s" : ""}
+                  {categoryProducts.length !== 1 ? "s" : ""} available
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end gap-2">
                 {/* View Toggle Buttons */}
                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-1.5 rounded transition-colors ${
-                      viewMode === "list"
-                        ? "bg-white text-primary-600 shadow-sm"
-                        : "text-gray-600"
-                    }`}>
+                    className={`p-1.5 rounded transition-colors ${viewMode === "list"
+                      ? "bg-white text-primary-600 shadow-sm"
+                      : "text-gray-600"
+                      }`}>
                     <FiList className="text-lg" />
                   </button>
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded transition-colors ${
-                      viewMode === "grid"
-                        ? "bg-white text-primary-600 shadow-sm"
-                        : "text-gray-600"
-                    }`}>
+                    className={`p-1.5 rounded transition-colors ${viewMode === "grid"
+                      ? "bg-white text-primary-600 shadow-sm"
+                      : "text-gray-600"
+                      }`}>
                     <FiGrid className="text-lg" />
                   </button>
                 </div>
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 glass-card rounded-xl hover:bg-white/80 transition-colors ${
-                      showFilters ? "bg-white/80" : ""
-                    }`}>
+                    className={`p-2.5 glass-card rounded-xl hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
+                      }`}>
                     <FiFilter
-                      className={`text-lg transition-colors ${
-                        hasActiveFilters ? "text-blue-600" : "text-gray-600"
-                      }`}
+                      className={`text-lg transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"
+                        }`}
                     />
                   </button>
 
@@ -273,6 +295,28 @@ const MobileCategory = () => {
                           {/* Filter Content */}
                           <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
                             <div className="p-2 space-y-2">
+                              {/* Category Switcher */}
+                              <div>
+                                <h4 className="font-semibold text-gray-700 mb-1 text-xs">
+                                  Switch Category
+                                </h4>
+                                <select
+                                  value={categoryId}
+                                  onChange={(e) => {
+                                    const newId = e.target.value;
+                                    if (newId) navigate(`/category/${newId}`);
+                                    setShowFilters(false);
+                                  }}
+                                  className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
+                                >
+                                  {fallbackCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               {/* Price Range */}
                               <div>
                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
@@ -334,7 +378,7 @@ const MobileCategory = () => {
                                         style={{
                                           backgroundImage:
                                             filters.minRating ===
-                                            rating.toString()
+                                              rating.toString()
                                               ? "radial-gradient(circle, #10b981 40%, transparent 40%)"
                                               : "none",
                                         }}
@@ -386,7 +430,7 @@ const MobileCategory = () => {
               </div>
             ) : viewMode === "grid" ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
                   {displayedItems.map((product, index) => (
                     <motion.div
                       key={product.id}

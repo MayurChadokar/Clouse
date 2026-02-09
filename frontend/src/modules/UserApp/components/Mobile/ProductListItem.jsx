@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FiShoppingBag, FiHeart } from "react-icons/fi";
+import { FiShoppingBag, FiHeart, FiTrash2 } from "react-icons/fi";
 import { useCartStore, useUIStore } from "../../../../shared/store/useStore";
 import { useWishlistStore } from "../../../../shared/store/wishlistStore";
 import { formatPrice } from "../../../../shared/utils/helpers";
@@ -9,13 +9,13 @@ import LazyImage from '../../../../shared/components/LazyImage';
 import VendorBadge from "../../../Vendor/components/VendorBadge";
 import { getVendorById } from '../../../../data/vendors';
 
-const ProductListItem = ({ product, index }) => {
+const ProductListItem = ({ product, index, isFlashSale = false }) => {
   const location = window.location.pathname;
   const isMobileApp = location.startsWith("/");
   const productLink = isMobileApp
     ? `/app/product/${product.id}`
     : `/product/${product.id}`;
-  const addItem = useCartStore((state) => state.addItem);
+  const { items, addItem, removeItem } = useCartStore();
   const triggerCartAnimation = useUIStore(
     (state) => state.triggerCartAnimation
   );
@@ -25,6 +25,7 @@ const ProductListItem = ({ product, index }) => {
     isInWishlist,
   } = useWishlistStore();
   const isFavorite = isInWishlist(product.id);
+  const isInCart = items.some((item) => item.id === product.id);
 
   const handleAddToCart = (e) => {
     if (e) {
@@ -40,6 +41,15 @@ const ProductListItem = ({ product, index }) => {
       quantity: 1,
     });
     triggerCartAnimation();
+  };
+
+  const handleRemoveFromCart = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    removeItem(product.id);
+    toast.success("Removed from cart!");
   };
 
   const handleFavorite = (e) => {
@@ -61,88 +71,126 @@ const ProductListItem = ({ product, index }) => {
     }
   };
 
+  const soldPercentage = product.stockQuantity ? Math.min(95, Math.floor(100 - (product.stockQuantity / 2))) : 75;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="glass-card rounded-xl p-1.5 mb-1.5">
-      <div className="flex gap-2">
-        {/* Product Image */}
-        <Link to={productLink} className="flex-shrink-0">
-          <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+      className={`glass-card rounded-2xl p-3 mb-3 border border-white/40 shadow-sm hover:shadow-md transition-all ${isFlashSale ? "bg-red-50/20 border-red-100" : ""}`}>
+      <div className="flex gap-4">
+        {/* Product Image Section */}
+        <Link to={productLink} className="flex-shrink-0 relative group">
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 p-2">
             <LazyImage
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
               onError={(e) => {
-                e.target.src =
-                  "https://via.placeholder.com/200x200?text=Product";
+                e.target.src = "https://via.placeholder.com/200x200?text=Product";
               }}
             />
           </div>
+          {product.originalPrice && (
+            <div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm">
+              {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+            </div>
+          )}
         </Link>
 
         {/* Product Info Section */}
         <div className="flex-1 min-w-0 flex flex-col">
-          {/* Top Row: Name + Favorite Button */}
-          <div className="flex items-start justify-between gap-1.5 mb-0.5">
+          {/* Top Row: Name + Favorite */}
+          <div className="flex items-start justify-between gap-2 mb-1">
             <Link to={productLink} className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-xs mb-0 line-clamp-2 leading-tight">
+              <h3 className="font-bold text-gray-800 text-sm md:text-base mb-0 line-clamp-2 md:line-clamp-1 leading-snug group-hover:text-primary-600 transition-colors">
                 {product.name}
               </h3>
             </Link>
             <button
               onClick={handleFavorite}
-              className={`flex-shrink-0 p-1 rounded-lg transition-colors ${isFavorite
-                ? "bg-red-50 text-red-600"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              className={`flex-shrink-0 p-2 rounded-full transition-all ${isFavorite
+                ? "bg-red-50 text-red-500 shadow-inner"
+                : "bg-gray-50 text-gray-400 hover:bg-gray-100"
                 }`}>
               <FiHeart
-                className={`text-xs ${isFavorite ? "fill-current" : ""}`}
+                className={`text-sm ${isFavorite ? "fill-current scale-110" : ""}`}
               />
             </button>
           </div>
 
-          {/* Rating */}
-          {product.rating && (
-            <div className="flex items-center gap-0.5 mb-0.5">
-              <span className="text-[10px] text-gray-600 font-medium">
-                ⭐ {product.rating} ({product.reviewCount || 0})
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 mb-1">
+            {product.rating && (
+              <div className="flex items-center bg-yellow-400/10 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] md:text-xs font-bold text-yellow-700">⭐ {product.rating}</span>
+                <span className="text-[9px] text-gray-400 font-medium ml-1">({product.reviewCount || 0})</span>
+              </div>
+            )}
+            <span className="text-[10px] md:text-xs text-gray-500 border-l border-gray-200 pl-2">{product.unit}</span>
+          </div>
 
-          {/* Vendor Badge */}
+          {/* Vendor */}
           {product.vendorId && (
-            <div className="mb-0.5">
+            <div className="mb-1.5">
               <VendorBadge
                 vendor={getVendorById(product.vendorId)}
                 showVerified={true}
                 size="sm"
+                showLogo={false}
               />
             </div>
           )}
 
-          {/* Price Row */}
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-sm font-bold text-gray-800">
-              {formatPrice(product.price)}
-            </span>
-            {product.originalPrice && (
-              <span className="text-[10px] text-gray-400 line-through font-medium">
-                {formatPrice(product.originalPrice)}
+          {/* Flash Sale Progress */}
+          {isFlashSale && (
+            <div className="mb-2 space-y-1 max-w-[200px]">
+              <div className="flex justify-between text-[9px] font-bold">
+                <span className="text-gray-400 uppercase">Stock Left</span>
+                <span className="text-orange-600">{soldPercentage}% Sold</span>
+              </div>
+              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-red-500 to-orange-400 transition-all duration-1000"
+                  style={{ width: `${soldPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Row: Price + Add Button */}
+          <div className="mt-auto flex items-center justify-between gap-3 pt-2 border-t border-gray-50">
+            <div className="flex flex-col">
+              <span className="text-base md:text-xl font-black text-gray-900 leading-none">
+                {formatPrice(product.price)}
               </span>
+              {product.originalPrice && (
+                <span className="text-[10px] md:text-xs text-gray-400 line-through font-medium mt-0.5">
+                  {formatPrice(product.originalPrice)}
+                </span>
+              )}
+            </div>
+
+            {isInCart ? (
+              <button
+                onClick={handleRemoveFromCart}
+                className="px-4 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 bg-red-50 text-red-600 border border-red-100 transition-all shadow-sm active:scale-95">
+                <FiTrash2 className="text-xs md:text-base" />
+                <span>Remove</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className={`px-4 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition-all shadow-sm active:scale-95 ${isFlashSale
+                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white hover:shadow-red-200"
+                  : "gradient-green text-white hover:shadow-glow-green"
+                  }`}>
+                <FiShoppingBag className="text-xs md:text-base" />
+                <span className="hidden sm:inline">Add to Cart</span>
+                <span className="sm:hidden">Add</span>
+              </button>
             )}
           </div>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            className="w-full py-1.5 gradient-green text-white rounded-lg font-semibold text-xs flex items-center justify-center gap-1 hover:shadow-glow-green transition-all">
-            <FiShoppingBag className="text-xs" />
-            Add to Cart
-          </button>
         </div>
       </div>
     </motion.div>

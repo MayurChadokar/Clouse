@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { FiArrowLeft, FiFilter, FiGrid, FiList, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiFilter, FiGrid, FiList, FiX, FiSearch } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileLayout from "../components/Layout/MobileLayout";
 import ProductCard from '../../../shared/components/ProductCard';
 import ProductListItem from '../components/Mobile/ProductListItem';
 import { getDailyDeals } from '../../../data/products';
+import { categories } from '../../../data/categories';
 import PageTransition from '../../../shared/components/PageTransition';
 import useInfiniteScroll from '../../../shared/hooks/useInfiniteScroll';
 
@@ -14,6 +15,7 @@ const MobileDailyDeals = () => {
   // Memoize the items array to prevent infinite loops in useInfiniteScroll
   const allDeals = useMemo(() => getDailyDeals(), []);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [filters, setFilters] = useState({
     category: '',
@@ -24,6 +26,30 @@ const MobileDailyDeals = () => {
 
   const filteredProducts = useMemo(() => {
     let result = allDeals;
+
+    if (filters.category) {
+      const categoryMap = {
+        '1': ['t-shirt', 'shirt', 'jeans', 'dress', 'gown', 'skirt', 'blazer', 'jacket', 'cardigan', 'sweater', 'flannel', 'maxi'],
+        '2': ['sneakers', 'pumps', 'boots', 'heels', 'shoes'],
+        '3': ['bag', 'crossbody', 'handbag'],
+        '4': ['necklace', 'watch', 'wristwatch'],
+        '5': ['sunglasses', 'belt', 'scarf'],
+        '6': ['athletic', 'running', 'track', 'sporty'],
+      };
+
+      const categoryKeywords = categoryMap[filters.category] || [];
+      result = result.filter((product) =>
+        categoryKeywords.some((keyword) =>
+          product.name.toLowerCase().includes(keyword)
+        )
+      );
+    }
+
+    if (searchQuery) {
+      result = result.filter((product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
 
     if (filters.minPrice) {
       result = result.filter((product) => product.price >= parseFloat(filters.minPrice));
@@ -38,7 +64,7 @@ const MobileDailyDeals = () => {
     }
 
     return result;
-  }, [allDeals, filters]);
+  }, [allDeals, filters, searchQuery]);
 
   const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } = useInfiniteScroll(
     filteredProducts,
@@ -92,50 +118,64 @@ const MobileDailyDeals = () => {
       <MobileLayout showBottomNav={true} showCartBar={true}>
         <div className="w-full pb-24">
           {/* Header */}
-          <div className="px-4 py-4 bg-gradient-to-r from-red-50 to-orange-50 border-b border-gray-200 sticky top-1 z-30">
+          <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-0 z-30">
             <div className="flex items-center gap-3 mb-3">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-white/50 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <FiArrowLeft className="text-xl text-gray-700" />
               </button>
               <div className="flex-1">
                 <h1 className="text-xl font-bold text-gray-800">Daily Deals</h1>
-                <p className="text-sm text-gray-600">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? 'deal' : 'deals'} available
-                </p>
+                <div className="relative mt-1">
+                  <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                  <input
+                    type="text"
+                    placeholder="Search in deals..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-10 py-1.5 bg-gray-100 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                    >
+                      <FiX className="text-xs" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {/* View Toggle Buttons */}
+              <div className="flex flex-col items-end gap-1.5">
                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded transition-colors ${viewMode === 'list'
+                    className={`p-1 rounded transition-colors ${viewMode === 'list'
                       ? 'bg-white text-primary-600 shadow-sm'
                       : 'text-gray-600'
                       }`}
                   >
-                    <FiList className="text-lg" />
+                    <FiList className="text-sm" />
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded transition-colors ${viewMode === 'grid'
+                    className={`p-1 rounded transition-colors ${viewMode === 'grid'
                       ? 'bg-white text-primary-600 shadow-sm'
                       : 'text-gray-600'
                       }`}
                   >
-                    <FiGrid className="text-lg" />
+                    <FiGrid className="text-sm" />
                   </button>
                 </div>
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2 glass-card rounded-xl hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
+                    className={`p-1.5 glass-card rounded-lg hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
                       }`}
                   >
                     <FiFilter
-                      className={`text-lg transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"
+                      className={`text-sm transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"
                         }`}
                     />
                   </button>
@@ -181,6 +221,27 @@ const MobileDailyDeals = () => {
                           {/* Filter Content */}
                           <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
                             <div className="p-2 space-y-2">
+                              {/* Category Filter */}
+                              <div>
+                                <h4 className="font-semibold text-gray-700 mb-1 text-xs">
+                                  Category
+                                </h4>
+                                <select
+                                  value={filters.category}
+                                  onChange={(e) =>
+                                    handleFilterChange("category", e.target.value)
+                                  }
+                                  className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
+                                >
+                                  <option value="">All Categories</option>
+                                  {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               {/* Price Range */}
                               <div>
                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
@@ -281,7 +342,7 @@ const MobileDailyDeals = () => {
               </div>
             ) : viewMode === 'grid' ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                   {displayedItems.map((product, index) => (
                     <motion.div
                       key={product.id}
@@ -289,7 +350,7 @@ const MobileDailyDeals = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <ProductCard product={product} />
+                      <ProductCard product={product} isFlashSale={true} />
                     </motion.div>
                   ))}
                 </div>
@@ -313,12 +374,13 @@ const MobileDailyDeals = () => {
               </>
             ) : (
               <>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {displayedItems.map((product, index) => (
                     <ProductListItem
                       key={product.id}
                       product={product}
                       index={index}
+                      isFlashSale={true}
                     />
                   ))}
                 </div>

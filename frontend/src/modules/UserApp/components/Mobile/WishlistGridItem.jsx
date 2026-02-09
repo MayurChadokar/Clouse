@@ -3,8 +3,20 @@ import { motion } from 'framer-motion';
 import { FiShoppingBag, FiTrash2, FiStar, FiHeart } from 'react-icons/fi';
 import { formatPrice } from '../../../../shared/utils/helpers';
 import LazyImage from '../../../../shared/components/LazyImage';
+import { useCartStore } from '../../../../shared/store/useStore';
+import toast from 'react-hot-toast';
 
 const WishlistGridItem = ({ item, index, onMoveToCart, onRemove }) => {
+  const { items: cartItems, removeItem } = useCartStore();
+  const isInCart = cartItems.some((i) => i.id === item.id);
+
+  const handleRemoveFromCart = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    removeItem(item.id);
+    toast.success("Removed from cart!");
+  };
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -65,11 +77,10 @@ const WishlistGridItem = ({ item, index, onMoveToCart, onRemove }) => {
               {[...Array(5)].map((_, i) => (
                 <FiStar
                   key={i}
-                  className={`text-[8px] ${
-                    i < Math.floor(item.rating)
+                  className={`text-[8px] ${i < Math.floor(item.rating)
                       ? 'text-yellow-400 fill-yellow-400'
                       : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -91,19 +102,29 @@ const WishlistGridItem = ({ item, index, onMoveToCart, onRemove }) => {
           )}
         </div>
 
-        {/* Add Button */}
-        <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveToCart(item);
-          }}
-          whileTap={{ scale: 0.95 }}
-          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-          className="w-full py-1 rounded-md font-semibold text-[10px] transition-all duration-300 flex items-center justify-center gap-1 mt-auto gradient-green text-white group/btn"
-        >
-          <FiShoppingBag className="text-xs transition-transform" />
-          <span>Add</span>
-        </motion.button>
+        {/* Add/Remove Button */}
+        {isInCart ? (
+          <motion.button
+            onClick={handleRemoveFromCart}
+            whileTap={{ scale: 0.95 }}
+            style={{ willChange: "transform", transform: "translateZ(0)" }}
+            className="w-full py-1 rounded-md font-semibold text-[10px] transition-all duration-300 flex items-center justify-center gap-1 mt-auto bg-red-50 text-red-600 border border-red-100">
+            <FiTrash2 className="text-xs" />
+            <span>Remove</span>
+          </motion.button>
+        ) : (
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveToCart(item);
+            }}
+            whileTap={{ scale: 0.95 }}
+            style={{ willChange: "transform", transform: "translateZ(0)" }}
+            className="w-full py-1 rounded-md font-semibold text-[10px] transition-all duration-300 flex items-center justify-center gap-1 mt-auto gradient-green text-white group/btn">
+            <FiShoppingBag className="text-xs transition-transform" />
+            <span>Add</span>
+          </motion.button>
+        )}
       </div>
     </motion.div>
   );

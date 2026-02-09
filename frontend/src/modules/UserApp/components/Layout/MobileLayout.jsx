@@ -15,6 +15,8 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
     location.pathname === '/register' ||
     location.pathname === '/verification';
 
+  const isCheckoutPage = location.pathname === '/checkout';
+
   // Always show bottom nav on /app routes, except auth pages
   const shouldShowBottomNav = location.pathname.startsWith('/') && !isAuthPage ? true : (showBottomNav && !isAuthPage);
   // Hide header on categories, search, wishlist, profile, and auth pages
@@ -22,7 +24,9 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
     location.pathname !== '/categories' &&
     location.pathname !== '/search' &&
     location.pathname !== '/wishlist' &&
-    location.pathname !== '/profile';
+    location.pathname !== '/profile' &&
+    location.pathname !== '/orders' &&
+    !isCheckoutPage;
 
   // Ensure body scroll is restored when component mounts
   useEffect(() => {
@@ -34,10 +38,10 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
 
   return (
     <>
-      {!isAuthPage && <DesktopHeader />}
+      {!isAuthPage && !isCheckoutPage && <DesktopHeader />}
       {shouldShowHeader && <MobileHeader />}
       <main
-        className={`min-h-screen w-full overflow-x-hidden md:container md:mx-auto px-4 md:px-12 lg:px-24 xl:px-40 ${shouldShowBottomNav ? 'pb-20' : ''} ${showCartBar ? 'pb-24' : ''}`}
+        className={`min-h-screen w-full overflow-x-hidden md:container md:mx-auto md:px-12 lg:px-24 xl:px-40 ${shouldShowBottomNav ? 'pb-20' : ''} ${showCartBar ? 'pb-24' : ''}`}
         style={{ paddingTop: shouldShowHeader ? `${headerHeight}px` : '0px' }}
       >
         {children}

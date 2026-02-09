@@ -127,6 +127,7 @@ import MobileWishlist from "./modules/UserApp/pages/Wishlist";
 import MobileOffers from "./modules/UserApp/pages/Offers";
 import MobileDailyDeals from "./modules/UserApp/pages/DailyDeals";
 import MobileFlashSale from "./modules/UserApp/pages/FlashSale";
+import MobileNewArrivals from "./modules/UserApp/pages/NewArrivals";
 import MobileTrackOrder from "./modules/UserApp/pages/TrackOrder";
 import MobileOrderConfirmation from "./modules/UserApp/pages/OrderConfirmation";
 // Delivery Routes
@@ -229,14 +230,6 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/checkout"
-        element={
-          <RouteWrapper>
-            <MobileCheckout />
-          </RouteWrapper>
-        }
-      />
-      <Route
         path="/search"
         element={
           <RouteWrapper>
@@ -244,6 +237,15 @@ const AppRoutes = () => {
           </RouteWrapper>
         }
       />
+      <Route
+        path="/checkout"
+        element={
+          <RouteWrapper>
+            <MobileCheckout />
+          </RouteWrapper>
+        }
+      />
+
       <Route
         path="/login"
         element={
@@ -297,6 +299,14 @@ const AppRoutes = () => {
         element={
           <RouteWrapper>
             <MobileFlashSale />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/new-arrivals"
+        element={
+          <RouteWrapper>
+            <MobileNewArrivals />
           </RouteWrapper>
         }
       />

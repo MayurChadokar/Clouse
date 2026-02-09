@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSearch, FiClock, FiTrendingUp } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllProducts } from '../../data/products';
+import { products } from '../../data/products';
 
 const RECENT_SEARCHES_KEY = 'recent-searches';
 const MAX_RECENT_SEARCHES = 5;
@@ -15,7 +15,7 @@ const SearchBar = () => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
-  const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,14 +28,7 @@ const SearchBar = () => {
   // Popular searches (can be made dynamic later)
   const popularSearches = ['Diapers', 'Vegetables', 'Meat', 'Fruits', 'Baby Care'];
 
-  // Animated placeholder texts
-  const placeholderTexts = [
-    'Search for groceries...',
-    'Find fresh vegetables...',
-    'Looking for fruits?',
-    'Browse baby products...',
-    'Search daily deals...'
-  ];
+
 
   // Get recent searches from localStorage
   const getRecentSearches = () => {
@@ -134,9 +127,7 @@ const SearchBar = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       saveRecentSearch(searchQuery);
-      const searchRoute = isMobileApp
-        ? `/ app / search ? q = ${encodeURIComponent(searchQuery.trim())} `
-        : `/ search ? q = ${encodeURIComponent(searchQuery.trim())} `;
+      const searchRoute = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
       navigate(searchRoute);
       setShowSuggestions(false);
     }
@@ -150,9 +141,7 @@ const SearchBar = () => {
       // Product suggestions
       if (index < suggestions.length) {
         selectedItem = suggestions[index];
-        const productRoute = isMobileApp
-          ? `/ app / product / ${selectedItem.id} `
-          : `/ product / ${selectedItem.id} `;
+        const productRoute = `/product/${selectedItem.id}`;
         navigate(productRoute);
       }
     } else {
@@ -161,17 +150,13 @@ const SearchBar = () => {
         const query = recentSearches[index];
         setSearchQuery(query);
         saveRecentSearch(query);
-        const searchRoute = isMobileApp
-          ? `/ app / search ? q = ${encodeURIComponent(query)} `
-          : `/ search ? q = ${encodeURIComponent(query)} `;
+        const searchRoute = `/search?q=${encodeURIComponent(query)}`;
         navigate(searchRoute);
       } else if (index < recentSearches.length + popularSearches.length) {
         const query = popularSearches[index - recentSearches.length];
         setSearchQuery(query);
         saveRecentSearch(query);
-        const searchRoute = isMobileApp
-          ? `/ app / search ? q = ${encodeURIComponent(query)} `
-          : `/ search ? q = ${encodeURIComponent(query)} `;
+        const searchRoute = `/search?q=${encodeURIComponent(query)}`;
         navigate(searchRoute);
       }
     }
@@ -199,15 +184,7 @@ const SearchBar = () => {
   };
 
   // Rotate placeholders when not focused and input is empty
-  useEffect(() => {
-    if (!isFocused && !searchQuery.trim()) {
-      const interval = setInterval(() => {
-        setCurrentPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
-      }, 3000); // Change placeholder every 3 seconds
 
-      return () => clearInterval(interval);
-    }
-  }, [isFocused, searchQuery, placeholderTexts.length]);
 
   const recentSearches = getRecentSearches();
   const hasSuggestions = suggestions.length > 0 || recentSearches.length > 0 || popularSearches.length > 0;
@@ -225,25 +202,9 @@ const SearchBar = () => {
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
-            placeholder=""
-            className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:shadow-glow transition-all duration-300 text-gray-700 placeholder:text-transparent"
+            placeholder="Search products..."
+            className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:shadow-glow transition-all duration-300 text-gray-700 placeholder:text-gray-400"
           />
-          {!searchQuery.trim() && (
-            <div className="absolute left-12 top-1/2 transform -translate-y-1/2 pointer-events-none overflow-hidden z-[1] h-6">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={currentPlaceholderIndex}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
-                  className="text-gray-400 text-sm block whitespace-nowrap"
-                >
-                  {placeholderTexts[currentPlaceholderIndex]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          )}
         </div>
       </form>
 
@@ -261,8 +222,8 @@ const SearchBar = () => {
                 <button
                   key={suggestion.id}
                   onClick={() => handleSuggestionSelect(index)}
-                  className={`w - full flex items - center gap - 3 px - 3 py - 2 rounded - lg hover: bg - gray - 50 transition - colors ${selectedIndex === index ? 'bg-primary-50' : ''
-                    } `}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedIndex === index ? 'bg-primary-50' : ''
+                    }`}
                 >
                   <img
                     src={suggestion.image}
@@ -289,8 +250,8 @@ const SearchBar = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestionSelect(index)}
-                  className={`w - full flex items - center gap - 2 px - 3 py - 2 rounded - lg hover: bg - gray - 50 transition - colors text - left ${selectedIndex === index ? 'bg-primary-50' : ''
-                    } `}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left ${selectedIndex === index ? 'bg-primary-50' : ''
+                    }`}
                 >
                   <FiClock className="text-gray-400" />
                   <span className="text-sm text-gray-700">{search}</span>
@@ -310,8 +271,8 @@ const SearchBar = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestionSelect(recentSearches.length + index)}
-                  className={`w - full flex items - center gap - 2 px - 3 py - 2 rounded - lg hover: bg - gray - 50 transition - colors text - left ${selectedIndex === recentSearches.length + index ? 'bg-primary-50' : ''
-                    } `}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left ${selectedIndex === recentSearches.length + index ? 'bg-primary-50' : ''
+                    }`}
                 >
                   <FiTrendingUp className="text-gray-400" />
                   <span className="text-sm text-gray-700">{search}</span>

@@ -245,16 +245,16 @@ const MobileCategoryIcons = () => {
               }}
               className="flex-shrink-0">
               <Link
-                to={`/app/category/${category.id}`}
+                to={`/category/${category.id}`}
                 className="flex flex-col items-center gap-1.5 w-16 relative">
                 {!isScrolling && (
                   <div>
                     <IconComponent
                       className={`text-lg transition-colors duration-300 ${isActive && activeColors
-                          ? activeColors.icon
-                          : isActive
-                            ? "text-primary-500"
-                            : "text-gray-700 hover:text-primary-600"
+                        ? activeColors.icon
+                        : isActive
+                          ? "text-primary-500"
+                          : "text-gray-700 hover:text-primary-600"
                         }`}
                       style={{
                         strokeWidth:
@@ -268,10 +268,10 @@ const MobileCategoryIcons = () => {
                 )}
                 <span
                   className={`text-[10px] font-semibold text-center line-clamp-1 transition-colors duration-300 ${isActive && activeColors
-                      ? activeColors.text
-                      : isActive
-                        ? "text-primary-500"
-                        : "text-gray-700"
+                    ? activeColors.text
+                    : isActive
+                      ? "text-primary-500"
+                      : "text-gray-700"
                     }`}>
                   {category.name}
                 </span>

@@ -126,7 +126,7 @@ const NewArrivalsSection = () => {
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
-              to="/search"
+              to="/new-arrivals"
               className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all block">
               See All
             </Link>
@@ -134,11 +134,9 @@ const NewArrivalsSection = () => {
         </div>
 
         {/* Products Grid - Image Only */}
-        <div className="flex flex-wrap md:flex-nowrap md:overflow-x-visible gap-2 md:gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 md:gap-3">
           {newArrivals.map((product, index) => {
-            const productLink = isMobileApp
-              ? `/app/product/${product.id}`
-              : `/product/${product.id}`;
+            const productLink = `/product/${product.id}`;
             return (
               <motion.div
                 key={product.id}
@@ -150,36 +148,38 @@ const NewArrivalsSection = () => {
                   stiffness: 100,
                   damping: 10,
                 }}
-                className="w-[calc(33.333%-0.5rem)] md:w-0 md:flex-1 md:min-w-0">
-                <motion.div
-                  animate={{
-                    boxShadow: [
-                      "0 4px 6px rgba(0,0,0,0.1)",
-                      "0 8px 12px rgba(59, 130, 246, 0.3)",
-                      "0 4px 6px rgba(0,0,0,0.1)",
-                    ],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.2,
-                  }}
-                  className="rounded-xl overflow-hidden">
-                  <Link to={productLink}>
-                    <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden relative rounded-xl">
+                className="relative group">
+                <Link to={productLink} className="block w-full h-full">
+                  <motion.div
+                    animate={{
+                      boxShadow: [
+                        "0 4px 6px rgba(0,0,0,0.1)",
+                        "0 8px 12px rgba(59, 130, 246, 0.3)",
+                        "0 4px 6px rgba(0,0,0,0.1)",
+                      ],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.2,
+                    }}
+                    className="rounded-xl overflow-hidden aspect-square bg-white/10 backdrop-blur-sm relative">
+                    <div className="w-full h-full relative overflow-hidden">
                       <LazyImage
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={(e) => {
                           e.target.src =
                             "https://via.placeholder.com/300x300?text=Product+Image";
                         }}
                       />
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                     </div>
-                  </Link>
-                </motion.div>
+                  </motion.div>
+                </Link>
               </motion.div>
             );
           })}

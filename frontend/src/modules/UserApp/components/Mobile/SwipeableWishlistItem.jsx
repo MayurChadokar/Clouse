@@ -17,6 +17,14 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
   const [isDeleted, setIsDeleted] = useState(false);
   const deletedItemRef = useRef(null);
   const { removeItem, addItem: addToWishlist } = useWishlistStore();
+  const { items: cartItems, removeItem: removeFromCart } = useCartStore();
+  const isInCart = cartItems ? cartItems.some((i) => i.id === item.id) : false;
+
+  const handleRemoveFromCart = (e) => {
+    if (e) e.stopPropagation();
+    removeFromCart(item.id);
+    toast.success("Removed from cart!");
+  };
 
   const handleSwipeRight = () => {
     setIsDeleted(true);
@@ -108,15 +116,24 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <button
-              onClick={() => onMoveToCart(item)}
-              className="flex-1 py-2.5 gradient-green text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-glow-green transition-all">
-              <FiShoppingBag className="text-base" />
-              Add to Cart
-            </button>
+            {isInCart ? (
+              <button
+                onClick={handleRemoveFromCart}
+                className="flex-1 py-2 sm:py-2.5 bg-red-50 text-red-600 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap border border-red-100 transition-all">
+                <FiTrash2 className="text-sm sm:text-base" />
+                Remove
+              </button>
+            ) : (
+              <button
+                onClick={() => onMoveToCart(item)}
+                className="flex-1 py-2 sm:py-2.5 gradient-green text-white rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap hover:shadow-glow-green transition-all">
+                <FiShoppingBag className="text-sm sm:text-base" />
+                Add to Cart
+              </button>
+            )}
             <button
               onClick={() => onRemove(item.id)}
-              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors">
+              className="p-2 sm:p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors">
               <FiTrash2 className="text-base" />
             </button>
           </div>

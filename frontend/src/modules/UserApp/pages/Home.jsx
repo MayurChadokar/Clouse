@@ -267,7 +267,7 @@ const MobileHome = () => {
                 See All
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {mostPopular.slice(0, 6).map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -301,14 +301,14 @@ const MobileHome = () => {
                   See All
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {flashSale.slice(0, 4).map((product, index) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+                {flashSale.slice(0, 6).map((product, index) => (
                   <motion.div
                     key={product.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}>
-                    <ProductCard product={product} />
+                    <ProductCard product={product} isFlashSale={true} />
                   </motion.div>
                 ))}
               </div>
@@ -325,7 +325,7 @@ const MobileHome = () => {
                 See All
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {trending.slice(0, 6).map((product, index) => (
                 <motion.div
                   key={product.id}

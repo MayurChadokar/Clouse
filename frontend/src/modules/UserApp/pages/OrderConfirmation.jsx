@@ -52,8 +52,8 @@ const MobileOrderConfirmation = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full min-h-screen flex items-center justify-center px-4 py-8">
-          <div className="w-full max-w-md">
+        <div className="w-full min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+          <div className="w-full max-w-md lg:max-w-lg">
             {/* Success Animation */}
             <motion.div
               initial={{ scale: 0 }}
@@ -134,7 +134,7 @@ const MobileOrderConfirmation = () => {
             {/* Actions */}
             <div className="space-y-3">
               <Link
-                to={`/app/orders/${order.id}`}
+                to={`/orders/${order.id}`}
                 className="block w-full py-3 gradient-green text-white rounded-xl font-semibold text-center hover:shadow-glow-green transition-all"
               >
                 <div className="flex items-center justify-center gap-2">
@@ -143,7 +143,7 @@ const MobileOrderConfirmation = () => {
                 </div>
               </Link>
               <Link
-                to={`/app/track-order/${order.id}`}
+                to={`/track-order/${order.id}`}
                 className="block w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-center hover:bg-gray-200 transition-colors"
               >
                 <div className="flex items-center justify-center gap-2">

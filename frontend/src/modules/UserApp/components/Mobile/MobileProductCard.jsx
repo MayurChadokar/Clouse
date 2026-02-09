@@ -1,4 +1,4 @@
-import { FiHeart, FiShoppingBag, FiStar } from "react-icons/fi";
+import { FiHeart, FiShoppingBag, FiStar, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCartStore, useUIStore } from "../../../../shared/store/useStore";
@@ -17,7 +17,7 @@ import VendorBadge from "../../../Vendor/components/VendorBadge";
 import { getVendorById } from "../../../../data/vendors";
 
 const MobileProductCard = ({ product }) => {
-  const addItem = useCartStore((state) => state.addItem);
+  const { items, addItem, removeItem } = useCartStore();
   const triggerCartAnimation = useUIStore(
     (state) => state.triggerCartAnimation
   );
@@ -27,6 +27,7 @@ const MobileProductCard = ({ product }) => {
     isInWishlist,
   } = useWishlistStore();
   const isFavorite = isInWishlist(product.id);
+  const isInCart = items.some((item) => item.id === product.id);
   const [showLongPressMenu, setShowLongPressMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showFlyingItem, setShowFlyingItem] = useState(false);
@@ -42,37 +43,41 @@ const MobileProductCard = ({ product }) => {
       e.stopPropagation();
     }
 
-    // Get button position
-    const buttonRect = buttonRef.current?.getBoundingClientRect();
-    const startX = buttonRect ? buttonRect.left + buttonRect.width / 2 : 0;
-    const startY = buttonRect ? buttonRect.top + buttonRect.height / 2 : 0;
+    const isLargeScreen = window.innerWidth >= 1024;
 
-    // Get cart bar position (prefer cart bar over header icon)
-    setTimeout(() => {
-      const cartBar = document.querySelector("[data-cart-bar]");
-      let endX = window.innerWidth / 2;
-      let endY = window.innerHeight - 100;
+    if (!isLargeScreen) {
+      // Get button position
+      const buttonRect = buttonRef.current?.getBoundingClientRect();
+      const startX = buttonRect ? buttonRect.left + buttonRect.width / 2 : 0;
+      const startY = buttonRect ? buttonRect.top + buttonRect.height / 2 : 0;
 
-      if (cartBar) {
-        const cartRect = cartBar.getBoundingClientRect();
-        endX = cartRect.left + cartRect.width / 2;
-        endY = cartRect.top + cartRect.height / 2;
-      } else {
-        // Fallback to cart icon in header
-        const cartIcon = document.querySelector("[data-cart-icon]");
-        if (cartIcon) {
-          const cartRect = cartIcon.getBoundingClientRect();
+      // Get cart bar position (prefer cart bar over header icon)
+      setTimeout(() => {
+        const cartBar = document.querySelector("[data-cart-bar]");
+        let endX = window.innerWidth / 2;
+        let endY = window.innerHeight - 100;
+
+        if (cartBar) {
+          const cartRect = cartBar.getBoundingClientRect();
           endX = cartRect.left + cartRect.width / 2;
           endY = cartRect.top + cartRect.height / 2;
+        } else {
+          // Fallback to cart icon in header
+          const cartIcon = document.querySelector("[data-cart-icon]");
+          if (cartIcon) {
+            const cartRect = cartIcon.getBoundingClientRect();
+            endX = cartRect.left + cartRect.width / 2;
+            endY = cartRect.top + cartRect.height / 2;
+          }
         }
-      }
 
-      setFlyingItemPos({
-        start: { x: startX, y: startY },
-        end: { x: endX, y: endY },
-      });
-      setShowFlyingItem(true);
-    }, 50);
+        setFlyingItemPos({
+          start: { x: startX, y: startY },
+          end: { x: endX, y: endY },
+        });
+        setShowFlyingItem(true);
+      }, 50);
+    }
 
     addItem({
       id: product.id,
@@ -82,6 +87,15 @@ const MobileProductCard = ({ product }) => {
       quantity: 1,
     });
     triggerCartAnimation();
+  };
+
+  const handleRemoveFromCart = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    removeItem(product.id);
+    toast.success("Removed from cart!");
   };
 
   const handleFavorite = (e) => {
@@ -159,9 +173,8 @@ const MobileProductCard = ({ product }) => {
                   onClick={handleFavorite}
                   className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-full transition-colors">
                   <FiHeart
-                    className={`text-lg ${
-                      isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
-                    }`}
+                    className={`text-lg ${isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
+                      }`}
                   />
                 </button>
               </div>
@@ -187,11 +200,10 @@ const MobileProductCard = ({ product }) => {
                     {[...Array(5)].map((_, i) => (
                       <FiStar
                         key={i}
-                        className={`text-xs ${
-                          i < Math.floor(product.rating)
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
-                        }`}
+                        className={`text-xs ${i < Math.floor(product.rating)
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-gray-300"
+                          }`}
                       />
                     ))}
                   </div>
@@ -213,24 +225,33 @@ const MobileProductCard = ({ product }) => {
                 )}
               </div>
 
-              {/* Add to Cart Button */}
-              <motion.button
-                ref={buttonRef}
-                onClick={handleAddToCart}
-                disabled={product.stock === "out_of_stock"}
-                whileTap={{ scale: 0.95 }}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                  product.stock === "out_of_stock"
+              {/* Add/Remove Button */}
+              {isInCart ? (
+                <motion.button
+                  onClick={handleRemoveFromCart}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full py-3 rounded-xl font-semibold text-sm bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all duration-300 flex items-center justify-center gap-2">
+                  <FiTrash2 className="text-base" />
+                  <span>Remove</span>
+                </motion.button>
+              ) : (
+                <motion.button
+                  ref={buttonRef}
+                  onClick={handleAddToCart}
+                  disabled={product.stock === "out_of_stock"}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${product.stock === "out_of_stock"
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "gradient-green text-white hover:shadow-glow-green"
-                }`}>
-                <FiShoppingBag className="text-base" />
-                <span>
-                  {product.stock === "out_of_stock"
-                    ? "Out of Stock"
-                    : "Add to Cart"}
-                </span>
-              </motion.button>
+                    }`}>
+                  <FiShoppingBag className="text-base" />
+                  <span>
+                    {product.stock === "out_of_stock"
+                      ? "Out of Stock"
+                      : "Add to Cart"}
+                  </span>
+                </motion.button>
+              )}
             </div>
           </div>
         </motion.div>

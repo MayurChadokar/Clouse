@@ -429,6 +429,8 @@ export const getNewArrivals = (limit = 8) => {
   return products.filter((p) => p.isNew).slice(0, limit);
 };
 
+export const getAllNewArrivals = () => products.filter((p) => p.isNew);
+
 // Get recommended products based on user behavior
 export const getRecommendedProducts = (limit = 6) => {
   // Try to get wishlist and cart data from localStorage

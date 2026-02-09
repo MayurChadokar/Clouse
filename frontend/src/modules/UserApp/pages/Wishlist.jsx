@@ -133,7 +133,7 @@ const WishlistItems = ({ items, viewMode, onMoveToCart, onRemove }) => {
   if (viewMode === "grid") {
     return (
       <AnimatePresence>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
           {items.map((item, index) => (
             <WishlistGridItem
               key={item.id}
@@ -150,7 +150,7 @@ const WishlistItems = ({ items, viewMode, onMoveToCart, onRemove }) => {
 
   return (
     <AnimatePresence>
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {items.map((item, index) => (
           <SwipeableWishlistItem
             key={item.id}

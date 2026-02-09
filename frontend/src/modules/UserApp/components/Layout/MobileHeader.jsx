@@ -2,12 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   FiShoppingBag,
-  FiUser,
-  FiLogOut,
-  FiPackage,
-  FiMapPin,
 } from "react-icons/fi";
-import { HiOutlineUserCircle } from "react-icons/hi";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCartStore, useUIStore } from "../../../../shared/store/useStore";
 import { useAuthStore } from "../../../../shared/store/authStore";
@@ -400,87 +395,11 @@ const MobileHeader = () => {
               )}
             </motion.button>
 
-            {/* User Menu */}
-            {isAuthenticated ? (
-              <div ref={userMenuRef} className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="p-1.5 hover:bg-white/50 rounded-full transition-all duration-300">
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <HiOutlineUserCircle className="text-gray-700 text-2xl" />
-                  )}
-                </button>
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-2 z-[60] min-w-[180px]">
-                    <div className="px-3 py-2 border-b border-gray-200">
-                      <p className="font-semibold text-gray-800 text-sm">
-                        {user?.name || "User"}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user?.email || ""}
-                      </p>
-                    </div>
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
-                      <FiUser className="text-gray-600 text-base" />
-                      <span className="font-medium text-gray-700 text-sm">
-                        Profile
-                      </span>
-                    </Link>
-                    <Link
-                      to="/orders"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
-                      <FiPackage className="text-gray-600 text-base" />
-                      <span className="font-medium text-gray-700 text-sm">
-                        Orders
-                      </span>
-                    </Link>
-                    <Link
-                      to="/addresses"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left w-full">
-                      <FiMapPin className="text-gray-600 text-base" />
-                      <span className="font-medium text-gray-700 text-sm">
-                        Addresses
-                      </span>
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition-colors text-left w-full text-red-600">
-                      <FiLogOut className="text-red-600 text-base" />
-                      <span className="font-medium text-sm">Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="px-3 py-1.5 gradient-green text-white rounded-lg font-semibold text-sm hover:shadow-glow-green transition-all duration-300">
-                Login
-              </Link>
-            )}
+
           </div>
         </motion.div>
 
-        {/* Second Row: Search Bar */}
-        <div className="overflow-visible mb-2">
-          <SearchBar />
-        </div>
 
-        {/* Third Row: Category Icons */}
-        <div className="overflow-visible">
-          <MobileCategoryIcons />
-        </div>
       </div>
     </motion.header>
   );

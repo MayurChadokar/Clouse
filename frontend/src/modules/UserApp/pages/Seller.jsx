@@ -122,10 +122,10 @@ const Seller = () => {
     return (
         <PageTransition>
             <MobileLayout showBottomNav={true} showCartBar={true}>
-                <div className="w-full pb-24">
+                <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-gray-50">
                     {/* Header */}
                     <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-                        <div className="px-4 py-4">
+                        <div className="px-2 md:px-4 py-2 md:py-4">
                             <div className="flex items-center gap-3 mb-4">
                                 <button
                                     onClick={() => navigate(-1)}
@@ -141,8 +141,8 @@ const Seller = () => {
                                         <button
                                             onClick={() => setViewMode("list")}
                                             className={`p-1.5 rounded transition-colors ${viewMode === "list"
-                                                    ? "bg-white text-primary-600 shadow-sm"
-                                                    : "text-gray-600"
+                                                ? "bg-white text-primary-600 shadow-sm"
+                                                : "text-gray-600"
                                                 }`}
                                         >
                                             <FiList className="text-lg" />
@@ -150,8 +150,8 @@ const Seller = () => {
                                         <button
                                             onClick={() => setViewMode("grid")}
                                             className={`p-1.5 rounded transition-colors ${viewMode === "grid"
-                                                    ? "bg-white text-primary-600 shadow-sm"
-                                                    : "text-gray-600"
+                                                ? "bg-white text-primary-600 shadow-sm"
+                                                : "text-gray-600"
                                                 }`}
                                         >
                                             <FiGrid className="text-lg" />
@@ -295,7 +295,7 @@ const Seller = () => {
                             </div>
 
                             {/* Vendor Profile Card */}
-                            <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center text-center gap-3">
+                            <div className="bg-gray-50 rounded-xl p-3 md:p-4 flex flex-col items-center text-center gap-3">
                                 <div className="w-20 h-20 rounded-full bg-white p-1 shadow-sm overflow-hidden">
                                     <LazyImage
                                         src={vendor.storeLogo}
@@ -327,7 +327,7 @@ const Seller = () => {
                     </div>
 
                     {/* Products List */}
-                    <div className="px-4 py-4">
+                    <div className="px-4 py-4 lg:p-6">
                         {vendorProducts.length === 0 ? (
                             <div className="text-center py-12">
                                 <div className="text-6xl text-gray-300 mx-auto mb-4">🏪</div>
@@ -340,7 +340,7 @@ const Seller = () => {
                             </div>
                         ) : viewMode === "grid" ? (
                             <>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
                                     {displayedItems.map((product, index) => (
                                         <motion.div
                                             key={product.id}
@@ -374,7 +374,7 @@ const Seller = () => {
                             </>
                         ) : (
                             <>
-                                <div className="space-y-3">
+                                <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
                                     {displayedItems.map((product, index) => (
                                         <ProductListItem
                                             key={product.id}

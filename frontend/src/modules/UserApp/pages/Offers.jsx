@@ -6,6 +6,7 @@ import MobileLayout from "../components/Layout/MobileLayout";
 import ProductCard from "../../../shared/components/ProductCard";
 import ProductListItem from "../components/Mobile/ProductListItem";
 import { getOffers } from '../../../data/products';
+import { categories } from '../../../data/categories';
 import PageTransition from "../../../shared/components/PageTransition";
 import useInfiniteScroll from "../../../shared/hooks/useInfiniteScroll";
 
@@ -32,6 +33,24 @@ const MobileOffers = () => {
 
   const filteredProducts = useMemo(() => {
     let result = offersWithDiscount;
+
+    if (filters.category) {
+      const categoryMap = {
+        '1': ['t-shirt', 'shirt', 'jeans', 'dress', 'gown', 'skirt', 'blazer', 'jacket', 'cardigan', 'sweater', 'flannel', 'maxi'],
+        '2': ['sneakers', 'pumps', 'boots', 'heels', 'shoes'],
+        '3': ['bag', 'crossbody', 'handbag'],
+        '4': ['necklace', 'watch', 'wristwatch'],
+        '5': ['sunglasses', 'belt', 'scarf'],
+        '6': ['athletic', 'running', 'track', 'sporty'],
+      };
+
+      const categoryKeywords = categoryMap[filters.category] || [];
+      result = result.filter((product) =>
+        categoryKeywords.some((keyword) =>
+          product.name.toLowerCase().includes(keyword)
+        )
+      );
+    }
 
     if (filters.minPrice) {
       result = result.filter(
@@ -102,20 +121,20 @@ const MobileOffers = () => {
       <MobileLayout showBottomNav={true} showCartBar={true}>
         <div className="w-full pb-24">
           {/* Header */}
-          <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-1 z-30">
+          <div className="px-4 py-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200 sticky top-1 z-30">
             <div className="flex items-center gap-3 mb-3">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                className="p-2 hover:bg-white/50 rounded-full transition-colors">
                 <FiArrowLeft className="text-xl text-gray-700" />
               </button>
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-800">
+                <h1 className="text-2xl font-black text-gray-800 tracking-tight uppercase">
                   Special Offers
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-medium text-emerald-600">
                   {filteredProducts.length}{" "}
-                  {filteredProducts.length === 1 ? "offer" : "offers"} available
+                  {filteredProducts.length === 1 ? "offer" : "offers"} live now • Extra savings
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -192,6 +211,27 @@ const MobileOffers = () => {
                           {/* Filter Content */}
                           <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
                             <div className="p-2 space-y-2">
+                              {/* Category Filter */}
+                              <div>
+                                <h4 className="font-semibold text-gray-700 mb-1 text-xs">
+                                  Category
+                                </h4>
+                                <select
+                                  value={filters.category}
+                                  onChange={(e) =>
+                                    handleFilterChange("category", e.target.value)
+                                  }
+                                  className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
+                                >
+                                  <option value="">All Categories</option>
+                                  {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               {/* Price Range */}
                               <div>
                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
@@ -294,14 +334,14 @@ const MobileOffers = () => {
               </div>
             ) : viewMode === "grid" ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                   {displayedItems.map((product, index) => (
                     <motion.div
                       key={product.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}>
-                      <ProductCard product={product} />
+                      <ProductCard product={product} isFlashSale={true} />
                     </motion.div>
                   ))}
                 </div>
@@ -352,12 +392,13 @@ const MobileOffers = () => {
               </>
             ) : (
               <>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {displayedItems.map((product, index) => (
                     <ProductListItem
                       key={product.id}
                       product={product}
                       index={index}
+                      isFlashSale={true}
                     />
                   ))}
                 </div>

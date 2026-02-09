@@ -23,7 +23,7 @@ const MobileBottomNav = () => {
     {
       path: isAuthenticated ? "/profile" : "/login",
       icon: FiUser,
-      label: "Profile",
+      label: "Account",
     },
   ];
 

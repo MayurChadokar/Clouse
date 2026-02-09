@@ -33,6 +33,22 @@ const MobileSearch = () => {
     minRating: searchParams.get('minRating') || '',
   });
 
+  // Sync searchQuery with URL params
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null) {
+      setSearchQuery(q);
+    }
+
+    setFilters({
+      category: searchParams.get('category') || '',
+      vendor: searchParams.get('vendor') || '',
+      minPrice: searchParams.get('minPrice') || '',
+      maxPrice: searchParams.get('maxPrice') || '',
+      minRating: searchParams.get('minRating') || '',
+    });
+  }, [searchParams]);
+
   // Load recent searches from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('recentSearches');
@@ -100,11 +116,14 @@ const MobileSearch = () => {
 
     if (filters.category) {
       const categoryMap = {
-        'Fresh Vegetables': ['potato', 'cauliflower', 'onion', 'okra', 'coriander'],
-        'Fresh Fruits': ['tomato', 'cherry'],
-        'Chicken': ['chicken'],
-        'Beef': ['beef', 'steak'],
+        '1': ['t-shirt', 'shirt', 'jeans', 'dress', 'gown', 'skirt', 'blazer', 'jacket', 'cardigan', 'sweater', 'flannel', 'maxi'],
+        '2': ['sneakers', 'pumps', 'boots', 'heels', 'shoes'],
+        '3': ['bag', 'crossbody', 'handbag'],
+        '4': ['necklace', 'watch', 'wristwatch'],
+        '5': ['sunglasses', 'belt', 'scarf'],
+        '6': ['athletic', 'running', 'track', 'sporty'],
       };
+
       const categoryKeywords = categoryMap[filters.category] || [];
       result = result.filter((product) =>
         categoryKeywords.some((keyword) =>
@@ -223,10 +242,10 @@ const MobileSearch = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={true} showCartBar={true}>
-        <div className="w-full pb-24">
+        <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-gray-50">
           {/* Search Header */}
           <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-1 z-30">
-            <form onSubmit={handleSearch} className="mb-3">
+            <form onSubmit={handleSearch} className="mb-3 lg:hidden">
               <div className="relative">
                 <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl z-10" />
                 <input
@@ -366,6 +385,27 @@ const MobileSearch = () => {
                           {/* Filter Content */}
                           <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
                             <div className="p-2 space-y-2">
+                              {/* Category Filter */}
+                              <div>
+                                <h4 className="font-semibold text-gray-700 mb-1 text-xs">
+                                  Category
+                                </h4>
+                                <select
+                                  value={filters.category}
+                                  onChange={(e) =>
+                                    handleFilterChange("category", e.target.value)
+                                  }
+                                  className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
+                                >
+                                  <option value="">All Categories</option>
+                                  {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               {/* Price Range */}
                               <div>
                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
@@ -483,7 +523,7 @@ const MobileSearch = () => {
           </div>
 
           {/* Products List */}
-          <div className="px-4 py-4">
+          <div className="px-4 py-4 lg:p-6">
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <FiSearch className="text-6xl text-gray-300 mx-auto mb-4" />
@@ -498,7 +538,7 @@ const MobileSearch = () => {
               </div>
             ) : viewMode === 'grid' ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
                   {displayedItems.map((product, index) => (
                     <motion.div
                       key={product.id}

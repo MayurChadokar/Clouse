@@ -7,109 +7,34 @@ import ExportButton from '../components/ExportButton';
 import Badge from '../../../shared/components/Badge';
 import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency, formatDateTime } from '../utils/adminHelpers';
-import { mockReturnRequests } from '../../../data/adminMockData';
+import { useReturnStore } from '../../../shared/store/returnStore';
 import toast from 'react-hot-toast';
 
 const ReturnRequests = () => {
   const navigate = useNavigate();
-  const [returnRequests, setReturnRequests] = useState([]);
+  const { returnRequests, isLoading, fetchReturnRequests, updateReturnStatus } = useReturnStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  // Load return requests from localStorage or use mock data
   useEffect(() => {
-    const savedRequests = localStorage.getItem('admin-return-requests');
-    if (savedRequests) {
-      setReturnRequests(JSON.parse(savedRequests));
-    } else {
-      setReturnRequests(mockReturnRequests);
-      localStorage.setItem('admin-return-requests', JSON.stringify(mockReturnRequests));
-    }
-  }, []);
-
-  // Save return requests to localStorage
-  const saveReturnRequests = (newRequests) => {
-    setReturnRequests(newRequests);
-    localStorage.setItem('admin-return-requests', JSON.stringify(newRequests));
-  };
-
-  // Filtered return requests
-  const filteredRequests = useMemo(() => {
-    let filtered = returnRequests;
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (request) =>
-          request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          request.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          request.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          request.customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter((request) => request.status === selectedStatus);
-    }
-
-    // Date filter
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch (dateFilter) {
-        case 'today':
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter((request) => new Date(request.requestDate) >= filterDate);
-          break;
-        case 'week':
-          filterDate.setDate(now.getDate() - 7);
-          filtered = filtered.filter((request) => new Date(request.requestDate) >= filterDate);
-          break;
-        case 'month':
-          filterDate.setMonth(now.getMonth() - 1);
-          filtered = filtered.filter((request) => new Date(request.requestDate) >= filterDate);
-          break;
-        default:
-          break;
-      }
-    }
-
-    return filtered;
-  }, [returnRequests, searchQuery, selectedStatus, dateFilter]);
+    fetchReturnRequests({
+      search: searchQuery,
+      status: selectedStatus === 'all' ? undefined : selectedStatus
+    });
+  }, [searchQuery, selectedStatus, fetchReturnRequests]);
 
   // Handle status update
-  const handleStatusUpdate = (requestId, newStatus, action = '') => {
-    const updatedRequests = returnRequests.map((request) => {
-      if (request.id === requestId) {
-        const updated = {
-          ...request,
-          status: newStatus,
-          updatedAt: new Date().toISOString(),
-        };
-        
-        if (newStatus === 'approved' && action === 'approve') {
-          updated.refundStatus = 'pending';
-        } else if (newStatus === 'completed' && action === 'process-refund') {
-          updated.refundStatus = 'processed';
-        }
-        
-        return updated;
-      }
-      return request;
-    });
-    
-    saveReturnRequests(updatedRequests);
-    
-    const statusMessages = {
-      approve: 'Return request approved',
-      reject: 'Return request rejected',
-      'process-refund': 'Refund processed successfully',
-    };
-    
-    toast.success(statusMessages[action] || 'Status updated successfully');
+  const handleStatusUpdate = async (requestId, newStatus, action = '') => {
+    const statusData = { status: newStatus };
+
+    if (newStatus === 'approved' && action === 'approve') {
+      statusData.refundStatus = 'pending';
+    } else if (newStatus === 'completed' && action === 'process-refund') {
+      statusData.refundStatus = 'processed';
+    }
+
+    await updateReturnStatus(requestId, statusData);
   };
 
   // Get status badge variant
@@ -347,7 +272,7 @@ const ReturnRequests = () => {
           {/* Export Button */}
           <div className="w-full sm:w-auto">
             <ExportButton
-              data={filteredRequests}
+              data={returnRequests}
               headers={[
                 { label: 'Return ID', accessor: (row) => row.id },
                 { label: 'Order ID', accessor: (row) => row.orderId },
@@ -367,10 +292,12 @@ const ReturnRequests = () => {
 
       {/* Return Requests Table */}
       <DataTable
-        data={filteredRequests}
+        data={returnRequests}
         columns={columns}
+        loading={isLoading}
         pagination={true}
-        itemsPerPage={10}
+        itemsPerPage={pagination.limit}
+        totalItems={pagination.total}
         onRowClick={(row) => navigate(`/admin/return-requests/${row.id}`)}
       />
     </motion.div>

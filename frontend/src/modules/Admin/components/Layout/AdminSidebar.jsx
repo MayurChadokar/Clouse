@@ -6,13 +6,10 @@ import {
   FiShoppingBag,
   FiRotateCcw,
   FiPackage,
-  FiLayers,
   FiGrid,
   FiTag,
   FiUsers,
-  FiBox,
   FiTruck,
-  FiMapPin,
   FiImage,
   FiPercent,
   FiBell,
@@ -36,13 +33,10 @@ const iconMap = {
   Orders: FiShoppingBag,
   "Return Requests": FiRotateCcw,
   Products: FiPackage,
-  "Attribute Management": FiLayers,
   Categories: FiGrid,
   Brands: FiTag,
   Customers: FiUsers,
-  "Stock Management": FiBox,
   "Delivery Management": FiTruck,
-  Locations: FiMapPin,
   "Offers & Sliders": FiImage,
   "Promo Codes": FiPercent,
   Notifications: FiBell,
@@ -60,20 +54,11 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/orders": {
       "All Orders": "/admin/orders/all-orders",
       "Order Tracking": "/admin/orders/order-tracking",
-      "Order Notifications": "/admin/orders/order-notifications",
     },
     "/admin/products": {
       "Manage Products": "/admin/products/manage-products",
-      "Add Product": "/admin/products/add-product",
-      "Bulk Upload": "/admin/products/bulk-upload",
       "Tax & Pricing": "/admin/products/tax-pricing",
       "Product Ratings": "/admin/products/product-ratings",
-      "Product FAQs": "/admin/products/product-faqs",
-    },
-    "/admin/attributes": {
-      "Attribute Sets": "/admin/attributes/attribute-sets",
-      Attributes: "/admin/attributes/attributes",
-      "Attribute Values": "/admin/attributes/attribute-values",
     },
     "/admin/categories": {
       "Manage Categories": "/admin/categories/manage-categories",
@@ -90,10 +75,6 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",
       "Cash Collection": "/admin/delivery/cash-collection",
-    },
-    "/admin/locations": {
-      Cities: "/admin/locations/cities",
-      Zipcodes: "/admin/locations/zipcodes",
     },
     "/admin/offers": {
       "Home Sliders": "/admin/offers/home-sliders",
@@ -277,10 +258,9 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         <div
           className={`
             flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
-            ${
-              active
-                ? "bg-primary-600 text-white shadow-sm"
-                : "text-gray-300 hover:bg-slate-700"
+            ${active
+              ? "bg-primary-600 text-white shadow-sm"
+              : "text-gray-300 hover:bg-slate-700"
             }
           `}
           onClick={() => {
@@ -293,9 +273,8 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             }
           }}>
           <Icon
-            className={`text-xl flex-shrink-0 ${
-              active ? "text-white" : "text-gray-400"
-            }`}
+            className={`text-xl flex-shrink-0 ${active ? "text-white" : "text-gray-400"
+              }`}
           />
           <span className="font-medium flex-1 text-sm">{item.title}</span>
           {hasChildren && (
@@ -332,10 +311,9 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                       }
                       className={`
                         px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer
-                        ${
-                          isChildActive
-                            ? "bg-primary-500/20 text-white font-medium"
-                            : "text-gray-400 hover:bg-slate-700"
+                        ${isChildActive
+                          ? "bg-primary-500/20 text-white font-medium"
+                          : "text-gray-400 hover:bg-slate-700"
                         }
                       `}>
                       {child}
@@ -371,7 +349,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
               </p>
             </div>
           </div>
-          
+
           {/* Close Button - Mobile Only */}
           <button
             onClick={onClose}

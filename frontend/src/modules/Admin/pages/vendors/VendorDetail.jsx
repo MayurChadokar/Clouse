@@ -18,8 +18,7 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useVendorStore } from "../../../Vendor/store/vendorStore";
-import { useOrderStore } from "../../../../shared/store/orderStore";
-import { useCommissionStore } from "../../../../shared/store/commissionStore";
+import { getAllOrders } from "../../services/adminService";
 import Badge from "../../../../shared/components/Badge";
 import DataTable from "../../components/DataTable";
 import { formatPrice } from "../../../../shared/utils/helpers";
@@ -31,12 +30,7 @@ const VendorDetail = () => {
   const navigate = useNavigate();
   const { vendors, updateVendorStatus, updateCommissionRate } =
     useVendorStore();
-  const { orders } = useOrderStore();
-  const {
-    getVendorCommissions,
-    getVendorEarningsSummary,
-    getVendorSettlements,
-  } = useCommissionStore();
+  useVendorStore();
 
   const [vendor, setVendor] = useState(null);
   const [vendorOrders, setVendorOrders] = useState([]);
@@ -47,53 +41,77 @@ const VendorDetail = () => {
   const [commissionRate, setCommissionRate] = useState("");
 
   useEffect(() => {
-    const vendorData = vendors.find((v) => v.id === parseInt(id));
-    if (vendorData) {
-      setVendor(vendorData);
-      setCommissionRate(((vendorData.commissionRate || 0) * 100).toFixed(1));
-    } else {
-      toast.error("Vendor not found");
-      navigate("/admin/vendors");
-    }
-  }, [id, vendors, navigate]);
+    const fetchVendorData = async () => {
+      // 1. Fetch Vendor Details
+      const data = await getVendor(id);
+      if (data) {
+        setVendor(data);
+        setCommissionRate(((data.commissionRate || 0) * 100).toFixed(1));
+
+        // 2. Fetch Vendor Orders
+        try {
+          const ordersResponse = await getAllOrders({ vendorId: id, limit: 100 }); // Fetch enough for stats
+          setVendorOrders(ordersResponse.data.orders);
+        } catch (error) {
+          console.error("Failed to fetch vendor orders:", error);
+          toast.error("Failed to load vendor orders");
+        }
+      } else {
+        toast.error("Vendor not found");
+        navigate("/admin/vendors");
+      }
+    };
+    fetchVendorData();
+  }, [id, getVendor, navigate]);
 
   useEffect(() => {
-    if (!vendor) return;
+    if (!vendor || vendorOrders.length === 0) return;
 
-    // Get vendor orders
-    const filtered = orders.filter((order) => {
-      if (order.vendorItems && Array.isArray(order.vendorItems)) {
-        return order.vendorItems.some((vi) => vi.vendorId === vendor.id);
+    // Calculate earnings from real orders
+    const summary = vendorOrders.reduce((acc, order) => {
+      const vendorItem = order.vendorItems?.find(vi => vi.vendorId === vendor.id);
+      if (vendorItem) {
+        // commission stored in vendorItem would be ideal, if not calculate it
+        const subtotal = vendorItem.subtotal || 0;
+        // Assuming simplified logic if backend doesn't return pre-calced commission yet
+        // If the order model stores commission, use it. Otherwise approximate or skip.
+        // For now, we focus on total earnings (subtotal)
+        acc.totalEarnings += subtotal;
       }
-      return false;
-    });
-    setVendorOrders(filtered);
+      return acc;
+    }, { totalEarnings: 0, pendingEarnings: 0 });
 
-    // Get commissions
-    const vendorCommissions = getVendorCommissions(vendor.id);
-    setCommissions(vendorCommissions);
-
-    // Get earnings summary
-    const summary = getVendorEarningsSummary(vendor.id);
     setEarningsSummary(summary);
-  }, [vendor, orders, getVendorCommissions, getVendorEarningsSummary]);
 
-  const handleStatusUpdate = (newStatus) => {
-    updateVendorStatus(vendor.id, newStatus);
-    setVendor({ ...vendor, status: newStatus });
-    toast.success(`Vendor status updated to ${newStatus}`);
+    // Placeholder for commissions list until backend endpoint exists
+    setCommissions([]);
+
+  }, [vendor, vendorOrders]);
+
+  const handleStatusUpdate = async (newStatus) => {
+    const success = await updateVendorStatus(vendor.id, newStatus);
+    if (success) {
+      setVendor({ ...vendor, status: newStatus });
+      toast.success(`Vendor status updated to ${newStatus}`);
+    } else {
+      toast.error("Failed to update vendor status");
+    }
   };
 
-  const handleCommissionUpdate = () => {
+  const handleCommissionUpdate = async () => {
     const rate = parseFloat(commissionRate) / 100;
     if (isNaN(rate) || rate < 0 || rate > 1) {
       toast.error("Please enter a valid commission rate (0-100%)");
       return;
     }
-    updateCommissionRate(vendor.id, rate);
-    setVendor({ ...vendor, commissionRate: rate });
-    setIsEditingCommission(false);
-    toast.success("Commission rate updated successfully");
+    const success = await updateCommissionRate(vendor.id, rate);
+    if (success) {
+      setVendor({ ...vendor, commissionRate: rate });
+      setIsEditingCommission(false);
+      toast.success("Commission rate updated successfully");
+    } else {
+      toast.error("Failed to update commission rate");
+    }
   };
 
   if (!vendor) {
@@ -126,10 +144,10 @@ const VendorDetail = () => {
             value === "delivered"
               ? "success"
               : value === "pending"
-              ? "warning"
-              : value === "cancelled" || value === "canceled"
-              ? "error"
-              : "info"
+                ? "warning"
+                : value === "cancelled" || value === "canceled"
+                  ? "error"
+                  : "info"
           }>
           {value?.toUpperCase() || "N/A"}
         </Badge>
@@ -204,8 +222,8 @@ const VendorDetail = () => {
             value === "paid"
               ? "success"
               : value === "pending"
-              ? "warning"
-              : "error"
+                ? "warning"
+                : "error"
           }>
           {value?.toUpperCase()}
         </Badge>
@@ -239,8 +257,8 @@ const VendorDetail = () => {
               vendor.status === "approved"
                 ? "success"
                 : vendor.status === "pending"
-                ? "warning"
-                : "error"
+                  ? "warning"
+                  : "error"
             }>
             {vendor.status?.toUpperCase()}
           </Badge>
@@ -270,11 +288,10 @@ const VendorDetail = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 font-semibold text-sm transition-colors ${
-                activeTab === tab
-                  ? "text-primary-600 border-b-2 border-primary-600"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}>
+              className={`px-6 py-3 font-semibold text-sm transition-colors ${activeTab === tab
+                ? "text-primary-600 border-b-2 border-primary-600"
+                : "text-gray-600 hover:text-gray-800"
+                }`}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}

@@ -29,7 +29,7 @@ import Button from "../Button";
 const CampaignForm = ({ campaign, onClose, onSave }) => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith("/app");
-  const { createCampaign, updateCampaign } = useCampaignStore();
+  const { campaigns, createCampaign, updateCampaign } = useCampaignStore();
   const isEdit = !!campaign;
 
   const [formData, setFormData] = useState({
@@ -93,14 +93,14 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
   // Generate slug from name
   const generatedSlug = useMemo(() => {
     if (formData.name) {
-      const campaigns = useCampaignStore.getState().campaigns;
+      const campaignsArr = campaigns || [];
       const existingCampaigns = isEdit
-        ? campaigns.filter((c) => c.id !== campaign.id)
-        : campaigns;
+        ? campaignsArr.filter((c) => c._id !== campaign._id)
+        : campaignsArr;
       return generateSlug(formData.name, existingCampaigns);
     }
     return "";
-  }, [formData.name, isEdit, campaign]);
+  }, [formData.name, isEdit, campaign, campaigns]);
 
   // Update slug when name changes (if slug is empty or matches old generated slug)
   useEffect(() => {
@@ -145,20 +145,20 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
         },
         bannerConfig: campaign.bannerConfig
           ? {
-              ...campaign.bannerConfig,
-              // Detect if image is base64 (custom uploaded image)
-              customImage:
-                campaign.bannerConfig.image &&
+            ...campaign.bannerConfig,
+            // Detect if image is base64 (custom uploaded image)
+            customImage:
+              campaign.bannerConfig.image &&
                 campaign.bannerConfig.image.startsWith("data:image/")
-                  ? true
-                  : campaign.bannerConfig.customImage || false,
-            }
+                ? true
+                : campaign.bannerConfig.customImage || false,
+          }
           : {
-              title: "",
-              subtitle: "",
-              image: "",
-              customImage: false,
-            },
+            title: "",
+            subtitle: "",
+            image: "",
+            customImage: false,
+          },
       });
     } else {
       // Set default dates
@@ -187,8 +187,8 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
             type === "checkbox"
               ? checked
               : type === "number"
-              ? parseInt(value)
-              : value,
+                ? parseInt(value)
+                : value,
         },
       });
     }
@@ -223,8 +223,8 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
           type === "checkbox"
             ? checked
             : type === "number"
-            ? parseFloat(value)
-            : value,
+              ? parseFloat(value)
+              : value,
       });
     }
   };
@@ -383,7 +383,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
@@ -412,21 +412,12 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
         discountValue: parseFloat(formData.discountValue),
       };
 
-      let createdCampaign;
       if (isEdit) {
-        createdCampaign = updateCampaign(campaign.id, campaignData);
+        await updateCampaign(campaign._id, campaignData);
       } else {
-        createdCampaign = createCampaign(campaignData);
-
-        // Auto-create banner if enabled
-        if (campaignData.autoCreateBanner && createdCampaign) {
-          try {
-            createCampaignBanner(createdCampaign, campaignData.bannerConfig);
-          } catch (bannerError) {
-            console.error("Failed to create banner:", bannerError);
-            // Don't fail the campaign creation if banner fails
-          }
-        }
+        await createCampaign(campaignData);
+        // Banner auto-creation can be added here if needed, 
+        // but it's better to handle it in the backend or via separate API call
       }
       onSave?.();
       onClose();
@@ -454,9 +445,8 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-[10001] flex ${
-            isAppRoute ? "items-start pt-[10px]" : "items-end"
-          } sm:items-center justify-center p-4 pointer-events-none`}
+          className={`fixed inset-0 z-[10001] flex ${isAppRoute ? "items-start pt-[10px]" : "items-end"
+            } sm:items-center justify-center p-4 pointer-events-none`}
           style={{ zIndex: 10001 }}>
           <motion.div
             variants={{
@@ -491,9 +481,8 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`bg-white ${
-              isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-            } sm:rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto pb-20 sm:pb-6 -mb-[30px] sm:mb-0`}
+            className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
+              } sm:rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto pb-20 sm:pb-6 -mb-[30px] sm:mb-0`}
             style={{ willChange: "transform", zIndex: 10001 }}>
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
               <h2 className="text-2xl font-bold text-gray-800">
@@ -797,14 +786,14 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                     selectedProductCategory !== "all" ||
                     selectedProductBrand !== "all" ||
                     selectedProductStock !== "all") && (
-                    <button
-                      type="button"
-                      onClick={handleClearFilters}
-                      className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800">
-                      <FiXCircle className="text-xs" />
-                      <span>Clear all filters</span>
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        onClick={handleClearFilters}
+                        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800">
+                        <FiXCircle className="text-xs" />
+                        <span>Clear all filters</span>
+                      </button>
+                    )}
 
                   {/* Results Count */}
                   <div className="text-sm text-gray-600">
@@ -825,13 +814,13 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                         selectedProductCategory !== "all" ||
                         selectedProductBrand !== "all" ||
                         selectedProductStock !== "all") && (
-                        <button
-                          type="button"
-                          onClick={handleClearFilters}
-                          className="mt-2 text-sm text-primary-600 hover:text-primary-700">
-                          Clear filters to see all products
-                        </button>
-                      )}
+                          <button
+                            type="button"
+                            onClick={handleClearFilters}
+                            className="mt-2 text-sm text-primary-600 hover:text-primary-700">
+                            Clear filters to see all products
+                          </button>
+                        )}
                     </div>
                   ) : (
                     <>
@@ -871,13 +860,12 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                                   )}
                                 {product.stock && (
                                   <span
-                                    className={`text-xs px-2 py-0.5 rounded ${
-                                      product.stock === "in_stock"
-                                        ? "bg-green-100 text-green-700"
-                                        : product.stock === "low_stock"
+                                    className={`text-xs px-2 py-0.5 rounded ${product.stock === "in_stock"
+                                      ? "bg-green-100 text-green-700"
+                                      : product.stock === "low_stock"
                                         ? "bg-yellow-100 text-yellow-700"
                                         : "bg-red-100 text-red-700"
-                                    }`}>
+                                      }`}>
                                     {product.stock.replace("_", " ")}
                                   </span>
                                 )}
@@ -1167,7 +1155,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                                 <FiUpload className="text-lg text-primary-600" />
                                 <span className="text-sm font-medium text-gray-700">
                                   {formData.bannerConfig.image &&
-                                  formData.bannerConfig.customImage
+                                    formData.bannerConfig.customImage
                                     ? "Change Custom Banner Image"
                                     : "Upload Custom Banner Image"}
                                 </span>

@@ -4,144 +4,81 @@ import {
   FiDollarSign,
   FiCheckCircle,
   FiXCircle,
+  FiUser
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import Badge from "../../../../shared/components/Badge";
 import AnimatedSelect from "../../components/AnimatedSelect";
-import { formatPrice } from "../../../../shared/utils/helpers";
 import { formatCurrency, formatDateTime } from "../../utils/adminHelpers";
-import { mockOrders } from "../../../../data/adminMockData";
+import { useDeliveryStore } from "../../../../shared/store/deliveryStore";
 
 const CashCollection = () => {
-  const [collections, setCollections] = useState([]);
+  const { deliveryBoys, isLoading, fetchDeliveryBoys, settleCash } = useDeliveryStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("pending"); // Default to pending collection
 
   useEffect(() => {
-    // Generate cash collections from orders
-    const generatedCollections = mockOrders
-      .filter((order) => order.paymentMethod === "cash")
-      .map((order) => ({
-        id: `CC-${order.id}`,
-        orderId: order.id,
-        customerName: order.customer.name,
-        amount: order.total,
-        deliveryBoy: "John Doe",
-        status: order.status === "delivered" ? "collected" : "pending",
-        collectionDate: order.status === "delivered" ? order.date : null,
-        orderDate: order.date,
-      }));
-    setCollections(generatedCollections);
-  }, []);
+    fetchDeliveryBoys({ search: searchQuery });
+  }, [searchQuery, fetchDeliveryBoys]);
 
-  const filteredCollections = collections.filter((collection) => {
-    const matchesSearch =
-      !searchQuery ||
-      collection.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      collection.customerName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      collection.deliveryBoy.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "all" || collection.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+  const boysWithCash = deliveryBoys.filter(boy => {
+    const hasCash = boy.stats.cashInHand > 0;
+    if (statusFilter === 'pending') return hasCash;
+    if (statusFilter === 'settled') return !hasCash;
+    return true;
   });
 
-  const totalCollected = filteredCollections
-    .filter((c) => c.status === "collected")
-    .reduce((sum, c) => sum + c.amount, 0);
-
-  const totalPending = filteredCollections
-    .filter((c) => c.status === "pending")
-    .reduce((sum, c) => sum + c.amount, 0);
+  const totalCollected = deliveryBoys.reduce((sum, boy) => sum + (boy.stats.totalCashCollected || 0), 0);
+  const totalPending = deliveryBoys.reduce((sum, boy) => sum + (boy.stats.cashInHand || 0), 0);
 
   const columns = [
     {
-      key: "orderId",
-      label: "Order ID",
+      key: "name",
+      label: "Delivery Boy",
       sortable: true,
-      render: (value) => (
-        <span className="font-semibold text-gray-800">{value}</span>
-      ),
+      render: (value, row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
+            {value.charAt(0)}
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800">{value}</p>
+            <p className="text-xs text-gray-500">{row.phone}</p>
+          </div>
+        </div>
+      )
     },
     {
-      key: "customerName",
-      label: "Customer",
-      sortable: true,
-    },
-    {
-      key: "amount",
-      label: "Amount",
+      key: "stats.cashInHand",
+      label: "Cash In Hand",
       sortable: true,
       render: (value) => (
         <div className="flex items-center gap-2">
           <FiDollarSign className="text-green-600" />
-          <span className="font-bold text-gray-800">{formatPrice(value)}</span>
+          <span className="font-bold text-gray-800">{formatCurrency(value)}</span>
         </div>
       ),
     },
     {
-      key: "deliveryBoy",
-      label: "Delivery Boy",
+      key: "stats.totalDeliveries",
+      label: "Deliveries",
       sortable: true,
-    },
-    {
-      key: "status",
-      label: "Status",
-      sortable: true,
-      render: (value) => (
-        <Badge variant={value === "collected" ? "success" : "warning"}>
-          {value}
-        </Badge>
-      ),
-    },
-    {
-      key: "orderDate",
-      label: "Order Date",
-      sortable: true,
-      render: (value) => new Date(value).toLocaleString(),
-    },
-    {
-      key: "collectionDate",
-      label: "Collection Date",
-      sortable: true,
-      render: (value) =>
-        value ? (
-          formatDateTime(value)
-        ) : (
-          <span className="text-gray-400">Pending</span>
-        ),
     },
     {
       key: "actions",
       label: "Actions",
       sortable: false,
       render: (_, row) =>
-        row.status === "pending" ? (
+        row.stats.cashInHand > 0 ? (
           <button
-            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-semibold"
-            onClick={() => {
-              setCollections(
-                collections.map((c) =>
-                  c.id === row.id
-                    ? {
-                        ...c,
-                        status: "collected",
-                        collectionDate: new Date().toISOString(),
-                      }
-                    : c
-                )
-              );
-            }}>
-            Mark Collected
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-semibold flex items-center gap-2"
+            onClick={() => settleCash(row.id, row.stats.cashInHand)}>
+            <FiCheckCircle />
+            Settle Cash
           </button>
         ) : (
-          <span className="text-green-600">
-            <FiCheckCircle />
-          </span>
+          <Badge variant="success">Settled</Badge>
         ),
     },
   ];
@@ -162,7 +99,7 @@ const CashCollection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Collected</p>
+          <p className="text-sm text-gray-600 mb-1">Total Collected (Lifetime)</p>
           <p className="text-2xl font-bold text-green-600">
             {formatCurrency(totalCollected)}
           </p>
@@ -183,7 +120,7 @@ const CashCollection = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by order ID, customer, or delivery boy..."
+              placeholder="Search by name, phone or email..."
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
@@ -192,9 +129,9 @@ const CashCollection = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: "all", label: "All Status" },
-              { value: "collected", label: "Collected" },
-              { value: "pending", label: "Pending" },
+              { value: "all", label: "All Delivery Boys" },
+              { value: "pending", label: "Pending Collection" },
+              { value: "settled", label: "Settled" },
             ]}
             className="min-w-[140px]"
           />
@@ -203,8 +140,9 @@ const CashCollection = () => {
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <DataTable
-          data={filteredCollections}
+          data={boysWithCash}
           columns={columns}
+          loading={isLoading}
           pagination={true}
           itemsPerPage={10}
         />

@@ -9,24 +9,30 @@ import {
   FiXCircle,
   FiList,
   FiMapPin,
-  FiBell,
+
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { mockOrders } from '../../../data/adminMockData';
+import { getAllOrders } from '../services/adminService';
 
 const Orders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load orders from localStorage or use mock data
+  // Load orders from backend
   useEffect(() => {
-    const savedOrders = localStorage.getItem('admin-orders');
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      setOrders(mockOrders);
-      localStorage.setItem('admin-orders', JSON.stringify(mockOrders));
-    }
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getAllOrders({ limit: 1000 });
+        setOrders(response.data.orders || []);
+      } catch (error) {
+        console.error("Orders overview fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
   // Calculate order statistics
@@ -43,7 +49,7 @@ const Orders = () => {
 
     orders.forEach((order) => {
       const status = order.status?.toLowerCase() || '';
-      
+
       if (status === 'pending') {
         stats.pending++;
       } else if (status === 'processing') {
@@ -133,16 +139,6 @@ const Orders = () => {
       hoverShadow: 'hover:shadow-purple-500/30',
       description: 'Track order status',
     },
-    {
-      path: '/admin/orders/order-notifications',
-      label: 'Order Notifications',
-      icon: FiBell,
-      gradient: 'from-orange-500 via-orange-600 to-orange-700',
-      lightGradient: 'from-orange-50 via-orange-100/80 to-orange-50',
-      shadowColor: 'shadow-orange-500/20',
-      hoverShadow: 'hover:shadow-orange-500/30',
-      description: 'Manage order notifications',
-    },
   ];
 
   return (
@@ -175,7 +171,7 @@ const Orders = () => {
             >
               {/* Decorative gradient overlay */}
               <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 ${card.bgColor} opacity-10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16`}></div>
-              
+
               <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
                 <div className={`${card.bgColor} bg-white/20 p-2 sm:p-2.5 rounded-lg shadow-md`}>
                   <Icon className="text-white text-base sm:text-lg" />

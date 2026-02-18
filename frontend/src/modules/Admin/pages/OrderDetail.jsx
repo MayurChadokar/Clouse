@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  FiArrowLeft, 
-  FiEdit, 
-  FiCheck, 
-  FiX, 
-  FiPhone, 
-  FiMapPin, 
-  FiCreditCard, 
-  FiTruck, 
-  FiCalendar, 
+import {
+  FiArrowLeft,
+  FiEdit,
+  FiCheck,
+  FiX,
+  FiPhone,
+  FiMapPin,
+  FiCreditCard,
+  FiTruck,
+  FiCalendar,
   FiTag,
   FiPackage,
   FiClock,
@@ -19,8 +19,7 @@ import { motion } from 'framer-motion';
 import Badge from '../../../shared/components/Badge';
 import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency, formatDateTime } from '../utils/adminHelpers';
-import { mockOrders } from '../../../data/adminMockData';
-import { products, getProductById } from '../../../data/products';
+import { getOrderById, updateOrderStatus } from '../services/adminService';
 import toast from 'react-hot-toast';
 
 const OrderDetail = () => {
@@ -30,35 +29,53 @@ const OrderDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [status, setStatus] = useState('');
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const savedOrders = localStorage.getItem('admin-orders');
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-    const foundOrder = orders.find((o) => o.id === id);
-    
-    if (foundOrder) {
-      setOrder(foundOrder);
-      setStatus(foundOrder.status);
-    } else {
-      toast.error('Order not found');
-      navigate('/admin/orders');
-    }
+    const fetchOrderData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getOrderById(id);
+        const o = response.data;
+
+        // Normalize data to match UI structure
+        const normalizedOrder = {
+          ...o,
+          id: o.orderId || o._id,
+          customer: {
+            name: o.userId?.name || 'Unknown',
+            email: o.userId?.email || '',
+            phone: o.userId?.phone || ''
+          },
+          date: o.createdAt
+        };
+
+        setOrder(normalizedOrder);
+        setStatus(o.status);
+      } catch (error) {
+        console.error("Fetch order detail error:", error);
+        toast.error('Order not found');
+        navigate('/admin/orders/all-orders');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrderData();
   }, [id, navigate]);
 
-  const handleStatusUpdate = () => {
-    const savedOrders = localStorage.getItem('admin-orders');
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-    
-    const updatedOrders = orders.map((o) =>
-      o.id === id ? { ...o, status } : o
-    );
-    
-    localStorage.setItem('admin-orders', JSON.stringify(updatedOrders));
-    setOrder({ ...order, status });
-    setIsEditing(false);
-    toast.success('Order status updated successfully');
+  const handleStatusUpdate = async () => {
+    try {
+      await updateOrderStatus(id, status);
+      setOrder({ ...order, status });
+      setIsEditing(false);
+      toast.success('Order status updated successfully');
+    } catch (error) {
+      console.error("Status update error:", error);
+    }
   };
 
-  if (!order) {
+  if (isLoading || !order) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Loading...</p>
@@ -91,30 +108,15 @@ const OrderDetail = () => {
     return methods[method.toLowerCase()] || method;
   };
 
-  // Get product image - try item.image, then product by ID, then product by name, then placeholder
+  // Resolve product image safely from the order payload
   const getProductImage = (item) => {
     if (item.image) {
       return item.image;
     }
-    
-    // Try to find product by ID
-    if (item.productId || item.id) {
-      const product = getProductById(item.productId || item.id);
-      if (product?.image) {
-        return product.image;
-      }
+    if (item.productId?.images?.[0]) {
+      return item.productId.images[0];
     }
-    
-    // Try to find product by name
-    if (item.name) {
-      const product = products.find(p => 
-        p.name.toLowerCase() === item.name.toLowerCase()
-      );
-      if (product?.image) {
-        return product.image;
-      }
-    }
-    
+
     // Return placeholder
     return 'https://via.placeholder.com/100x100?text=Product';
   };

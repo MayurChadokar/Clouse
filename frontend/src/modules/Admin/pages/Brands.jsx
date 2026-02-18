@@ -14,6 +14,7 @@ import BrandForm from "../components/Brands/BrandForm";
 import ExportButton from "../components/ExportButton";
 import Pagination from "../components/Pagination";
 import Badge from "../../../shared/components/Badge";
+import AnimatedSelect from "../components/AnimatedSelect";
 import toast from "react-hot-toast";
 import Button from "../components/Button";
 

@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 
 const CommissionRates = () => {
   const navigate = useNavigate();
-  const { vendors, updateCommissionRate } = useVendorStore();
+  const { vendors, updateCommissionRate, initialize } = useVendorStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [commissionModal, setCommissionModal] = useState({
     isOpen: false,
@@ -36,21 +36,29 @@ const CommissionRates = () => {
     return filtered;
   }, [vendors, searchQuery]);
 
-  const handleCommissionUpdate = () => {
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  const handleCommissionUpdate = async () => {
     const rate = parseFloat(newRate) / 100;
     if (isNaN(rate) || rate < 0 || rate > 1) {
       toast.error("Please enter a valid commission rate (0-100%)");
       return;
     }
-    updateCommissionRate(commissionModal.vendorId, rate);
-    setCommissionModal({
-      isOpen: false,
-      vendorId: null,
-      vendorName: null,
-      currentRate: "",
-    });
-    setNewRate("");
-    toast.success("Commission rate updated successfully");
+    const success = await updateCommissionRate(commissionModal.vendorId, rate);
+    if (success) {
+      setCommissionModal({
+        isOpen: false,
+        vendorId: null,
+        vendorName: null,
+        currentRate: "",
+      });
+      setNewRate("");
+      toast.success("Commission rate updated successfully");
+    } else {
+      toast.error("Failed to update commission rate");
+    }
   };
 
   const columns = [

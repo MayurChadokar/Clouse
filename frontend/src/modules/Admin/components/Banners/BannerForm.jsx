@@ -51,7 +51,7 @@ const BannerForm = ({ banner, onClose, onSave }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.image.trim()) {
@@ -79,9 +79,9 @@ const BannerForm = ({ banner, onClose, onSave }) => {
       };
 
       if (isEdit) {
-        updateBanner(banner.id, bannerData);
+        await updateBanner(banner._id, bannerData);
       } else {
-        createBanner(bannerData);
+        await createBanner(bannerData);
       }
       onSave?.();
       onClose();
@@ -108,9 +108,8 @@ const BannerForm = ({ banner, onClose, onSave }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-[10000] flex ${
-            isAppRoute ? "items-start pt-[10px]" : "items-end"
-          } sm:items-center justify-center p-4 pointer-events-none`}>
+          className={`fixed inset-0 z-[10000] flex ${isAppRoute ? "items-start pt-[10px]" : "items-end"
+            } sm:items-center justify-center p-4 pointer-events-none`}>
           <motion.div
             variants={{
               hidden: {
@@ -144,9 +143,8 @@ const BannerForm = ({ banner, onClose, onSave }) => {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`bg-white ${
-              isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-            } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
+            className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
+              } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
             style={{ willChange: "transform" }}>
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
               <h2 className="text-2xl font-bold text-gray-800">

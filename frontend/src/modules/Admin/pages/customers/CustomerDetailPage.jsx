@@ -31,22 +31,24 @@ const CustomerDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { getCustomerById, initialize } = useCustomerStore();
+  const { fetchCustomerById, isLoading } = useCustomerStore();
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    initialize();
-    const customerData = getCustomerById(id);
-    if (customerData) {
-      setCustomer(customerData);
-    } else {
-      toast.error('Customer not found');
-      navigate('/admin/customers');
-    }
-  }, [id, initialize, getCustomerById, navigate]);
+    const loadCustomer = async () => {
+      const data = await fetchCustomerById(id);
+      if (data) {
+        setCustomer(data);
+      } else if (!isLoading) {
+        toast.error('Customer not found');
+        navigate('/admin/customers');
+      }
+    };
+    loadCustomer();
+  }, [id, fetchCustomerById, navigate]);
 
   useEffect(() => {
     // Load orders from localStorage

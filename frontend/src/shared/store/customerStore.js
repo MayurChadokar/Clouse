@@ -1,105 +1,129 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { mockCustomers } from '../../data/adminMockData';
+import * as adminService from '../../modules/Admin/services/adminService';
 import toast from 'react-hot-toast';
 
 export const useCustomerStore = create(
   persist(
     (set, get) => ({
       customers: [],
+      selectedCustomer: null,
+      pagination: {
+        total: 0,
+        page: 1,
+        limit: 10,
+        pages: 0
+      },
       isLoading: false,
 
-      // Initialize customers
-      initialize: () => {
-        const savedCustomers = localStorage.getItem('admin-customers');
-        if (savedCustomers) {
-          set({ customers: JSON.parse(savedCustomers) });
-        } else {
-          // Create mock customers with more details
-          const initialCustomers = mockCustomers.map((customer, index) => ({
-            ...customer,
-            phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-            status: 'active',
-            createdAt: new Date(Date.now() - (index * 7 * 24 * 60 * 60 * 1000)).toISOString(),
-            lastOrderDate: new Date(Date.now() - (index * 3 * 24 * 60 * 60 * 1000)).toISOString(),
-            addresses: [],
-            wishlist: [],
-            activityHistory: [],
-          }));
-          set({ customers: initialCustomers });
-          localStorage.setItem('admin-customers', JSON.stringify(initialCustomers));
-        }
-      },
-
-      // Get all customers
-      getCustomers: () => {
-        const state = get();
-        if (state.customers.length === 0) {
-          state.initialize();
-        }
-        return get().customers;
-      },
-
-      // Get customer by ID
-      getCustomerById: (id) => {
-        return get().customers.find((customer) => customer.id === parseInt(id));
-      },
-
-      // Update customer
-      updateCustomer: (id, customerData) => {
+      // Initialize/Fetch customers
+      initialize: async (params = {}) => {
         set({ isLoading: true });
         try {
-          const customers = get().customers;
-          const updatedCustomers = customers.map((customer) =>
-            customer.id === parseInt(id)
-              ? { ...customer, ...customerData, updatedAt: new Date().toISOString() }
-              : customer
-          );
-          set({ customers: updatedCustomers, isLoading: false });
-          localStorage.setItem('admin-customers', JSON.stringify(updatedCustomers));
-          toast.success('Customer updated successfully');
-          return updatedCustomers.find((customer) => customer.id === parseInt(id));
+          const response = await adminService.getAllCustomers(params);
+          const { customers, pagination } = response.data;
+
+          // Map backend data to frontend expectations
+          const normalizedCustomers = customers.map(c => ({
+            ...c,
+            id: c._id,
+            status: c.isActive ? 'active' : 'blocked'
+          }));
+
+          set({
+            customers: normalizedCustomers,
+            pagination,
+            isLoading: false
+          });
         } catch (error) {
           set({ isLoading: false });
-          toast.error('Failed to update customer');
-          throw error;
+          // Error handled by api interceptor
         }
       },
 
-      // Toggle customer status
-      toggleCustomerStatus: (id) => {
-        const customer = get().getCustomerById(id);
-        if (customer) {
-          const newStatus = customer.status === 'active' ? 'blocked' : 'active';
-          get().updateCustomer(id, { status: newStatus });
+      // Get customer by ID from API
+      fetchCustomerById: async (id) => {
+        set({ isLoading: true });
+        try {
+          const response = await adminService.getCustomerById(id);
+          const customer = response.data;
+
+          const normalizedCustomer = {
+            ...customer,
+            id: customer._id,
+            status: customer.isActive ? 'active' : 'blocked'
+          };
+
+          set({ selectedCustomer: normalizedCustomer, isLoading: false });
+          return normalizedCustomer;
+        } catch (error) {
+          set({ isLoading: false });
+          return null;
         }
       },
 
-      // Add activity to customer history
+      // Update customer details via API
+      updateCustomer: async (id, customerData) => {
+        set({ isLoading: true });
+        try {
+          const response = await adminService.updateCustomer(id, customerData);
+          const updatedCustomer = response.data;
+
+          set((state) => ({
+            customers: state.customers.map(c =>
+              String(c.id) === String(id)
+                ? { ...c, ...updatedCustomer, id: updatedCustomer._id, status: updatedCustomer.isActive ? 'active' : 'blocked' }
+                : c
+            ),
+            isLoading: false
+          }));
+
+          toast.success('Customer updated successfully');
+        } catch (error) {
+          set({ isLoading: false });
+        }
+      },
+
+      // Placeholder for activity history (frontend depends on it)
       addActivity: (customerId, activity) => {
-        const customers = get().customers;
-        const updatedCustomers = customers.map((customer) =>
-          customer.id === parseInt(customerId)
-            ? {
-              ...customer,
-              activityHistory: [
-                {
-                  id: Date.now(),
-                  type: activity.type,
-                  description: activity.description,
-                  date: new Date().toISOString(),
-                },
-                ...(customer.activityHistory || []),
-              ].slice(0, 50), // Keep last 50 activities
-            }
-            : customer
-        );
-        set({ customers: updatedCustomers });
-        localStorage.setItem('admin-customers', JSON.stringify(updatedCustomers));
+        console.log(`Activity for ${customerId}:`, activity);
+      },
+
+      // Update customer status via API
+      toggleCustomerStatus: async (id) => {
+        const customer = get().customers.find(c => String(c.id) === String(id));
+        if (!customer) return;
+
+        const newIsActive = !(customer.status === 'active');
+
+        set({ isLoading: true });
+        try {
+          const response = await adminService.updateCustomerStatus(id, newIsActive);
+          const updatedCustomer = response.data;
+
+          // Update local state
+          set((state) => ({
+            customers: state.customers.map(c =>
+              String(c.id) === String(id)
+                ? { ...c, isActive: updatedCustomer.isActive, status: updatedCustomer.isActive ? 'active' : 'blocked' }
+                : c
+            ),
+            isLoading: false
+          }));
+
+          toast.success(`Customer ${updatedCustomer.isActive ? 'activated' : 'blocked'} successfully`);
+        } catch (error) {
+          set({ isLoading: false });
+        }
+      },
+
+      // Select a customer (local)
+      setSelectedCustomer: (customer) => {
+        set({ selectedCustomer: customer });
       },
     }),
     {
-      name: 'customer-storage',
+      name: 'admin-customer-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

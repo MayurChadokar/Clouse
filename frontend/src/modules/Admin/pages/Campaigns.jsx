@@ -13,7 +13,8 @@ import toast from 'react-hot-toast';
 const Campaigns = () => {
   const {
     campaigns,
-    initialize,
+    isLoading,
+    fetchCampaigns,
     deleteCampaign,
     toggleCampaignStatus,
   } = useCampaignStore();
@@ -27,8 +28,8 @@ const Campaigns = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    initialize();
-  }, []);
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   // Filtered campaigns
   const filteredCampaigns = useMemo(() => {
@@ -175,7 +176,7 @@ const Campaigns = () => {
           <ExportButton
             data={filteredCampaigns}
             headers={[
-              { label: 'ID', accessor: (row) => row.id },
+              { label: 'ID', accessor: (row) => row._id },
               { label: 'Name', accessor: (row) => row.name },
               { label: 'Type', accessor: (row) => row.type },
               { label: 'Discount', accessor: (row) => `${row.discountValue}${row.discountType === 'percentage' ? '%' : ''}` },
@@ -198,82 +199,82 @@ const Campaigns = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedCampaigns.map((campaign) => {
-            const status = getCampaignStatus(campaign);
-            return (
-              <div
-                key={campaign.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">{campaign.name}</h3>
-                    <Badge variant={getStatusColor(status)}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </Badge>
-                  </div>
-                  <button
-                    onClick={() => toggleCampaignStatus(campaign.id)}
-                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title={campaign.isActive ? 'Deactivate' : 'Activate'}
+                const status = getCampaignStatus(campaign);
+                return (
+                  <div
+                    key={campaign._id}
+                    className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow"
                   >
-                    {campaign.isActive ? <FiEye /> : <FiEyeOff />}
-                  </button>
-                </div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-800 text-lg mb-1">{campaign.name}</h3>
+                        <Badge variant={getStatusColor(status)}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </Badge>
+                      </div>
+                      <button
+                        onClick={() => toggleCampaignStatus(campaign._id)}
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title={campaign.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {campaign.isActive ? <FiEye /> : <FiEyeOff />}
+                      </button>
+                    </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Type:</span>
-                    <span className="font-semibold text-gray-800">
-                      {campaign.type.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Discount:</span>
-                    <span className="font-semibold text-primary-600">
-                      {campaign.discountValue}
-                      {campaign.discountType === 'percentage' ? '%' : ' $'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Products:</span>
-                    <span className="font-semibold text-gray-800">
-                      {campaign.productIds.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <FiCalendar />
-                    <span>{formatDateTime(campaign.startDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <FiCalendar />
-                    <span>{formatDateTime(campaign.endDate)}</span>
-                  </div>
-                </div>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Type:</span>
+                        <span className="font-semibold text-gray-800">
+                          {campaign.type.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Discount:</span>
+                        <span className="font-semibold text-primary-600">
+                          {campaign.discountValue}
+                          {campaign.discountType === 'percentage' ? '%' : ' $'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Products:</span>
+                        <span className="font-semibold text-gray-800">
+                          {campaign.productIds.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <FiCalendar />
+                        <span>{formatDateTime(campaign.startDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <FiCalendar />
+                        <span>{formatDateTime(campaign.endDate)}</span>
+                      </div>
+                    </div>
 
-                {campaign.description && (
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {campaign.description}
-                  </p>
-                )}
+                    {campaign.description && (
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                        {campaign.description}
+                      </p>
+                    )}
 
-                <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => handleEdit(campaign)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
-                  >
-                    <FiEdit />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(campaign.id)}
-                    className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                    <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => handleEdit(campaign)}
+                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                      >
+                        <FiEdit />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(campaign._id)}
+                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <Pagination
               currentPage={currentPage}
@@ -292,7 +293,7 @@ const Campaigns = () => {
           campaign={editingCampaign}
           onClose={handleFormClose}
           onSave={() => {
-            initialize();
+            fetchCampaigns();
           }}
         />
       )}

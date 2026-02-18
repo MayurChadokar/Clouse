@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { FiMenu, FiBell, FiLogOut } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuthStore } from '../../store/adminStore';
+import { useNotificationStore } from '../../store/notificationStore';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Button from '../Button';
 import NotificationWindow from './NotificationWindow';
@@ -10,7 +12,14 @@ const AdminHeader = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAdminAuthStore();
+  const { notifications, unreadCount, fetchNotifications } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const handleLogout = () => {
     logout();
@@ -47,7 +56,7 @@ const AdminHeader = ({ onMenuClick }) => {
   const pageName = getPageName(location.pathname);
 
   return (
-    <header 
+    <header
       className="bg-white border-b border-gray-200 fixed top-0 left-0 lg:left-64 right-0 z-30"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -62,7 +71,7 @@ const AdminHeader = ({ onMenuClick }) => {
             className="lg:hidden text-gray-700"
             icon={FiMenu}
           />
-          
+
           {/* Page Heading - Desktop Only */}
           <div className="hidden lg:block">
             <h1 className="text-2xl font-bold text-gray-800 mb-1">{pageName}</h1>
@@ -81,8 +90,10 @@ const AdminHeader = ({ onMenuClick }) => {
               className="text-gray-700"
               icon={FiBell}
             />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            )}
+
             {/* Notification Window - positioned relative to this container */}
             <NotificationWindow
               isOpen={showNotifications}

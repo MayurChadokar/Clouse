@@ -11,28 +11,44 @@ import { motion } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import Badge from "../../../../shared/components/Badge";
 // import { formatDateTime } from '../../utils/adminHelpers';
-import { mockOrders } from "../../../../data/adminMockData";
+import { getAllOrders } from "../../services/adminService";
 
 const OrderTracking = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      setOrders(mockOrders);
-      localStorage.setItem("admin-orders", JSON.stringify(mockOrders));
-    }
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getAllOrders({ limit: 100 });
+        const normalizedOrders = response.data.orders.map(order => ({
+          ...order,
+          id: order.orderId || order._id,
+          customer: {
+            name: order.userId?.name || 'Unknown',
+            email: order.userId?.email || ''
+          },
+          date: order.createdAt
+        }));
+        setOrders(normalizedOrders);
+      } catch (error) {
+        console.error("Tracking fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      (order.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.customer?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getTrackingSteps = (status) => {
@@ -42,8 +58,8 @@ const OrderTracking = () => {
         label: "Processing",
         status:
           status === "processing" ||
-          status === "shipped" ||
-          status === "delivered"
+            status === "shipped" ||
+            status === "delivered"
             ? "completed"
             : "pending",
         icon: FiPackage,
@@ -174,20 +190,18 @@ const OrderTracking = () => {
                   return (
                     <div key={index} className="flex items-start gap-3">
                       <div
-                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                          step.status === "completed"
+                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.status === "completed"
                             ? "bg-green-100 text-green-600"
                             : "bg-gray-100 text-gray-400"
-                        }`}>
+                          }`}>
                         <Icon className="text-sm" />
                       </div>
                       <div className="flex-1">
                         <p
-                          className={`font-medium ${
-                            step.status === "completed"
+                          className={`font-medium ${step.status === "completed"
                               ? "text-gray-800"
                               : "text-gray-400"
-                          }`}>
+                            }`}>
                           {step.label}
                         </p>
                         {step.status === "completed" && (

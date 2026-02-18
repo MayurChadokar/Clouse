@@ -3,51 +3,13 @@ import { FiBell, FiCheck, FiX, FiChevronRight } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDateTime } from '../../utils/adminHelpers';
 import { useNavigate } from 'react-router-dom';
+import { useNotificationStore } from '../../store/notificationStore';
 
 const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
   const navigate = useNavigate();
   const windowRef = useRef(null);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'order_placed',
-      title: 'New Order Received',
-      message: 'Order #ORD-001 has been placed by John Doe',
-      orderId: 'ORD-001',
-      read: false,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      type: 'order_cancelled',
-      title: 'Order Cancelled',
-      message: 'Order #ORD-002 has been cancelled by customer',
-      orderId: 'ORD-002',
-      read: false,
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: 3,
-      type: 'payment_failed',
-      title: 'Payment Failed',
-      message: 'Payment for Order #ORD-003 has failed',
-      orderId: 'ORD-003',
-      read: true,
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-    },
-    {
-      id: 4,
-      type: 'order_delivered',
-      title: 'Order Delivered',
-      message: 'Order #ORD-004 has been successfully delivered',
-      orderId: 'ORD-004',
-      read: false,
-      createdAt: new Date(Date.now() - 10800000).toISOString(),
-    },
-  ]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -70,19 +32,7 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
     };
   }, [isOpen, onClose]);
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
 
   const getNotificationIcon = (type) => {
     return FiBell;
@@ -99,8 +49,9 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
   };
 
   const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
-    if (notification.orderId) {
+    markAsRead(notification._id);
+    const orderId = notification.orderId || notification.data?.orderId;
+    if (orderId) {
       navigate('/admin/orders');
       onClose();
     }
@@ -177,12 +128,11 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
                     const Icon = getNotificationIcon(notification.type);
                     return (
                       <motion.div
-                        key={notification.id}
+                        key={notification._id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                          !notification.read ? 'bg-blue-50/30' : ''
-                        }`}
+                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-blue-50/30' : ''
+                          }`}
                         onClick={() => handleNotificationClick(notification)}
                       >
                         <div className="flex items-start gap-3">
@@ -200,7 +150,7 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
                                   <h4 className="font-semibold text-gray-800 text-sm">
                                     {notification.title}
                                   </h4>
-                                  {!notification.read && (
+                                  {!notification.isRead && (
                                     <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full"></span>
                                   )}
                                 </div>
@@ -211,9 +161,9 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
                                   <span className="text-xs text-gray-500">
                                     {formatDateTime(notification.createdAt)}
                                   </span>
-                                  {notification.orderId && (
+                                  {(notification.orderId || notification.data?.orderId) && (
                                     <span className="text-xs font-medium text-primary-600">
-                                      {notification.orderId}
+                                      {notification.orderId || notification.data?.orderId}
                                     </span>
                                   )}
                                 </div>
@@ -221,11 +171,11 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            {!notification.read && (
+                            {!notification.isRead && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  markAsRead(notification.id);
+                                  markAsRead(notification._id);
                                 }}
                                 className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                 title="Mark as read"
@@ -233,16 +183,6 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
                                 <FiCheck className="text-sm" />
                               </button>
                             )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotification(notification.id);
-                              }}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <FiX className="text-sm" />
-                            </button>
                           </div>
                         </div>
                       </motion.div>
@@ -257,7 +197,7 @@ const NotificationWindow = ({ isOpen, onClose, position = 'right' }) => {
               <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3">
                 <button
                   onClick={() => {
-                    navigate('/admin/orders/order-notifications');
+                    navigate('/admin/notifications');
                     onClose();
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"

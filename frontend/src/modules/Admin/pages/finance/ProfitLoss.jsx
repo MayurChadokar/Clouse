@@ -1,20 +1,36 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FiDollarSign, FiTrendingUp, FiTrendingDown } from "react-icons/fi";
 import { motion } from "framer-motion";
 import ProfitLossChart from "../../components/Analytics/ProfitLossChart";
 import AnimatedSelect from "../../components/AnimatedSelect";
-import { mockOrders, generateRevenueData } from "../../../../data/adminMockData";
 import { formatPrice } from '../../../../shared/utils/helpers';
+import { useAnalyticsStore } from "../../../../shared/store/analyticsStore";
 
 const ProfitLoss = () => {
   const [period, setPeriod] = useState("month");
-  const [orders] = useState(mockOrders);
-  const revenueData = useMemo(() => generateRevenueData(30), []);
+  const { financialSummary, isLoading, fetchFinancialSummary } = useAnalyticsStore();
+
+  useEffect(() => {
+    const periodMap = {
+      week: 'daily',
+      month: 'daily',
+      year: 'monthly'
+    };
+    fetchFinancialSummary(periodMap[period] || 'monthly');
+  }, [period, fetchFinancialSummary]);
+
+  const chartData = useMemo(() => {
+    return financialSummary.map(item => ({
+      ...item,
+      date: item._id,
+    }));
+  }, [financialSummary]);
 
   const financials = useMemo(() => {
-    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
-    const costOfGoods = revenue * 0.6; // 60% COGS
-    const operatingExpenses = revenue * 0.2; // 20% operating expenses
+    const revenue = financialSummary.reduce((sum, item) => sum + item.revenue, 0);
+    // Derived values for demo consistency with mock UI
+    const costOfGoods = revenue * 0.6;
+    const operatingExpenses = revenue * 0.2;
     const grossProfit = revenue - costOfGoods;
     const netProfit = grossProfit - operatingExpenses;
     const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
@@ -27,7 +43,15 @@ const ProfitLoss = () => {
       netProfit,
       profitMargin,
     };
-  }, [orders]);
+  }, [financialSummary]);
+
+  if (isLoading && financialSummary.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -142,7 +166,7 @@ const ProfitLoss = () => {
             className="min-w-[140px]"
           />
         </div>
-        <ProfitLossChart data={revenueData} period={period} />
+        <ProfitLossChart data={chartData} period={period} />
       </div>
     </motion.div>
   );

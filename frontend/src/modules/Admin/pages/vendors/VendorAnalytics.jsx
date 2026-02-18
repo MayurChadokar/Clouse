@@ -15,9 +15,13 @@ import { useCommissionStore } from "../../../../shared/store/commissionStore";
 
 const VendorAnalytics = () => {
   const navigate = useNavigate();
-  const { vendors } = useVendorStore();
+  const { vendors, initialize } = useVendorStore();
   const { orders } = useOrderStore();
   const { getVendorEarningsSummary } = useCommissionStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   const approvedVendors = vendors.filter((v) => v.status === "approved");
 

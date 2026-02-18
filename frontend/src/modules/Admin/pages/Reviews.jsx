@@ -1,77 +1,32 @@
 import { useState, useEffect } from 'react';
-import { FiSearch, FiCheck, FiX, FiMessageSquare } from 'react-icons/fi';
+import { FiSearch, FiCheck, FiX, FiMessageSquare, FiTrash2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataTable from '../components/DataTable';
 import ExportButton from '../components/ExportButton';
 import Badge from '../../../shared/components/Badge';
 import AnimatedSelect from '../components/AnimatedSelect';
 import { formatDateTime } from '../utils/adminHelpers';
+import { useReviewStore } from '../../../shared/store/reviewStore';
 import toast from 'react-hot-toast';
 
 const Reviews = () => {
-  const [reviews, setReviews] = useState([]);
+  const { reviews, isLoading, fetchReviews, updateReviewStatus, deleteReview, pagination } = useReviewStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
   useEffect(() => {
-    // Mock reviews data
-    const mockReviews = [
-      {
-        id: 1,
-        productId: 1,
-        productName: 'Classic White T-Shirt',
-        customerName: 'John Doe',
-        customerEmail: 'john@example.com',
-        rating: 5,
-        comment: 'Great product! Very satisfied.',
-        status: 'approved',
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        productId: 2,
-        productName: 'Slim Fit Blue Jeans',
-        customerName: 'Jane Smith',
-        customerEmail: 'jane@example.com',
-        rating: 4,
-        comment: 'Good quality, fits well.',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
-    const savedReviews = localStorage.getItem('admin-reviews');
-    setReviews(savedReviews ? JSON.parse(savedReviews) : mockReviews);
-  }, []);
+    fetchReviews({
+      search: searchQuery,
+      status: selectedStatus === 'all' ? undefined : selectedStatus
+    });
+  }, [searchQuery, selectedStatus, fetchReviews]);
 
-  const filteredReviews = reviews.filter((review) => {
-    const matchesSearch =
-      !searchQuery ||
-      review.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.comment.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      selectedStatus === 'all' || review.status === selectedStatus;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleApprove = (id) => {
-    const updatedReviews = reviews.map((r) =>
-      r.id === id ? { ...r, status: 'approved' } : r
-    );
-    setReviews(updatedReviews);
-    localStorage.setItem('admin-reviews', JSON.stringify(updatedReviews));
-    toast.success('Review approved');
+  const handleApprove = async (id) => {
+    await updateReviewStatus(id, 'approved');
   };
 
-  const handleReject = (id) => {
-    const updatedReviews = reviews.map((r) =>
-      r.id === id ? { ...r, status: 'rejected' } : r
-    );
-    setReviews(updatedReviews);
-    localStorage.setItem('admin-reviews', JSON.stringify(updatedReviews));
-    toast.success('Review rejected');
+  const handleReject = async (id) => {
+    await updateReviewStatus(id, 'pending'); // Or 'rejected' if supported
   };
 
   const columns = [
@@ -79,6 +34,7 @@ const Reviews = () => {
       key: 'id',
       label: 'ID',
       sortable: true,
+      render: (value) => <span className="text-[10px] font-mono text-gray-500">{value}</span>
     },
     {
       key: 'productName',
@@ -114,7 +70,7 @@ const Reviews = () => {
       key: 'comment',
       label: 'Comment',
       sortable: false,
-      render: (value) => <p className="max-w-xs truncate">{value}</p>,
+      render: (value) => <p className="max-w-xs truncate text-sm">{value}</p>,
     },
     {
       key: 'status',
@@ -126,8 +82,8 @@ const Reviews = () => {
             value === 'approved'
               ? 'success'
               : value === 'pending'
-              ? 'warning'
-              : 'error'
+                ? 'warning'
+                : 'error'
           }
         >
           {value}
@@ -149,15 +105,15 @@ const Reviews = () => {
               >
                 <FiCheck />
               </button>
-              <button
-                onClick={() => handleReject(row.id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Reject"
-              >
-                <FiX />
-              </button>
             </>
           )}
+          <button
+            onClick={() => deleteReview(row.id)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete"
+          >
+            <FiTrash2 />
+          </button>
         </div>
       ),
     },
@@ -200,7 +156,7 @@ const Reviews = () => {
             className="min-w-[140px]"
           />
           <ExportButton
-            data={filteredReviews}
+            data={reviews}
             headers={[
               { label: 'ID', accessor: (row) => row.id },
               { label: 'Product', accessor: (row) => row.productName },
@@ -216,10 +172,12 @@ const Reviews = () => {
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <DataTable
-          data={filteredReviews}
+          data={reviews}
           columns={columns}
+          loading={isLoading}
           pagination={true}
-          itemsPerPage={10}
+          itemsPerPage={pagination.limit}
+          totalItems={pagination.total}
         />
       </div>
     </motion.div>

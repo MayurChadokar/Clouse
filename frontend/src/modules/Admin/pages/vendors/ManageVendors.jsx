@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 
 const ManageVendors = () => {
   const navigate = useNavigate();
-  const { vendors, updateVendorStatus, updateCommissionRate } =
+  const { vendors, initialize, updateVendorStatus, updateCommissionRate } =
     useVendorStore();
   const { orders } = useOrderStore();
   const { getVendorEarningsSummary } = useCommissionStore();
@@ -36,6 +36,10 @@ const ManageVendors = () => {
     vendorName: null,
   });
   const [commissionRate, setCommissionRate] = useState("");
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   // Get vendor statistics
   const getVendorStats = (vendorId) => {
@@ -123,8 +127,8 @@ const ManageVendors = () => {
             value === "approved"
               ? "success"
               : value === "pending"
-              ? "warning"
-              : "error"
+                ? "warning"
+                : "error"
           }>
           {value?.toUpperCase() || "N/A"}
         </Badge>
@@ -231,43 +235,55 @@ const ManageVendors = () => {
     },
   ];
 
-  const handleApprove = () => {
-    updateVendorStatus(actionModal.vendorId, "approved");
-    setActionModal({
-      isOpen: false,
-      type: null,
-      vendorId: null,
-      vendorName: null,
-    });
-    toast.success("Vendor approved successfully");
+  const handleApprove = async () => {
+    const success = await updateVendorStatus(actionModal.vendorId, "approved");
+    if (success) {
+      toast.success("Vendor approved successfully");
+      setActionModal({
+        isOpen: false,
+        type: null,
+        vendorId: null,
+        vendorName: null,
+      });
+    } else {
+      toast.error("Failed to approve vendor");
+    }
   };
 
-  const handleSuspend = () => {
-    updateVendorStatus(actionModal.vendorId, "suspended");
-    setActionModal({
-      isOpen: false,
-      type: null,
-      vendorId: null,
-      vendorName: null,
-    });
-    toast.success("Vendor suspended successfully");
+  const handleSuspend = async () => {
+    const success = await updateVendorStatus(actionModal.vendorId, "suspended");
+    if (success) {
+      toast.success("Vendor suspended successfully");
+      setActionModal({
+        isOpen: false,
+        type: null,
+        vendorId: null,
+        vendorName: null,
+      });
+    } else {
+      toast.error("Failed to suspend vendor");
+    }
   };
 
-  const handleCommissionUpdate = () => {
+  const handleCommissionUpdate = async () => {
     const rate = parseFloat(commissionRate) / 100;
     if (isNaN(rate) || rate < 0 || rate > 1) {
       toast.error("Please enter a valid commission rate (0-100%)");
       return;
     }
-    updateCommissionRate(actionModal.vendorId, rate);
-    setActionModal({
-      isOpen: false,
-      type: null,
-      vendorId: null,
-      vendorName: null,
-    });
-    setCommissionRate("");
-    toast.success("Commission rate updated successfully");
+    const success = await updateCommissionRate(actionModal.vendorId, rate);
+    if (success) {
+      toast.success("Commission rate updated successfully");
+      setActionModal({
+        isOpen: false,
+        type: null,
+        vendorId: null,
+        vendorName: null,
+      });
+      setCommissionRate("");
+    } else {
+      toast.error("Failed to update commission rate");
+    }
   };
 
   const getModalContent = () => {

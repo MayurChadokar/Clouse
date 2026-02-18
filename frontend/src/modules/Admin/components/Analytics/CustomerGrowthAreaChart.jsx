@@ -8,29 +8,22 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { formatDate, filterByDateRange, getDateRange } from '../../utils/adminHelpers';
 import { motion } from 'framer-motion';
 
-const CustomerGrowthAreaChart = ({ data, period = 'month' }) => {
-  // Generate mock customer growth data based on revenue data
+const CustomerGrowthAreaChart = ({ data = [], period = 'month' }) => {
+  // data from API: [{ _id: '2024-01', newUsers: 45 }, ...]
   const customerData = useMemo(() => {
-    const range = getDateRange(period);
-    const filtered = filterByDateRange(data, range.start, range.end);
-    let cumulativeCustomers = 1000; // Starting point
-    
-    return filtered.map((item, index) => {
-      // Simulate customer growth (new customers per day)
-      const newCustomers = Math.floor(Math.random() * 20) + 5;
-      cumulativeCustomers += newCustomers;
-      
+    if (!data || data.length === 0) return [];
+    let cumulative = 0;
+    return data.map((item) => {
+      cumulative += item.newUsers || 0;
       return {
-        date: item.date,
-        dateLabel: formatDate(item.date, { month: 'short', day: 'numeric' }),
-        customers: cumulativeCustomers,
-        newCustomers: newCustomers,
+        dateLabel: item._id || '',
+        customers: cumulative,
+        newCustomers: item.newUsers || 0,
       };
     });
-  }, [data, period]);
+  }, [data]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

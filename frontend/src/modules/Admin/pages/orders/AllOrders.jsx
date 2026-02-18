@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiSearch,
@@ -17,6 +17,7 @@ import {
   FiMoreVertical,
   FiCalendar,
   FiX,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import DataTable from "../../components/DataTable";
@@ -26,7 +27,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import AnimatedSelect from "../../components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
 import { formatCurrency, formatDateTime } from "../../utils/adminHelpers";
-import { mockOrders } from "../../../../data/adminMockData";
+import { getAllOrders, deleteOrder } from "../../services/adminService";
 import toast from "react-hot-toast";
 
 // OrderItemsDropdown component
@@ -145,9 +146,8 @@ const OrderItemsDropdown = ({ items, orderTotal }) => {
               stiffness: 300,
               damping: 30,
             }}
-            className={`absolute left-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-[85vw] sm:w-[500px] max-w-[600px] max-h-[400px] overflow-hidden ${
-              openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
+            className={`absolute left-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-[85vw] sm:w-[500px] max-w-[600px] max-h-[400px] overflow-hidden ${openUpward ? "bottom-full mb-2" : "top-full mt-2"
+              }`}
             style={{
               transformOrigin: openUpward ? "bottom left" : "top left",
             }}>
@@ -342,9 +342,8 @@ const OrderActionsDropdown = ({
               scale: 0.95,
             }}
             transition={{ duration: 0.2 }}
-            className={`absolute right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[180px] overflow-hidden ${
-              openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
+            className={`absolute right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[180px] overflow-hidden ${openUpward ? "bottom-full mb-2" : "top-full mt-2"
+              }`}
             style={{
               transformOrigin: openUpward ? "bottom right" : "top right",
             }}>
@@ -387,15 +386,45 @@ const AllOrders = () => {
     orderId: null,
   });
 
-  useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      setOrders(mockOrders);
-      localStorage.setItem("admin-orders", JSON.stringify(mockOrders));
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchOrders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        status: selectedStatus === "all" ? undefined : selectedStatus,
+        search: searchQuery,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        limit: 100 // Fetch a larger set for the DataTable's internal pagination
+      };
+
+      const response = await getAllOrders(params);
+
+      // Normalize data to match existing UI structure
+      const normalizedOrders = response.data.orders.map(order => ({
+        ...order,
+        id: order.orderId || order._id,
+        customer: {
+          name: order.userId?.name || 'Unknown',
+          email: order.userId?.email || ''
+        },
+        date: order.createdAt,
+        finalTotal: order.total
+      }));
+
+      setOrders(normalizedOrders);
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+      // adminService interceptor already handles error toasts
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [selectedStatus, searchQuery, dateRange]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // Calculate order status counts
   const orderStats = useMemo(() => {
@@ -524,12 +553,16 @@ const AllOrders = () => {
     setDeleteModal({ isOpen: true, orderId });
   };
 
-  const confirmDeleteOrder = () => {
-    const updatedOrders = orders.filter((o) => o.id !== deleteModal.orderId);
-    setOrders(updatedOrders);
-    localStorage.setItem("admin-orders", JSON.stringify(updatedOrders));
-    setDeleteModal({ isOpen: false, orderId: null });
-    toast.success("Order deleted successfully");
+  const confirmDeleteOrder = async () => {
+    try {
+      await deleteOrder(deleteModal.orderId);
+      const updatedOrders = orders.filter((o) => o.id !== deleteModal.orderId);
+      setOrders(updatedOrders);
+      setDeleteModal({ isOpen: false, orderId: null });
+      toast.success("Order deleted successfully");
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
   };
 
   const handleDropdownToggle = (orderId) => {

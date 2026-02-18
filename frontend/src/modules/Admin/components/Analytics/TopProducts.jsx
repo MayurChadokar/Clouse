@@ -22,9 +22,11 @@ const TopProducts = ({ products }) => {
       <div className="space-y-4">
         {paginatedProducts.map((product, index) => {
           const globalIndex = (currentPage - 1) * itemsPerPage + index;
+          // Support both real API shape and mock data shape
+          const salesCount = product.totalSold ?? product.sales ?? 0;
           return (
             <motion.div
-              key={product.id}
+              key={product._id || product.id || index}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -38,19 +40,13 @@ const TopProducts = ({ products }) => {
                   <h4 className="font-semibold text-gray-800 truncate">{product.name}</h4>
                   <div className="flex items-center gap-4 mt-1">
                     <span className="text-sm text-gray-600">
-                      {product.sales} sales
+                      {salesCount} sold
                     </span>
-                    <Badge
-                      variant={product.stock === 'low_stock' ? 'warning' : 'success'}
-                    >
-                      {product.stock === 'low_stock' ? 'Low Stock' : 'In Stock'}
-                    </Badge>
                   </div>
                 </div>
               </div>
               <div className="text-right flex-shrink-0 ml-4">
-                <p className="font-bold text-gray-800">{formatCurrency(product.revenue)}</p>
-                <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+                <p className="font-bold text-gray-800">{formatCurrency(product.revenue || 0)}</p>
               </div>
             </motion.div>
           );

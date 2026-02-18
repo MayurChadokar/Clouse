@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  FiArrowLeft, 
-  FiCheck, 
-  FiX, 
-  FiPhone, 
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiX,
+  FiPhone,
   FiMail,
   FiPackage,
   FiCalendar,
@@ -18,74 +18,55 @@ import { motion } from 'framer-motion';
 import Badge from '../../../shared/components/Badge';
 import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency, formatDateTime } from '../utils/adminHelpers';
-import { mockReturnRequests } from '../../../data/adminMockData';
+import { useReturnStore } from '../../../shared/store/returnStore';
 import toast from 'react-hot-toast';
 
 const ReturnRequestDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { fetchReturnRequestById, updateReturnStatus, isLoading } = useReturnStore();
   const [returnRequest, setReturnRequest] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [status, setStatus] = useState('');
 
   useEffect(() => {
-    const savedRequests = localStorage.getItem('admin-return-requests');
-    const requests = savedRequests ? JSON.parse(savedRequests) : mockReturnRequests;
-    const foundRequest = requests.find((r) => r.id === id);
-    
-    if (foundRequest) {
-      setReturnRequest(foundRequest);
-      setStatus(foundRequest.status);
-    } else {
-      toast.error('Return request not found');
-      navigate('/admin/return-requests');
-    }
-  }, [id, navigate]);
-
-  const handleStatusUpdate = (newStatus, action = '') => {
-    const savedRequests = localStorage.getItem('admin-return-requests');
-    const requests = savedRequests ? JSON.parse(savedRequests) : mockReturnRequests;
-    
-    const updatedRequests = requests.map((request) => {
-      if (request.id === id) {
-        const updated = {
-          ...request,
-          status: newStatus,
-          updatedAt: new Date().toISOString(),
-        };
-        
-        if (newStatus === 'approved' && action === 'approve') {
-          updated.refundStatus = 'pending';
-        } else if (newStatus === 'completed' && action === 'process-refund') {
-          updated.refundStatus = 'processed';
-        } else if (newStatus === 'completed' && !action) {
-          // If manually setting to completed, mark refund as processed
-          updated.refundStatus = 'processed';
-        } else if (newStatus === 'approved' && !action) {
-          // If manually setting to approved, ensure refund status is pending
-          if (updated.refundStatus !== 'processed') {
-            updated.refundStatus = 'pending';
-          }
-        }
-        
-        return updated;
+    const loadDetail = async () => {
+      const data = await fetchReturnRequestById(id);
+      if (data) {
+        setReturnRequest(data);
+        setStatus(data.status);
+      } else {
+        navigate('/admin/return-requests');
       }
-      return request;
-    });
-    
-    localStorage.setItem('admin-return-requests', JSON.stringify(updatedRequests));
-    const updatedRequest = updatedRequests.find((r) => r.id === id);
-    setReturnRequest(updatedRequest);
-    setStatus(updatedRequest.status);
-    setIsEditing(false);
-    
-    const statusMessages = {
-      approve: 'Return request approved',
-      reject: 'Return request rejected',
-      'process-refund': 'Refund processed successfully',
     };
-    
-    toast.success(statusMessages[action] || 'Status updated successfully');
+    loadDetail();
+  }, [id, navigate, fetchReturnRequestById]);
+
+  const handleStatusUpdate = async (newStatus, action = '') => {
+    const statusData = { status: newStatus };
+
+    if (newStatus === 'approved' && action === 'approve') {
+      statusData.refundStatus = 'pending';
+    } else if (newStatus === 'completed' && action === 'process-refund') {
+      statusData.refundStatus = 'processed';
+    } else if (newStatus === 'completed' && !action) {
+      statusData.refundStatus = 'processed';
+    } else if (newStatus === 'approved' && !action) {
+      if (returnRequest.refundStatus !== 'processed') {
+        statusData.refundStatus = 'pending';
+      }
+    }
+
+    const success = await updateReturnStatus(id, statusData);
+    if (success) {
+      // Refresh local data
+      const data = await fetchReturnRequestById(id);
+      if (data) {
+        setReturnRequest(data);
+        setStatus(data.status);
+      }
+      setIsEditing(false);
+    }
   };
 
   const handleStatusSave = () => {

@@ -2,7 +2,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from './constants';
 
-// Create axios instance
+// ─── Single Central Axios Instance ────────────────────────────────────────────
+// All API calls (admin, vendor, customer) go through this one instance.
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,44 +11,53 @@ const api = axios.create({
   },
 });
 
-// Request interceptor
+// Request interceptor — attach the right token based on the request path
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = localStorage.getItem('token');
+    // Admin routes use 'adminToken', all others use 'token'
+    const isAdminRoute = config.url?.startsWith('/admin');
+    const token = isAdminRoute
+      ? localStorage.getItem('adminToken')
+      : localStorage.getItem('token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response interceptor — unwrap data and handle errors globally
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
     const message =
       error.response?.data?.message ||
       error.message ||
       'Something went wrong';
-    
-    // Show error toast
+
     toast.error(message);
-    
-    // Handle 401 (Unauthorized) - redirect to login
+
     if (error.response?.status === 401) {
-      // Handle logout logic here if needed
-      localStorage.removeItem('token');
+      const isAdminRoute = error.config?.url?.startsWith('/admin');
+      if (isAdminRoute) {
+        // Clear both manual token and persisted Zustand state to break the redirect loop
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('admin-auth-storage');
+
+        // Only redirect and toast if we're not already on the login page
+        if (!window.location.pathname.includes('/admin/login')) {
+          toast.error('Session expired. Please login again.');
+          window.location.href = '/admin/login';
+        }
+      } else {
+        localStorage.removeItem('token');
+      }
     }
-    
+
     return Promise.reject(error);
   }
 );
 
 export default api;
-

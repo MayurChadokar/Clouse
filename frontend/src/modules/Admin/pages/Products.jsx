@@ -2,11 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FiPackage,
-  FiPlus,
-  FiUpload,
   FiDollarSign,
   FiStar,
-  FiHelpCircle,
 } from "react-icons/fi";
 
 const Products = () => {
@@ -22,26 +19,6 @@ const Products = () => {
       shadowColor: "shadow-blue-500/20",
       hoverShadow: "hover:shadow-blue-500/30",
       description: "View and manage all products",
-    },
-    {
-      path: "/admin/products/add-product",
-      label: "Add Product",
-      icon: FiPlus,
-      gradient: "from-green-500 via-green-600 to-green-700",
-      lightGradient: "from-green-50 via-green-100/80 to-green-50",
-      shadowColor: "shadow-green-500/20",
-      hoverShadow: "hover:shadow-green-500/30",
-      description: "Create a new product",
-    },
-    {
-      path: "/admin/products/bulk-upload",
-      label: "Bulk Upload",
-      icon: FiUpload,
-      gradient: "from-purple-500 via-purple-600 to-purple-700",
-      lightGradient: "from-purple-50 via-purple-100/80 to-purple-50",
-      shadowColor: "shadow-purple-500/20",
-      hoverShadow: "hover:shadow-purple-500/30",
-      description: "Upload products in bulk",
     },
     {
       path: "/admin/products/tax-pricing",
@@ -62,16 +39,6 @@ const Products = () => {
       shadowColor: "shadow-amber-500/20",
       hoverShadow: "hover:shadow-amber-500/30",
       description: "View and manage ratings",
-    },
-    {
-      path: "/admin/products/product-faqs",
-      label: "Product FAQs",
-      icon: FiHelpCircle,
-      gradient: "from-indigo-500 via-indigo-600 to-indigo-700",
-      lightGradient: "from-indigo-50 via-indigo-100/80 to-indigo-50",
-      shadowColor: "shadow-indigo-500/20",
-      hoverShadow: "hover:shadow-indigo-500/30",
-      description: "Manage product FAQs",
     },
   ];
 

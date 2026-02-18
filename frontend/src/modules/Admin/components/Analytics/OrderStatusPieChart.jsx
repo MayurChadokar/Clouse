@@ -1,37 +1,34 @@
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
-import { mockOrders } from '../../../../data/adminMockData';
 
-const OrderStatusPieChart = () => {
+const COLORS = {
+  pending: '#fbbf24',
+  processing: '#3b82f6',
+  shipped: '#8b5cf6',
+  delivered: '#10b981',
+  cancelled: '#ef4444',
+  returned: '#f97316',
+};
+
+const STATUS_LABELS = {
+  pending: 'Pending',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned: 'Returned',
+};
+
+const OrderStatusPieChart = ({ data = [] }) => {
   const statusData = useMemo(() => {
-    const statusCounts = mockOrders.reduce((acc, order) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
-      return acc;
-    }, {});
-
-    const colors = {
-      pending: '#fbbf24',
-      processing: '#3b82f6',
-      shipped: '#8b5cf6',
-      delivered: '#10b981',
-      cancelled: '#ef4444',
-    };
-
-    const statusLabels = {
-      pending: 'Pending',
-      processing: 'Processing',
-      shipped: 'Shipped',
-      delivered: 'Delivered',
-      cancelled: 'Cancelled',
-    };
-
-    return Object.entries(statusCounts).map(([status, count]) => ({
-      name: statusLabels[status] || status,
-      value: count,
-      color: colors[status] || '#6b7280',
+    if (!data || data.length === 0) return [];
+    return data.map((item) => ({
+      name: STATUS_LABELS[item.status] || item.status,
+      value: item.count,
+      color: COLORS[item.status] || '#6b7280',
     }));
-  }, []);
+  }, [data]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {

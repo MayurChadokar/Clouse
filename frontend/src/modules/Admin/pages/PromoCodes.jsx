@@ -10,50 +10,14 @@ import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency, formatDateTime } from '../utils/adminHelpers';
 import toast from 'react-hot-toast';
 
+import { useCouponStore } from '../../../shared/store/couponStore';
+
 const PromoCodes = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
-  const [promoCodes, setPromoCodes] = useState([
-    {
-      id: 1,
-      code: 'SAVE20',
-      type: 'percentage',
-      value: 20,
-      minPurchase: 50,
-      maxDiscount: 100,
-      usageLimit: 100,
-      usedCount: 45,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'active',
-    },
-    {
-      id: 2,
-      code: 'FLAT50',
-      type: 'fixed',
-      value: 50,
-      minPurchase: 100,
-      maxDiscount: 50,
-      usageLimit: 50,
-      usedCount: 32,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'active',
-    },
-    {
-      id: 3,
-      code: 'WELCOME10',
-      type: 'percentage',
-      value: 10,
-      minPurchase: 0,
-      maxDiscount: 25,
-      usageLimit: 1,
-      usedCount: 0,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'active',
-    },
-  ]);
+
+  const { coupons, isLoading, fetchCoupons, addCoupon, updateCoupon, deleteCoupon } = useCouponStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingCode, setEditingCode] = useState(null);
@@ -61,41 +25,40 @@ const PromoCodes = () => {
   const [copiedCode, setCopiedCode] = useState(null);
 
   useEffect(() => {
-    const savedCodes = localStorage.getItem('admin-promocodes');
-    if (savedCodes) {
-      setPromoCodes(JSON.parse(savedCodes));
-    } else {
-      localStorage.setItem('admin-promocodes', JSON.stringify(promoCodes));
-    }
-  }, []);
+    fetchCoupons();
+  }, [fetchCoupons]);
 
-  const filteredCodes = promoCodes.filter((code) => {
+  const filteredCodes = (coupons || []).filter((code) => {
     const matchesSearch =
       !searchQuery ||
       code.code.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || code.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' ? code.isActive : !code.isActive);
 
     return matchesSearch && matchesStatus;
   });
 
-  const handleSave = (codeData) => {
-    const updatedCodes = editingCode && editingCode.id
-      ? promoCodes.map((c) => (c.id === editingCode.id ? { ...codeData, id: editingCode.id } : c))
-      : [...promoCodes, { ...codeData, id: promoCodes.length > 0 ? Math.max(...promoCodes.map(c => c.id)) + 1 : 1, usedCount: 0 }];
-
-    setPromoCodes(updatedCodes);
-    localStorage.setItem('admin-promocodes', JSON.stringify(updatedCodes));
-    setEditingCode(null);
-    toast.success(editingCode && editingCode.id ? 'Promo code updated' : 'Promo code added');
+  const handleSave = async (codeData) => {
+    try {
+      if (editingCode && editingCode._id) {
+        await updateCoupon(editingCode._id, codeData);
+      } else {
+        await addCoupon(codeData);
+      }
+      setEditingCode(null);
+    } catch (error) {
+      // Error already handled by store toast
+    }
   };
 
-  const handleDelete = () => {
-    const updatedCodes = promoCodes.filter((c) => c.id !== deleteModal.id);
-    setPromoCodes(updatedCodes);
-    localStorage.setItem('admin-promocodes', JSON.stringify(updatedCodes));
-    setDeleteModal({ isOpen: false, id: null });
-    toast.success('Promo code deleted');
+  const handleDelete = async () => {
+    try {
+      await deleteCoupon(deleteModal.id);
+      setDeleteModal({ isOpen: false, id: null });
+    } catch (error) {
+      // Error already handled by store toast
+    }
   };
 
   const copyToClipboard = (code) => {
@@ -105,13 +68,12 @@ const PromoCodes = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const toggleStatus = (id) => {
-    const updatedCodes = promoCodes.map((c) =>
-      c.id === id ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } : c
-    );
-    setPromoCodes(updatedCodes);
-    localStorage.setItem('admin-promocodes', JSON.stringify(updatedCodes));
-    toast.success('Status updated');
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await updateCoupon(id, { isActive: !currentStatus });
+    } catch (error) {
+      // Error already handled by store toast
+    }
   };
 
   const columns = [
@@ -181,15 +143,15 @@ const PromoCodes = () => {
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (value, row) => (
+      render: (_, row) => (
         <button
-          onClick={() => toggleStatus(row.id)}
-          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${value === 'active'
-              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+          onClick={() => handleToggleStatus(row._id, row.isActive)}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${row.isActive
+            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
             }`}
         >
-          {value}
+          {row.isActive ? 'Active' : 'Inactive'}
         </button>
       ),
     },
@@ -206,7 +168,7 @@ const PromoCodes = () => {
             <FiEdit />
           </button>
           <button
-            onClick={() => setDeleteModal({ isOpen: true, id: row.id })}
+            onClick={() => setDeleteModal({ isOpen: true, id: row._id })}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
             <FiTrash2 />
@@ -344,7 +306,7 @@ const PromoCodes = () => {
                 style={{ willChange: 'transform' }}
               >
                 <h3 className="text-lg font-bold text-gray-800 mb-4">
-                  {editingCode.id ? 'Edit Promo Code' : 'Add Promo Code'}
+                  {editingCode._id ? 'Edit Promo Code' : 'Add Promo Code'}
                 </h3>
                 <form
                   onSubmit={(e) => {

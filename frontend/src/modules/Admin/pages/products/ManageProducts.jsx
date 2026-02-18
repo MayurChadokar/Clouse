@@ -12,6 +12,7 @@ import { formatPrice } from "../../../../shared/utils/helpers";
 
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
+import { getAllProducts, deleteProduct } from "../../services/adminService";
 import toast from "react-hot-toast";
 
 const ManageProducts = () => {
@@ -38,13 +39,21 @@ const ManageProducts = () => {
     loadProducts();
   }, []);
 
-  const loadProducts = () => {
-    const savedProducts = localStorage.getItem("admin-products");
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      setProducts(initialProducts);
-      localStorage.setItem("admin-products", JSON.stringify(initialProducts));
+  const loadProducts = async () => {
+    try {
+      const response = await getAllProducts();
+      const products = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.products || []);
+      const normalizedProducts = products.map(p => ({
+        ...p,
+        id: p._id, // Map backend _id to frontend id
+        image: p.image || p.images?.[0] || "https://via.placeholder.com/50x50?text=Product",
+        stock: p.stock || (p.stockQuantity > 5 ? "in_stock" : p.stockQuantity > 0 ? "low_stock" : "out_of_stock"),
+      }));
+      setProducts(normalizedProducts);
+    } catch (error) {
+      // Error is handled in interceptor
     }
   };
 
@@ -63,13 +72,13 @@ const ManageProducts = () => {
 
     if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (product) => product.categoryId === parseInt(selectedCategory)
+        (product) => String(product.categoryId?._id || product.categoryId) === String(selectedCategory)
       );
     }
 
     if (selectedBrand !== "all") {
       filtered = filtered.filter(
-        (product) => product.brandId === parseInt(selectedBrand)
+        (product) => String(product.brandId?._id || product.brandId) === String(selectedBrand)
       );
     }
 
@@ -156,12 +165,15 @@ const ManageProducts = () => {
     },
   ];
 
-  const confirmDelete = () => {
-    const newProducts = products.filter((p) => p.id !== deleteModal.productId);
-    setProducts(newProducts);
-    localStorage.setItem("admin-products", JSON.stringify(newProducts));
-    setDeleteModal({ isOpen: false, productId: null });
-    toast.success("Product deleted successfully");
+  const confirmDelete = async () => {
+    try {
+      await deleteProduct(deleteModal.productId);
+      setProducts(products.filter((p) => p.id !== deleteModal.productId));
+      setDeleteModal({ isOpen: false, productId: null });
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      setDeleteModal({ isOpen: false, productId: null });
+    }
   };
 
   return (
@@ -219,13 +231,7 @@ const ManageProducts = () => {
               className="w-full sm:w-auto min-w-[160px]"
             />
 
-            <button
-              onClick={() =>
-                setProductFormModal({ isOpen: true, productId: "new" })
-              }
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 gradient-green text-white rounded-lg hover:shadow-glow-green transition-all font-semibold text-sm sm:text-base whitespace-nowrap">
-              <span>Add New Product</span>
-            </button>
+
 
             <div className="w-full sm:w-auto">
               <ExportButton

@@ -11,7 +11,7 @@ import AnimatedSelect from '../components/AnimatedSelect';
 import { formatCurrency } from '../utils/adminHelpers';
 
 const Customers = () => {
-  const { customers, initialize } = useCustomerStore();
+  const { customers, pagination, initialize } = useCustomerStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -22,40 +22,20 @@ const Customers = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    initialize();
-  }, []);
-
-  // Filtered customers
-  const filteredCustomers = useMemo(() => {
-    return customers.filter((customer) => {
-      const matchesSearch =
-        !searchQuery ||
-        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (customer.phone && customer.phone.includes(searchQuery));
-
-      const matchesStatus =
-        selectedStatus === 'all' ||
-        (selectedStatus === 'active' && customer.status === 'active') ||
-        (selectedStatus === 'blocked' && customer.status === 'blocked');
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [customers, searchQuery, selectedStatus]);
-
-  // Pagination for grid view
-  const paginatedCustomers = useMemo(() => {
-    if (viewMode !== 'grid') return filteredCustomers;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCustomers.slice(startIndex, endIndex);
-  }, [filteredCustomers, currentPage, itemsPerPage, viewMode]);
-
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+    const params = {
+      page: currentPage,
+      limit: itemsPerPage,
+      search: searchQuery,
+      status: selectedStatus !== 'all' ? selectedStatus : undefined
+    };
+    initialize(params);
+  }, [currentPage, searchQuery, selectedStatus]);
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
   }, [searchQuery, selectedStatus]);
 
   const handleViewCustomer = (customer) => {
@@ -110,11 +90,10 @@ const Customers = () => {
       sortable: true,
       render: (value) => (
         <span
-          className={`px-2 py-1 rounded text-xs font-semibold ${
-            value === 'active'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}
+          className={`px-2 py-1 rounded text-xs font-semibold ${value === 'active'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
+            }`}
         >
           {value}
         </span>
@@ -180,21 +159,19 @@ const Customers = () => {
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'grid'
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewMode === 'grid'
                   ? 'bg-white text-primary-600 shadow-sm'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'table'
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewMode === 'table'
                   ? 'bg-white text-primary-600 shadow-sm'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Table
             </button>
@@ -202,7 +179,7 @@ const Customers = () => {
 
           {/* Export Button */}
           <ExportButton
-            data={filteredCustomers}
+            data={customers}
             headers={[
               { label: 'ID', accessor: (row) => row.id },
               { label: 'Name', accessor: (row) => row.name },
@@ -219,14 +196,14 @@ const Customers = () => {
 
       {/* Customers Display */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        {filteredCustomers.length === 0 ? (
+        {customers.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No customers found</p>
           </div>
         ) : viewMode === 'grid' ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedCustomers.map((customer) => (
+              {customers.map((customer) => (
                 <CustomerCard
                   key={customer.id}
                   customer={customer}
@@ -236,8 +213,8 @@ const Customers = () => {
             </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredCustomers.length}
+              totalPages={pagination.pages}
+              totalItems={pagination.total}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
               className="mt-6"
@@ -245,10 +222,9 @@ const Customers = () => {
           </>
         ) : (
           <DataTable
-            data={filteredCustomers}
+            data={customers}
             columns={columns}
-            pagination={true}
-            itemsPerPage={10}
+            pagination={false} // Store handles pagination
           />
         )}
       </div>

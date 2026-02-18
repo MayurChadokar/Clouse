@@ -1,31 +1,31 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { vendors, getVendorById, getApprovedVendors } from '../../../data/vendors';
-import { products } from '../../../data/products';
+import { getAllVendors, getVendorById, updateVendorStatus, updateCommissionRate } from '../../Admin/services/adminService';
+import toast from 'react-hot-toast';
 
 export const useVendorStore = create(
   persist(
     (set, get) => ({
-      vendors: vendors,
+      vendors: [],
       selectedVendor: null,
       isLoading: false,
 
-      // Initialize vendors - merge initial vendors with stored ones
-      initialize: () => {
-        const stored = localStorage.getItem('vendor-storage');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.state?.vendors) {
-            // Merge initial vendors with stored vendors (avoid duplicates)
-            const initialIds = new Set(vendors.map(v => v.id));
-            const storedVendors = parsed.state.vendors;
-            const newVendors = storedVendors.filter(v => !initialIds.has(v.id));
-            set({ vendors: [...vendors, ...newVendors] });
-            return;
-          }
+      // Initialize vendors
+      initialize: async (params = {}) => {
+        set({ isLoading: true });
+        try {
+          const response = await getAllVendors(params);
+          const vendors = Array.isArray(response.data)
+            ? response.data
+            : (response.data?.vendors || []);
+          const normalizedVendors = vendors.map(v => ({
+            ...v,
+            id: v._id // Alias _id to id
+          }));
+          set({ vendors: normalizedVendors, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
         }
-        // If no stored data, use initial vendors
-        set({ vendors: vendors });
       },
 
       // Get all vendors
@@ -38,13 +38,25 @@ export const useVendorStore = create(
       },
 
       // Get vendor by ID
-      getVendor: (id) => {
-        return getVendorById(id);
+      getVendor: async (id) => {
+        set({ isLoading: true });
+        try {
+          const response = await getVendorById(id);
+          const vendor = {
+            ...response.data,
+            id: response.data._id
+          };
+          set({ selectedVendor: vendor, isLoading: false });
+          return vendor;
+        } catch (error) {
+          set({ isLoading: false });
+          return null;
+        }
       },
 
       // Get approved vendors only
       getApprovedVendors: () => {
-        return getApprovedVendors();
+        return get().vendors.filter((v) => v.status === 'approved');
       },
 
       // Get vendors by status
@@ -54,25 +66,21 @@ export const useVendorStore = create(
 
       // Get vendor products
       getVendorProducts: (vendorId) => {
-        return products.filter((p) => p.vendorId === parseInt(vendorId));
+        // Since products aren't in this store, we might need to fetch them or pass them
+        // For now, let's keep it simple or return empty if we don't have them
+        return [];
       },
 
       // Get vendor statistics
       getVendorStats: (vendorId) => {
-        const vendor = getVendorById(vendorId);
+        const vendor = get().vendors.find((v) => String(v.id) === String(vendorId));
         if (!vendor) return null;
 
-        const vendorProducts = products.filter((p) => p.vendorId === parseInt(vendorId));
-        const totalProducts = vendorProducts.length;
-        const inStockProducts = vendorProducts.filter((p) => p.stock === 'in_stock').length;
-        const lowStockProducts = vendorProducts.filter((p) => p.stock === 'low_stock').length;
-        const outOfStockProducts = vendorProducts.filter((p) => p.stock === 'out_of_stock').length;
-
         return {
-          totalProducts,
-          inStockProducts,
-          lowStockProducts,
-          outOfStockProducts,
+          totalProducts: 0,
+          inStockProducts: 0,
+          lowStockProducts: 0,
+          outOfStockProducts: 0,
           totalSales: vendor.totalSales || 0,
           totalEarnings: vendor.totalEarnings || 0,
           rating: vendor.rating || 0,
@@ -81,32 +89,57 @@ export const useVendorStore = create(
       },
 
       // Update vendor status (admin only)
-      updateVendorStatus: (vendorId, status, reason = null) => {
-        set((state) => ({
-          vendors: state.vendors.map((v) =>
-            v.id === parseInt(vendorId)
-              ? {
-                  ...v,
-                  status,
-                  ...(reason && { suspensionReason: reason }),
-                }
-              : v
-          ),
-        }));
+      updateVendorStatus: async (vendorId, status, reason = null) => {
+        set({ isLoading: true });
+        try {
+          const response = await updateVendorStatus(vendorId, status, reason);
+          const updatedVendor = {
+            ...response.data,
+            id: response.data._id
+          };
+
+          set((state) => ({
+            vendors: state.vendors.map((v) =>
+              v.id === vendorId ? updatedVendor : v
+            ),
+            selectedVendor: state.selectedVendor?.id === vendorId ? updatedVendor : state.selectedVendor,
+            isLoading: false
+          }));
+          return true;
+        } catch (error) {
+          set({ isLoading: false });
+          return false;
+        }
       },
 
       // Update vendor commission rate (admin only)
-      updateCommissionRate: (vendorId, commissionRate) => {
-        set((state) => ({
-          vendors: state.vendors.map((v) =>
-            v.id === parseInt(vendorId) ? { ...v, commissionRate } : v
-          ),
-        }));
+      updateCommissionRate: async (vendorId, commissionRate) => {
+        set({ isLoading: true });
+        try {
+          const response = await updateCommissionRate(vendorId, commissionRate);
+          const updatedVendor = {
+            ...response.data,
+            id: response.data._id
+          };
+
+          set((state) => ({
+            vendors: state.vendors.map((v) =>
+              v.id === vendorId ? updatedVendor : v
+            ),
+            selectedVendor: state.selectedVendor?.id === vendorId ? updatedVendor : state.selectedVendor,
+            isLoading: false
+          }));
+          return true;
+        } catch (error) {
+          set({ isLoading: false });
+          return false;
+        }
       },
 
       // Add new vendor (admin only)
       addVendor: (vendorData) => {
-        const newId = Math.max(...get().vendors.map((v) => v.id), 0) + 1;
+        const lastId = get().vendors.length > 0 ? get().vendors[get().vendors.length - 1].id : 0;
+        const newId = typeof lastId === 'number' ? lastId + 1 : Date.now();
         const newVendor = {
           id: newId,
           ...vendorData,
@@ -131,14 +164,14 @@ export const useVendorStore = create(
       updateVendorProfile: (vendorId, profileData) => {
         set((state) => ({
           vendors: state.vendors.map((v) =>
-            v.id === parseInt(vendorId) ? { ...v, ...profileData } : v
+            String(v.id) === String(vendorId) ? { ...v, ...profileData } : v
           ),
         }));
       },
 
       // Set selected vendor
       setSelectedVendor: (vendorId) => {
-        const vendor = getVendorById(vendorId);
+        const vendor = get().vendors.find((v) => v.id === vendorId);
         set({ selectedVendor: vendor });
       },
 

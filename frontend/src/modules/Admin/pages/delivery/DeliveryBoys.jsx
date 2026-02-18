@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FiPlus, FiSearch, FiEdit, FiTrash2, FiMapPin, FiPhone } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,82 +7,44 @@ import Badge from '../../../../shared/components/Badge';
 import ConfirmModal from '../../components/ConfirmModal';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import toast from 'react-hot-toast';
+import { useDeliveryStore } from '../../../../shared/store/deliveryStore';
 
 const DeliveryBoys = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
-  const [deliveryBoys, setDeliveryBoys] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      phone: '+1234567890',
-      email: 'john@example.com',
-      address: '123 Main St, New York, NY 10001',
-      vehicleType: 'Bike',
-      vehicleNumber: 'BIKE-123',
-      status: 'active',
-      totalDeliveries: 150,
-      rating: 4.5,
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      phone: '+1234567891',
-      email: 'jane@example.com',
-      address: '456 Oak Ave, Los Angeles, CA 90001',
-      vehicleType: 'Car',
-      vehicleNumber: 'CAR-456',
-      status: 'active',
-      totalDeliveries: 200,
-      rating: 4.8,
-    },
-    {
-      id: 3,
-      name: 'Bob Johnson',
-      phone: '+1234567892',
-      email: 'bob@example.com',
-      address: '789 Pine Rd, Chicago, IL 60601',
-      vehicleType: 'Bike',
-      vehicleNumber: 'BIKE-789',
-      status: 'inactive',
-      totalDeliveries: 75,
-      rating: 4.2,
-    },
-  ]);
+  const { deliveryBoys, isLoading, fetchDeliveryBoys, addDeliveryBoy, updateStatus, pagination } = useDeliveryStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingBoy, setEditingBoy] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
-  const filteredBoys = deliveryBoys.filter((boy) => {
-    const matchesSearch =
-      !searchQuery ||
-      boy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      boy.phone.includes(searchQuery) ||
-      boy.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (boy.address && boy.address.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    const params = {
+      search: searchQuery,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      page: 1,
+      limit: 10
+    };
+    fetchDeliveryBoys(params);
+  }, [searchQuery, statusFilter, fetchDeliveryBoys]);
 
-    const matchesStatus = statusFilter === 'all' || boy.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleSave = (boyData) => {
+  const handleSave = async (boyData) => {
     if (editingBoy && editingBoy.id) {
-      setDeliveryBoys(deliveryBoys.map((b) => (b.id === editingBoy.id ? { ...boyData, id: editingBoy.id } : b)));
-      toast.success('Delivery boy updated');
+      // For now, only status update is implemented in backend for existing boys
+      // Future: add updateDeliveryBoyDetail to backend
+      toast.error('Update delivery boy details not yet implemented');
     } else {
-      const newId = deliveryBoys.length > 0 ? Math.max(...deliveryBoys.map(b => b.id)) + 1 : 1;
-      setDeliveryBoys([...deliveryBoys, { ...boyData, id: newId }]);
-      toast.success('Delivery boy added');
+      const success = await addDeliveryBoy(boyData);
+      if (success) {
+        setEditingBoy(null);
+      }
     }
-    setEditingBoy(null);
   };
 
   const handleDelete = () => {
-    setDeliveryBoys(deliveryBoys.filter((b) => b.id !== deleteModal.id));
+    toast.error('Delete functionality restricted for now');
     setDeleteModal({ isOpen: false, id: null });
-    toast.success('Delivery boy deleted');
   };
 
   const columns = [
@@ -163,16 +125,19 @@ const DeliveryBoys = () => {
       render: (_, row) => (
         <div className="flex items-center gap-2">
           <button
+            onClick={() => updateStatus(row.id, !row.isActive)}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${row.isActive
+                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                : 'bg-green-50 text-green-600 hover:bg-green-100'
+              }`}
+          >
+            {row.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
             onClick={() => setEditingBoy(row)}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
             <FiEdit />
-          </button>
-          <button
-            onClick={() => setDeleteModal({ isOpen: true, id: row.id })}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <FiTrash2 />
           </button>
         </div>
       ),
@@ -227,10 +192,12 @@ const DeliveryBoys = () => {
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <DataTable
-          data={filteredBoys}
+          data={deliveryBoys}
           columns={columns}
+          loading={isLoading}
           pagination={true}
-          itemsPerPage={10}
+          itemsPerPage={pagination.limit}
+          totalItems={pagination.total}
         />
       </div>
 

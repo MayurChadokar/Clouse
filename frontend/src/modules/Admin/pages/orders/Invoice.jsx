@@ -3,8 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiDownload, FiPrinter } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { formatPrice } from "../../../../shared/utils/helpers";
-import { mockOrders } from "../../../../data/adminMockData";
 import { useSettingsStore } from "../../../../shared/store/settingsStore";
+import { getOrderById } from "../../services/adminService";
 import toast from "react-hot-toast";
 import logoImage from "../../../../../data/logos/ChatGPT Image Dec 2, 2025, 03_01_19 PM.png";
 
@@ -12,24 +12,45 @@ const Invoice = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { settings } = useSettingsStore();
   const storeLogo = settings?.general?.storeLogo || logoImage;
   const storeName = settings?.general?.storeName || "Appzeto E-commerce";
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem("admin-orders");
-    const orders = savedOrders ? JSON.parse(savedOrders) : mockOrders;
-    const foundOrder = orders.find((o) => o.id === id);
+    const fetchOrder = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getOrderById(id);
+        const o = response.data;
 
-    if (foundOrder) {
-      setOrder(foundOrder);
-    } else {
-      toast.error("Order not found");
-      navigate("/admin/orders/all-orders");
-    }
+        // Normalize data to match UI structure
+        const normalizedOrder = {
+          ...o,
+          id: o.orderId || o._id,
+          customer: {
+            name: o.userId?.name || 'Unknown',
+            email: o.userId?.email || '',
+            phone: o.userId?.phone || ''
+          },
+          date: o.createdAt,
+          finalTotal: o.total
+        };
+
+        setOrder(normalizedOrder);
+      } catch (error) {
+        toast.error("Order not found");
+        console.error("Order fetch error:", error);
+        navigate("/admin/orders/all-orders");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
   }, [id, navigate]);
 
-  if (!order) {
+  if (isLoading || !order) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Loading...</p>
@@ -41,11 +62,11 @@ const Invoice = () => {
   const items = Array.isArray(order.items)
     ? order.items
     : Array.from({ length: order.items || 1 }, (_, i) => ({
-        id: i + 1,
-        name: `Item ${i + 1}`,
-        quantity: 1,
-        price: (order.total || 0) / (order.items || 1),
-      }));
+      id: i + 1,
+      name: `Item ${i + 1}`,
+      quantity: 1,
+      price: (order.total || 0) / (order.items || 1),
+    }));
 
   // Calculate totals
   const subtotal = order.subtotal || order.total || 0;
@@ -87,20 +108,19 @@ ${order.customer?.phone || order.shippingAddress?.phone || ""}
 Shipping Address:
 ${order.shippingAddress?.name || order.customer?.name || "N/A"}
 ${order.shippingAddress?.address || "N/A"}
-${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${
-      order.shippingAddress?.zipCode || ""
-    }
+${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${order.shippingAddress?.zipCode || ""
+      }
 ${order.shippingAddress?.country || ""}
 
 Items:
 ${items
-  .map(
-    (item) =>
-      `- ${item.name || "Item"} x${item.quantity || 1} - ${formatPrice(
-        (item.price || 0) * (item.quantity || 1)
-      )}`
-  )
-  .join("\n")}
+        .map(
+          (item) =>
+            `- ${item.name || "Item"} x${item.quantity || 1} - ${formatPrice(
+              (item.price || 0) * (item.quantity || 1)
+            )}`
+        )
+        .join("\n")}
 
 Subtotal: ${formatPrice(subtotal)}
 ${discount > 0 ? `Discount: -${formatPrice(discount)}\n` : ""}
@@ -232,16 +252,16 @@ ${order.trackingNumber ? `Tracking Number: ${order.trackingNumber}` : ""}
                 {(order.shippingAddress.city ||
                   order.shippingAddress.state ||
                   order.shippingAddress.zipCode) && (
-                  <p>
-                    {[
-                      order.shippingAddress.city,
-                      order.shippingAddress.state,
-                      order.shippingAddress.zipCode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </p>
-                )}
+                    <p>
+                      {[
+                        order.shippingAddress.city,
+                        order.shippingAddress.state,
+                        order.shippingAddress.zipCode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  )}
                 {order.shippingAddress.country && (
                   <p>{order.shippingAddress.country}</p>
                 )}

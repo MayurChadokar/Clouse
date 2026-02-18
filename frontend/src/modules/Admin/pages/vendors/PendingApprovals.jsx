@@ -141,26 +141,34 @@ const PendingApprovals = () => {
     },
   ];
 
-  const handleApprove = () => {
-    updateVendorStatus(actionModal.vendorId, "approved");
-    setActionModal({
-      isOpen: false,
-      type: null,
-      vendorId: null,
-      vendorName: null,
-    });
-    toast.success("Vendor approved successfully");
+  const handleApprove = async () => {
+    const success = await updateVendorStatus(actionModal.vendorId, "approved");
+    if (success) {
+      toast.success("Vendor approved successfully");
+      setActionModal({
+        isOpen: false,
+        type: null,
+        vendorId: null,
+        vendorName: null,
+      });
+    } else {
+      toast.error("Failed to approve vendor");
+    }
   };
 
-  const handleReject = () => {
-    updateVendorStatus(actionModal.vendorId, "suspended");
-    setActionModal({
-      isOpen: false,
-      type: null,
-      vendorId: null,
-      vendorName: null,
-    });
-    toast.success("Vendor registration rejected");
+  const handleReject = async () => {
+    const success = await updateVendorStatus(actionModal.vendorId, "suspended");
+    if (success) {
+      toast.success("Vendor registration rejected");
+      setActionModal({
+        isOpen: false,
+        type: null,
+        vendorId: null,
+        vendorName: null,
+      });
+    } else {
+      toast.error("Failed to reject vendor");
+    }
   };
 
   const getModalContent = () => {

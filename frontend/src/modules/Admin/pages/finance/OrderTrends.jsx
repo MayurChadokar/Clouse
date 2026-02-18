@@ -1,17 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FiTrendingUp, FiCalendar } from "react-icons/fi";
 import { motion } from "framer-motion";
 import OrderTrendsLineChart from "../../components/Analytics/OrderTrendsLineChart";
 import AnimatedSelect from "../../components/AnimatedSelect";
-import { generateRevenueData } from "../../../../data/adminMockData";
+
+import { useAnalyticsStore } from "../../../../shared/store/analyticsStore";
 
 const OrderTrends = () => {
   const [period, setPeriod] = useState("month");
-  const revenueData = useMemo(() => generateRevenueData(30), []);
+  const { revenueData, isLoading, fetchRevenueData } = useAnalyticsStore();
+
+  useEffect(() => {
+    // Map internal selection to period param
+    const periodMap = {
+      week: 'daily',
+      month: 'daily',
+      year: 'monthly'
+    };
+    fetchRevenueData(periodMap[period] || 'monthly');
+  }, [period, fetchRevenueData]);
 
   const orderTrends = useMemo(() => {
+    if (!revenueData) return [];
     return revenueData.map((day) => ({
-      date: day.date,
+      date: day._id,
       orders: day.orders,
     }));
   }, [revenueData]);
@@ -20,6 +32,14 @@ const OrderTrends = () => {
   const averageOrders =
     orderTrends.length > 0 ? totalOrders / orderTrends.length : 0;
   const maxOrders = Math.max(...orderTrends.map((d) => d.orders), 0);
+
+  if (isLoading && orderTrends.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div

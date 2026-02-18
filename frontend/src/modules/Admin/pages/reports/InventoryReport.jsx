@@ -1,27 +1,36 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FiPackage, FiAlertCircle, FiTrendingDown } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataTable from '../../components/DataTable';
 import ExportButton from '../../components/ExportButton';
-import { products as initialProducts } from '../../../../data/products';
+import { useProductStore } from '../../../../shared/store/productStore';
+import { useAnalyticsStore } from '../../../../shared/store/analyticsStore';
+import { formatPrice } from '../../../../shared/utils/helpers';
 
 const InventoryReport = () => {
-  const [products] = useState(() => {
-    const saved = localStorage.getItem('admin-products');
-    return saved ? JSON.parse(saved) : initialProducts;
-  });
+  const { products, isLoading: productsLoading, fetchProducts } = useProductStore();
+  const { inventoryStats, isLoading: statsLoading, fetchInventoryStats } = useAnalyticsStore();
 
-  const inventoryStats = useMemo(() => {
+  useEffect(() => {
+    fetchProducts({ limit: 100 }); // Fetch more for report
+    fetchInventoryStats();
+  }, [fetchProducts, fetchInventoryStats]);
+
+  const stats = useMemo(() => {
+    if (inventoryStats) return inventoryStats;
+    // Fallback calculation if stats endpoint hasn't loaded
     const totalProducts = products.length;
-    const inStock = products.filter(p => p.stock === 'in_stock').length;
-    const lowStock = products.filter(p => p.stock === 'low_stock').length;
-    const outOfStock = products.filter(p => p.stock === 'out_of_stock').length;
+    const inStock = products.filter(p => (p.stockQuantity || 0) > 5).length;
+    const lowStock = products.filter(p => (p.stockQuantity || 0) <= 5 && (p.stockQuantity || 0) > 0).length;
+    const outOfStock = products.filter(p => (p.stockQuantity || 0) === 0).length;
     const totalValue = products.reduce((sum, p) => sum + (p.price * p.stockQuantity), 0);
 
     return { totalProducts, inStock, lowStock, outOfStock, totalValue };
-  }, [products]);
+  }, [products, inventoryStats]);
 
-  const lowStockProducts = products.filter(p => p.stock === 'low_stock' || p.stock === 'out_of_stock');
+  const lowStockProducts = useMemo(() =>
+    products.filter(p => (p.stockQuantity || 0) <= 5),
+    [products]);
 
   const columns = [
     {
@@ -46,35 +55,46 @@ const InventoryReport = () => {
       key: 'stockQuantity',
       label: 'Stock',
       sortable: true,
-      render: (value) => value.toLocaleString(),
+      render: (value) => (value || 0).toLocaleString(),
     },
     {
-      key: 'stock',
+      key: 'stockStatus',
       label: 'Status',
       sortable: true,
-      render: (value) => (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          value === 'in_stock' ? 'bg-green-100 text-green-800' :
-          value === 'low_stock' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {value.replace('_', ' ').toUpperCase()}
-        </span>
-      ),
+      render: (_, row) => {
+        const qty = row.stockQuantity || 0;
+        const status = qty === 0 ? 'OUT_OF_STOCK' : qty <= 5 ? 'LOW_STOCK' : 'IN_STOCK';
+        return (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${status === 'IN_STOCK' ? 'bg-green-100 text-green-800' :
+            status === 'LOW_STOCK' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+            {status.replace('_', ' ')}
+          </span>
+        );
+      },
     },
     {
       key: 'price',
       label: 'Price',
       sortable: true,
-      render: (value) => `$${value.toFixed(2)}`,
+      render: (value) => formatPrice(value),
     },
     {
-      key: 'value',
+      key: 'totalValue',
       label: 'Total Value',
       sortable: true,
-      render: (_, row) => `$${(row.price * row.stockQuantity).toFixed(2)}`,
+      render: (_, row) => formatPrice((row.price || 0) * (row.stockQuantity || 0)),
     },
   ];
+
+  if ((productsLoading || statsLoading) && products.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -93,28 +113,28 @@ const InventoryReport = () => {
             <p className="text-sm text-gray-600">Total Products</p>
             <FiPackage className="text-blue-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-800">{inventoryStats.totalProducts}</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.totalProducts || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">In Stock</p>
+            <p className="text-sm text-gray-600">Active Products</p>
             <FiPackage className="text-green-600" />
           </div>
-          <p className="text-2xl font-bold text-green-600">{inventoryStats.inStock}</p>
+          <p className="text-2xl font-bold text-green-600">{stats.activeProducts || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Low Stock</p>
+            <p className="text-sm text-gray-600">Low Stock / Out</p>
             <FiAlertCircle className="text-yellow-600" />
           </div>
-          <p className="text-2xl font-bold text-yellow-600">{inventoryStats.lowStock}</p>
+          <p className="text-2xl font-bold text-yellow-600">{stats.lowStock || 0} / {stats.outOfStock || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Total Value</p>
+            <p className="text-sm text-gray-600">Inventory Value</p>
             <FiTrendingDown className="text-purple-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-800">${inventoryStats.totalValue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-gray-800">{formatPrice(stats.totalValue || 0)}</p>
         </div>
       </div>
 
@@ -125,8 +145,7 @@ const InventoryReport = () => {
             headers={[
               { label: 'Product Name', accessor: (row) => row.name },
               { label: 'Stock', accessor: (row) => row.stockQuantity },
-              { label: 'Status', accessor: (row) => row.stock },
-              { label: 'Price', accessor: (row) => `$${row.price.toFixed(2)}` },
+              { label: 'Price', accessor: (row) => formatPrice(row.price) },
             ]}
             filename="inventory-report"
           />

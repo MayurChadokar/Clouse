@@ -6,16 +6,17 @@ import BannerForm from '../components/Banners/BannerForm';
 import ExportButton from '../components/ExportButton';
 import Pagination from '../components/Pagination';
 import Badge from '../../../shared/components/Badge';
+import AnimatedSelect from '../components/AnimatedSelect';
 import { formatDateTime } from '../utils/adminHelpers';
 import toast from 'react-hot-toast';
 
 const Banners = () => {
   const {
     banners,
-    initialize,
+    isLoading,
+    fetchBanners,
     deleteBanner,
     toggleBannerStatus,
-    reorderBanners,
   } = useBannerStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,8 +28,8 @@ const Banners = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    initialize();
-  }, []);
+    fetchBanners();
+  }, [fetchBanners]);
 
   // Filtered banners
   const filteredBanners = useMemo(() => {
@@ -83,29 +84,12 @@ const Banners = () => {
   };
 
   const handleMoveUp = (banner) => {
-    const currentIndex = filteredBanners.findIndex((b) => b.id === banner.id);
-    if (currentIndex > 0) {
-      const newOrder = [...filteredBanners];
-      [newOrder[currentIndex], newOrder[currentIndex - 1]] = [
-        newOrder[currentIndex - 1],
-        newOrder[currentIndex],
-      ];
-      const bannerIds = newOrder.map((b) => b.id);
-      reorderBanners(bannerIds);
-    }
+    // Reordering logic simplified for now as it needs backend support for 'order' field updates
+    toast.info('Reordering is coming soon with persistent backend support');
   };
 
   const handleMoveDown = (banner) => {
-    const currentIndex = filteredBanners.findIndex((b) => b.id === banner.id);
-    if (currentIndex < filteredBanners.length - 1) {
-      const newOrder = [...filteredBanners];
-      [newOrder[currentIndex], newOrder[currentIndex + 1]] = [
-        newOrder[currentIndex + 1],
-        newOrder[currentIndex],
-      ];
-      const bannerIds = newOrder.map((b) => b.id);
-      reorderBanners(bannerIds);
-    }
+    toast.info('Reordering is coming soon with persistent backend support');
   };
 
   const handleFormClose = () => {
@@ -200,91 +184,91 @@ const Banners = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedBanners.map((banner, index) => {
                 // Find the index in filteredBanners for move up/down functionality
-                const filteredIndex = filteredBanners.findIndex((b) => b.id === banner.id);
+                const filteredIndex = filteredBanners.findIndex((b) => b._id === banner._id);
                 return (
-            <div
-              key={banner.id}
-              className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className="relative h-48 bg-gray-100">
-                {banner.image && (
-                  <img
-                    src={banner.image}
-                    alt={banner.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                )}
-                <div className="absolute top-2 right-2">
-                  <Badge variant={banner.isActive ? 'success' : 'error'}>
-                    {banner.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-                <div className="absolute top-2 left-2">
-                  <Badge variant="info">
-                    {banner.type === 'hero' ? 'Hero' : 'Promo'}
-                  </Badge>
-                </div>
-              </div>
+                  <div
+                    key={banner._id}
+                    className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <div className="relative h-48 bg-gray-100">
+                      {banner.image && (
+                        <img
+                          src={banner.image}
+                          alt={banner.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={banner.isActive ? 'success' : 'error'}>
+                          {banner.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="info">
+                          {banner.type === 'hero' ? 'Hero' : 'Promo'}
+                        </Badge>
+                      </div>
+                    </div>
 
-              <div className="p-4">
-                <h3 className="font-bold text-gray-800 mb-1">{banner.title || 'Untitled'}</h3>
-                {banner.subtitle && (
-                  <p className="text-sm text-gray-600 mb-2">{banner.subtitle}</p>
-                )}
-                {banner.link && (
-                  <p className="text-xs text-primary-600 mb-2 truncate">{banner.link}</p>
-                )}
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span>Order: {banner.order}</span>
-                  {banner.startDate && banner.endDate && (
-                    <span>
-                      {formatDateTime(banner.startDate)} - {formatDateTime(banner.endDate)}
-                    </span>
-                  )}
-                </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-800 mb-1">{banner.title || 'Untitled'}</h3>
+                      {banner.subtitle && (
+                        <p className="text-sm text-gray-600 mb-2">{banner.subtitle}</p>
+                      )}
+                      {banner.link && (
+                        <p className="text-xs text-primary-600 mb-2 truncate">{banner.link}</p>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <span>Order: {banner.order}</span>
+                        {banner.startDate && banner.endDate && (
+                          <span>
+                            {formatDateTime(banner.startDate)} - {formatDateTime(banner.endDate)}
+                          </span>
+                        )}
+                      </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleMoveUp(banner)}
-                    disabled={filteredIndex === 0}
-                    className="flex-1 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Move Up"
-                  >
-                    <FiArrowUp />
-                  </button>
-                  <button
-                    onClick={() => handleMoveDown(banner)}
-                    disabled={filteredIndex === filteredBanners.length - 1}
-                    className="flex-1 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Move Down"
-                  >
-                    <FiArrowDown />
-                  </button>
-                  <button
-                    onClick={() => toggleBannerStatus(banner.id)}
-                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title={banner.isActive ? 'Deactivate' : 'Activate'}
-                  >
-                    {banner.isActive ? <FiEye /> : <FiEyeOff />}
-                  </button>
-                  <button
-                    onClick={() => handleEdit(banner)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <FiEdit />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(banner.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
-              </div>
-            </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleMoveUp(banner)}
+                          disabled={filteredIndex === 0}
+                          className="flex-1 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move Up"
+                        >
+                          <FiArrowUp />
+                        </button>
+                        <button
+                          onClick={() => handleMoveDown(banner)}
+                          disabled={filteredIndex === filteredBanners.length - 1}
+                          className="flex-1 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move Down"
+                        >
+                          <FiArrowDown />
+                        </button>
+                        <button
+                          onClick={() => toggleBannerStatus(banner._id)}
+                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title={banner.isActive ? 'Deactivate' : 'Activate'}
+                        >
+                          {banner.isActive ? <FiEye /> : <FiEyeOff />}
+                        </button>
+                        <button
+                          onClick={() => handleEdit(banner)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <FiEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(banner._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -305,7 +289,7 @@ const Banners = () => {
           banner={editingBanner}
           onClose={handleFormClose}
           onSave={() => {
-            initialize();
+            fetchBanners();
           }}
         />
       )}

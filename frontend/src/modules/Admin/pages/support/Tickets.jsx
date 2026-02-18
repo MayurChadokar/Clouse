@@ -1,62 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FiSearch, FiEye, FiMessageSquare } from 'react-icons/fi';
+import { FiSearch, FiEye, FiMessageSquare, FiSend } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import DataTable from '../../components/DataTable';
 import Badge from '../../../../shared/components/Badge';
 import AnimatedSelect from '../../components/AnimatedSelect';
-// import { formatDateTime } from '../../../utils/adminHelpers';
+import { useSupportStore } from '../../../../shared/store/supportStore';
+import { formatDateTime } from '../../utils/adminHelpers';
 
 const Tickets = () => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
-  const [tickets, setTickets] = useState([
-    {
-      id: 'TKT-001',
-      customerName: 'John Doe',
-      type: 'Technical Support',
-      subject: 'Unable to place order',
-      status: 'open',
-      priority: 'high',
-      createdAt: new Date().toISOString(),
-      lastUpdate: new Date().toISOString(),
-    },
-    {
-      id: 'TKT-002',
-      customerName: 'Jane Smith',
-      type: 'Billing Inquiry',
-      subject: 'Payment not processed',
-      status: 'in_progress',
-      priority: 'medium',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      lastUpdate: new Date(Date.now() - 1800000).toISOString(),
-    },
-    {
-      id: 'TKT-003',
-      customerName: 'Bob Johnson',
-      type: 'Product Inquiry',
-      subject: 'Product availability',
-      status: 'resolved',
-      priority: 'low',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      lastUpdate: new Date(Date.now() - 43200000).toISOString(),
-    },
-  ]);
+  const { tickets, isLoading, fetchTickets, updateTicketStatus, addReply, pagination } = useSupportStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
 
-  const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch =
-      !searchQuery ||
-      ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    fetchTickets({
+      search: searchQuery,
+      status: statusFilter === 'all' ? undefined : statusFilter
+    });
+  }, [searchQuery, statusFilter, fetchTickets]);
 
-    const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+  const handleReply = async () => {
+    if (!replyMessage.trim()) return;
+    const success = await addReply(selectedTicket.id, replyMessage);
+    if (success) {
+      setReplyMessage('');
+      // Refresh selected ticket detail if needed, or just stay as is
+      // For simplicity, we just clear the input
+      const updated = await useSupportStore.getState().fetchTicketById(selectedTicket.id);
+      if (updated) setSelectedTicket(updated);
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -82,16 +61,22 @@ const Tickets = () => {
       key: 'id',
       label: 'Ticket ID',
       sortable: true,
-      render: (value) => <span className="font-semibold text-gray-800">{value}</span>,
+      render: (value) => <span className="font-semibold text-gray-800 text-xs">{value}</span>,
     },
     {
-      key: 'customerName',
+      key: 'customer.name',
       label: 'Customer',
       sortable: true,
+      render: (value, row) => (
+        <div>
+          <p className="font-medium">{value}</p>
+          <p className="text-xs text-gray-500">{row.customer?.email}</p>
+        </div>
+      )
     },
     {
-      key: 'type',
-      label: 'Type',
+      key: 'category',
+      label: 'Category',
       sortable: true,
     },
     {
@@ -120,7 +105,7 @@ const Tickets = () => {
       key: 'createdAt',
       label: 'Created',
       sortable: true,
-      render: (value) => new Date(value).toLocaleString(),
+      render: (value) => formatDateTime(value),
     },
     {
       key: 'actions',
@@ -178,10 +163,12 @@ const Tickets = () => {
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <DataTable
-          data={filteredTickets}
+          data={tickets}
           columns={columns}
+          loading={isLoading}
           pagination={true}
-          itemsPerPage={10}
+          itemsPerPage={pagination.limit}
+          totalItems={pagination.total}
         />
       </div>
 
@@ -198,7 +185,7 @@ const Tickets = () => {
               className="fixed inset-0 bg-black/50 z-[10000]"
             />
 
-            {/* Modal Content - Mobile: Slide up from bottom, Desktop: Center with scale */}
+            {/* Modal Content */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -238,11 +225,11 @@ const Tickets = () => {
                 animate="visible"
                 exit="exit"
                 onClick={(e) => e.stopPropagation()}
-                className={`bg-white ${isAppRoute ? 'rounded-b-3xl' : 'rounded-t-3xl'} sm:rounded-xl shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto`}
+                className={`bg-white ${isAppRoute ? 'rounded-b-3xl' : 'rounded-t-3xl'} sm:rounded-xl shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto flex flex-col`}
                 style={{ willChange: 'transform' }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">Ticket Details</h3>
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                  <h3 className="text-lg font-bold text-gray-800">#{selectedTicket.id} - {selectedTicket.subject}</h3>
                   <button
                     onClick={() => setSelectedTicket(null)}
                     className="text-gray-400 hover:text-gray-600"
@@ -250,38 +237,78 @@ const Tickets = () => {
                     ✕
                   </button>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Ticket ID</p>
-                    <p className="font-semibold text-gray-800">{selectedTicket.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Customer</p>
-                    <p className="font-semibold text-gray-800">{selectedTicket.customerName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Subject</p>
-                    <p className="font-semibold text-gray-800">{selectedTicket.subject}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
                     <div>
-                      <p className="text-sm text-gray-600">Type</p>
-                      <p className="font-semibold text-gray-800">{selectedTicket.type}</p>
+                      <p className="text-xs text-gray-500">Customer</p>
+                      <p className="font-semibold text-gray-800">{selectedTicket.customer?.name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Priority</p>
+                      <p className="text-xs text-gray-500">Category</p>
+                      <p className="font-semibold text-gray-800">{selectedTicket.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Priority</p>
                       <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getPriorityColor(selectedTicket.priority)}`}>
                         {selectedTicket.priority}
                       </span>
                     </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Status</p>
+                      <Badge variant={getStatusColor(selectedTicket.status)}>
+                        {selectedTicket.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <Badge variant={getStatusColor(selectedTicket.status)}>
-                      {selectedTicket.status.replace('_', ' ')}
-                    </Badge>
+
+                  {/* Message History */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                      <FiMessageSquare /> Conversation
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedTicket.messages?.map((msg, idx) => (
+                        <div key={idx} className={`flex flex-col ${msg.senderType === 'admin' ? 'items-end' : 'items-start'}`}>
+                          <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.senderType === 'admin'
+                              ? 'bg-primary-600 text-white rounded-br-none'
+                              : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                            }`}>
+                            {msg.message}
+                          </div>
+                          <span className="text-[10px] text-gray-400 mt-1">
+                            {msg.senderType.toUpperCase()} • {new Date(msg.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      ))}
+                      {(!selectedTicket.messages || selectedTicket.messages.length === 0) && (
+                        <p className="text-center text-gray-400 text-xs py-4">No messages yet</p>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {/* Reply Section */}
+                {selectedTicket.status !== 'closed' && (
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex-shrink-0">
+                    <div className="relative">
+                      <textarea
+                        value={replyMessage}
+                        onChange={(e) => setReplyMessage(e.target.value)}
+                        placeholder="Type your response..."
+                        className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm resize-none"
+                        rows="3"
+                      />
+                      <button
+                        onClick={handleReply}
+                        disabled={!replyMessage.trim() || isLoading}
+                        className="absolute right-2 bottom-2 p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                      >
+                        <FiSend />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           </>

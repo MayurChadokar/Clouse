@@ -22,7 +22,7 @@ import ReturnRequestDetail from "./modules/Admin/pages/ReturnRequestDetail";
 import Categories from "./modules/Admin/pages/Categories";
 import Brands from "./modules/Admin/pages/Brands";
 import Customers from "./modules/Admin/pages/Customers";
-import Inventory from "./modules/Admin/pages/Inventory";
+
 import Campaigns from "./modules/Admin/pages/Campaigns";
 import Banners from "./modules/Admin/pages/Banners";
 import Reviews from "./modules/Admin/pages/Reviews";
@@ -34,19 +34,13 @@ import PromoCodes from "./modules/Admin/pages/PromoCodes";
 // Orders child pages
 import AllOrders from "./modules/Admin/pages/orders/AllOrders";
 import OrderTracking from "./modules/Admin/pages/orders/OrderTracking";
-import OrderNotifications from "./modules/Admin/pages/orders/OrderNotifications";
+
 import Invoice from "./modules/Admin/pages/orders/Invoice";
 // Products child pages
 import ManageProducts from "./modules/Admin/pages/products/ManageProducts";
-import AddProduct from "./modules/Admin/pages/products/AddProduct";
-import BulkUpload from "./modules/Admin/pages/products/BulkUpload";
 import TaxPricing from "./modules/Admin/pages/products/TaxPricing";
 import ProductRatings from "./modules/Admin/pages/products/ProductRatings";
-import ProductFAQs from "./modules/Admin/pages/products/ProductFAQs";
-// Attribute Management child pages
-import AttributeSets from "./modules/Admin/pages/attributes/AttributeSets";
-import Attributes from "./modules/Admin/pages/attributes/Attributes";
-import AttributeValues from "./modules/Admin/pages/attributes/AttributeValues";
+
 // Categories child pages
 import ManageCategories from "./modules/Admin/pages/categories/ManageCategories";
 import CategoryOrder from "./modules/Admin/pages/categories/CategoryOrder";
@@ -67,9 +61,7 @@ import PendingApprovals from "./modules/Admin/pages/vendors/PendingApprovals";
 import VendorDetail from "./modules/Admin/pages/vendors/VendorDetail";
 import CommissionRates from "./modules/Admin/pages/vendors/CommissionRates";
 import AdminVendorAnalytics from "./modules/Admin/pages/vendors/VendorAnalytics";
-// Locations child pages
-import Cities from "./modules/Admin/pages/locations/Cities";
-import Zipcodes from "./modules/Admin/pages/locations/Zipcodes";
+
 // Offers & Sliders child pages
 import HomeSliders from "./modules/Admin/pages/offers/HomeSliders";
 import FestivalOffers from "./modules/Admin/pages/offers/FestivalOffers";
@@ -378,11 +370,8 @@ const AppRoutes = () => {
         <Route path="products" element={<Products />} />
         <Route path="products/:id" element={<ProductForm />} />
         <Route path="products/manage-products" element={<ManageProducts />} />
-        <Route path="products/add-product" element={<AddProduct />} />
-        <Route path="products/bulk-upload" element={<BulkUpload />} />
         <Route path="products/tax-pricing" element={<TaxPricing />} />
         <Route path="products/product-ratings" element={<ProductRatings />} />
-        <Route path="products/product-faqs" element={<ProductFAQs />} />
         <Route path="more" element={<More />} />
         <Route path="categories" element={<Categories />} />
         <Route
@@ -397,10 +386,6 @@ const AppRoutes = () => {
         <Route path="orders/:id/invoice" element={<Invoice />} />
         <Route path="orders/all-orders" element={<AllOrders />} />
         <Route path="orders/order-tracking" element={<OrderTracking />} />
-        <Route
-          path="orders/order-notifications"
-          element={<OrderNotifications />}
-        />
         <Route path="return-requests" element={<ReturnRequests />} />
         <Route path="return-requests/:id" element={<ReturnRequestDetail />} />
         <Route path="customers" element={<Customers />} />
@@ -408,15 +393,7 @@ const AppRoutes = () => {
         <Route path="customers/addresses" element={<CustomerAddresses />} />
         <Route path="customers/transactions" element={<Transactions />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
-        <Route path="attributes" element={<AttributeSets />} />
-        <Route path="attributes/attribute-sets" element={<AttributeSets />} />
-        <Route path="attributes/attributes" element={<Attributes />} />
-        <Route
-          path="attributes/attribute-values"
-          element={<AttributeValues />}
-        />
-        <Route path="stock" element={<Inventory />} />
-        <Route path="inventory" element={<Inventory />} />
+
         <Route path="delivery" element={<DeliveryBoys />} />
         <Route path="delivery/delivery-boys" element={<DeliveryBoys />} />
         <Route path="delivery/cash-collection" element={<CashCollection />} />
@@ -432,9 +409,7 @@ const AppRoutes = () => {
           element={<AdminVendorAnalytics />}
         />
         <Route path="vendors/:id" element={<VendorDetail />} />
-        <Route path="locations" element={<Cities />} />
-        <Route path="locations/cities" element={<Cities />} />
-        <Route path="locations/zipcodes" element={<Zipcodes />} />
+
         <Route path="offers" element={<HomeSliders />} />
         <Route path="offers/home-sliders" element={<HomeSliders />} />
         <Route path="offers/festival-offers" element={<FestivalOffers />} />

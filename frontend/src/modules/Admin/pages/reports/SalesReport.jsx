@@ -1,44 +1,76 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiDownload, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataTable from '../../components/DataTable';
 import ExportButton from '../../components/ExportButton';
 import { formatPrice } from '../../../../shared/utils/helpers';
-import { mockOrders } from '../../../../data/adminMockData';
+import * as adminService from '../../services/adminService';
+import toast from 'react-hot-toast';
 
 const SalesReport = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 1
+  });
 
-  const filteredOrders = useMemo(() => {
-    if (!dateRange.start && !dateRange.end) return orders;
-    return orders.filter((order) => {
-      const orderDate = new Date(order.date);
-      const start = dateRange.start ? new Date(dateRange.start) : null;
-      const end = dateRange.end ? new Date(dateRange.end) : null;
-      return (!start || orderDate >= start) && (!end || orderDate <= end);
-    });
-  }, [orders, dateRange]);
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        status: 'delivered', // Only counting delivered sales usually, or 'all' if preferred
+        startDate: dateRange.start,
+        endDate: dateRange.end
+      };
+      const response = await adminService.getAllOrders(params);
+      setOrders(response.data.orders);
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.total,
+        pages: response.data.pages
+      }));
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to fetch sales report');
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.page, pagination.limit, dateRange]);
 
-  const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0);
-  const totalOrders = filteredOrders.length;
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const handleApplyFilter = () => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchOrders();
+  };
+
+  const totalSales = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const totalOrders = orders.length;
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
   const columns = [
     {
-      key: 'id',
+      key: 'orderId',
       label: 'Order ID',
       sortable: true,
-      render: (value) => <span className="font-semibold text-gray-800">{value}</span>,
+      render: (value, row) => <span className="font-semibold text-gray-800">{row.orderId || row._id.substring(0, 8)}</span>,
     },
     {
-      key: 'customer',
+      key: 'userId',
       label: 'Customer',
       sortable: true,
-      render: (value) => value.name,
+      render: (value) => value?.name || 'Guest',
     },
     {
-      key: 'date',
+      key: 'createdAt',
       label: 'Date',
       sortable: true,
       render: (value) => new Date(value).toLocaleString(),
@@ -80,14 +112,14 @@ const SalesReport = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Total Sales</p>
+            <p className="text-sm text-gray-600">Total Sales (Page)</p>
             <FiTrendingUp className="text-green-600" />
           </div>
           <p className="text-2xl font-bold text-gray-800">{formatPrice(totalSales)}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Total Orders</p>
+            <p className="text-sm text-gray-600">Total Orders (Page)</p>
             <FiCalendar className="text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-gray-800">{totalOrders}</p>
@@ -121,13 +153,19 @@ const SalesReport = () => {
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
+            <button
+              onClick={handleApplyFilter}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Apply Filter
+            </button>
             <ExportButton
-              data={filteredOrders}
+              data={orders}
               headers={[
-                { label: 'Order ID', accessor: (row) => row.id },
-                { label: 'Customer', accessor: (row) => row.customer.name },
-                { label: 'Date', accessor: (row) => formatDateTime(row.date) },
+                { label: 'Order ID', accessor: (row) => row.orderId || row._id },
+                { label: 'Customer', accessor: (row) => row.userId?.name || 'Guest' },
+                { label: 'Date', accessor: (row) => new Date(row.createdAt).toLocaleString() },
                 { label: 'Amount', accessor: (row) => formatPrice(row.total) },
                 { label: 'Status', accessor: (row) => row.status },
               ]}
@@ -138,12 +176,21 @@ const SalesReport = () => {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <DataTable
-          data={filteredOrders}
-          columns={columns}
-          pagination={true}
-          itemsPerPage={10}
-        />
+        {loading ? (
+          <div className="flex justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          </div>
+        ) : (
+          <DataTable
+            data={orders}
+            columns={columns}
+            pagination={true}
+            itemsPerPage={pagination.limit}
+            totalItems={pagination.total}
+            currentPage={pagination.page}
+            onPageChange={(page) => setPagination(prev => ({ ...prev, page }))}
+          />
+        )}
       </div>
     </motion.div>
   );

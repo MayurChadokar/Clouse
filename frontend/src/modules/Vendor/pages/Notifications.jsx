@@ -1,60 +1,33 @@
 import { useState, useEffect, useMemo } from "react";
-import { FiBell, FiSearch, FiCheck, FiX, FiFilter } from "react-icons/fi";
+import { FiBell, FiSearch, FiCheck, FiX } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../../Admin/components/DataTable";
 import Badge from "../../../shared/components/Badge";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import toast from "react-hot-toast";
+import { useVendorNotificationStore } from "../store/vendorNotificationStore";
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const [notifications, setNotifications] = useState([]);
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    fetchNotifications,
+  } = useVendorNotificationStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [readFilter, setReadFilter] = useState("all");
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
   useEffect(() => {
     if (!vendorId) return;
-
-    const savedNotifications = localStorage.getItem(
-      `vendor-${vendorId}-notifications`
-    );
-    if (savedNotifications) {
-      setNotifications(JSON.parse(savedNotifications));
-    } else {
-      // Initialize with some dummy notifications
-      const dummyNotifications = [
-        {
-          id: 1,
-          type: "new_order",
-          title: "New Order Received",
-          message: "You have received a new order #ORD-FH-001",
-          orderId: "ORD-FH-001",
-          isRead: false,
-          createdAt: new Date().toISOString(),
-          actionUrl: "/vendor/orders/ORD-FH-001",
-        },
-        {
-          id: 2,
-          type: "order_status_change",
-          title: "Order Status Updated",
-          message: "Order #ORD-FH-002 status changed to processing",
-          orderId: "ORD-FH-002",
-          isRead: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          actionUrl: "/vendor/orders/ORD-FH-002",
-        },
-      ];
-      setNotifications(dummyNotifications);
-      localStorage.setItem(
-        `vendor-${vendorId}-notifications`,
-        JSON.stringify(dummyNotifications)
-      );
-    }
-  }, [vendorId]);
+    fetchNotifications(1);
+  }, [vendorId, fetchNotifications]);
 
   const filteredNotifications = useMemo(() => {
     let filtered = notifications;
@@ -82,46 +55,19 @@ const Notifications = () => {
     );
   }, [notifications, searchQuery, typeFilter, readFilter]);
 
-  const handleMarkRead = (id) => {
-    const updated = notifications.map((n) =>
-      n.id === id ? { ...n, isRead: true } : n
-    );
-    setNotifications(updated);
-    localStorage.setItem(
-      `vendor-${vendorId}-notifications`,
-      JSON.stringify(updated)
-    );
-    toast.success("Notification marked as read");
-  };
+  const handleMarkRead = (id) => markAsRead(id);
 
-  const handleMarkAllRead = () => {
-    const updated = notifications.map((n) => ({ ...n, isRead: true }));
-    setNotifications(updated);
-    localStorage.setItem(
-      `vendor-${vendorId}-notifications`,
-      JSON.stringify(updated)
-    );
-    toast.success("All notifications marked as read");
-  };
+  const handleMarkAllRead = () => markAllAsRead();
 
-  const handleDelete = (id) => {
-    const updated = notifications.filter((n) => n.id !== id);
-    setNotifications(updated);
-    localStorage.setItem(
-      `vendor-${vendorId}-notifications`,
-      JSON.stringify(updated)
-    );
-    toast.success("Notification deleted");
-  };
+  const handleDelete = (id) => removeNotification(id);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const getTypeLabel = (type) => {
     const typeMap = {
-      new_order: "New Order",
-      order_status_change: "Order Update",
-      return_request: "Return Request",
-      review: "Review",
+      order: "Order",
+      payment: "Payment",
+      promotion: "Promotion",
       system: "System",
     };
     return typeMap[type] || type;
@@ -173,14 +119,14 @@ const Notifications = () => {
         <div className="flex items-center gap-2">
           {!row.isRead && (
             <button
-              onClick={() => handleMarkRead(row.id)}
+              onClick={() => handleMarkRead(row._id)}
               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               title="Mark as Read">
               <FiCheck />
             </button>
           )}
           <button
-            onClick={() => handleDelete(row.id)}
+            onClick={() => handleDelete(row._id)}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Delete">
             <FiX />
@@ -253,8 +199,7 @@ const Notifications = () => {
           <p className="text-lg sm:text-2xl font-bold text-blue-600">
             {
               notifications.filter(
-                (n) =>
-                  n.type === "new_order" || n.type === "order_status_change"
+                (n) => n.type === "order"
               ).length
             }
           </p>
@@ -280,10 +225,9 @@ const Notifications = () => {
             onChange={(e) => setTypeFilter(e.target.value)}
             options={[
               { value: "all", label: "All Types" },
-              { value: "new_order", label: "New Orders" },
-              { value: "order_status_change", label: "Order Updates" },
-              { value: "return_request", label: "Returns" },
-              { value: "review", label: "Reviews" },
+              { value: "order", label: "Order" },
+              { value: "payment", label: "Payment" },
+              { value: "promotion", label: "Promotion" },
               { value: "system", label: "System" },
             ]}
             className="w-full sm:w-auto min-w-[140px]"
@@ -310,11 +254,12 @@ const Notifications = () => {
           pagination={true}
           itemsPerPage={10}
           onRowClick={(row) => {
-            if (row.actionUrl) {
-              window.location.href = row.actionUrl;
-            }
+            if (row.data?.returnRequestId) navigate("/vendor/return-requests");
+            else if (row.data?.documentId) navigate("/vendor/documents");
+            else if (row.orderId || row.data?.orderId)
+              navigate("/vendor/orders/all-orders");
             if (!row.isRead) {
-              handleMarkRead(row.id);
+              handleMarkRead(row._id);
             }
           }}
         />

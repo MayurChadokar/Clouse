@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   FiTrendingUp,
   FiDollarSign,
@@ -8,39 +8,70 @@ import {
 import { motion } from "framer-motion";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useVendorStore } from "../store/vendorStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
-import { useCommissionStore } from "../../../shared/store/commissionStore";
+import { getVendorPerformanceMetrics } from "../services/vendorService";
 
 const PerformanceMetrics = () => {
   const { vendor } = useVendorAuthStore();
-  const { getVendorProducts, getVendorStats } = useVendorStore();
-  const { getVendorOrders } = useOrderStore();
-  const { getVendorEarningsSummary } = useCommissionStore();
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    avgOrderValue: 0,
+    conversionRate: 0,
+    customerCount: 0,
+  });
+  const [earnings, setEarnings] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const vendorId = vendor?.id;
-  const products = vendorId ? getVendorProducts(vendorId) : [];
-  const orders = vendorId ? getVendorOrders(vendorId) : [];
-  const stats = vendorId ? getVendorStats(vendorId) : null;
-  const earnings = vendorId ? getVendorEarningsSummary(vendorId) : null;
+  const vendorId = vendor?.id || vendor?._id;
 
-  const metrics = useMemo(() => {
-    const totalRevenue = earnings?.totalEarnings || 0;
-    const totalOrders = orders.length;
-    const totalProducts = products.length;
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const conversionRate = 0; // Would need visitor data
-    const customerCount = new Set(orders.map((o) => o.userId || o.id)).size;
+  useEffect(() => {
+    if (!vendorId) {
+      setMetrics({
+        totalRevenue: 0,
+        totalOrders: 0,
+        totalProducts: 0,
+        avgOrderValue: 0,
+        conversionRate: 0,
+        customerCount: 0,
+      });
+      setEarnings(null);
+      return;
+    }
 
-    return {
-      totalRevenue,
-      totalOrders,
-      totalProducts,
-      avgOrderValue,
-      conversionRate,
-      customerCount,
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorPerformanceMetrics();
+        const data = res?.data ?? res;
+        setMetrics(
+          data?.metrics || {
+            totalRevenue: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            avgOrderValue: 0,
+            conversionRate: 0,
+            customerCount: 0,
+          }
+        );
+        setEarnings(data?.earnings || null);
+      } catch {
+        setMetrics({
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalProducts: 0,
+          avgOrderValue: 0,
+          conversionRate: 0,
+          customerCount: 0,
+        });
+        setEarnings(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }, [products, orders, earnings]);
+
+    fetchData();
+  }, [vendorId]);
 
   if (!vendorId) {
     return (
@@ -54,7 +85,8 @@ const PerformanceMetrics = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="lg:hidden">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
           <FiTrendingUp className="text-primary-600" />
@@ -65,7 +97,6 @@ const PerformanceMetrics = () => {
         </p>
       </div>
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -123,11 +154,8 @@ const PerformanceMetrics = () => {
         </div>
       </div>
 
-      {/* Additional Analytics */}
       <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">
-          Revenue Breakdown
-        </h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Revenue Breakdown</h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Total Earnings</span>
@@ -144,14 +172,17 @@ const PerformanceMetrics = () => {
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Paid Earnings</span>
             <span className="font-semibold text-green-600">
-              {formatPrice(
-                (earnings?.totalEarnings || 0) -
-                (earnings?.pendingEarnings || 0)
-              )}
+              {formatPrice(earnings?.paidEarnings || 0)}
             </span>
           </div>
         </div>
       </div>
+
+      {isLoading && (
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
+          <p className="text-gray-500 text-center">Loading performance metrics...</p>
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { FiStar, FiSearch, FiEye, FiMessageSquare, FiX } from "react-icons/fi";
 import { motion } from "framer-motion";
 import DataTable from "../../Admin/components/DataTable";
@@ -7,14 +6,19 @@ import ExportButton from "../../Admin/components/ExportButton";
 import Badge from "../../../shared/components/Badge";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useVendorStore } from "../store/vendorStore";
+import { useVendorProductStore } from "../store/vendorProductStore";
+import {
+  getVendorReviews,
+  updateVendorReviewStatus,
+  addVendorReviewResponse,
+} from "../services/vendorService";
 import toast from "react-hot-toast";
 
 const ProductReviews = () => {
-  const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { getVendorProducts } = useVendorStore();
+  const { products, fetchProducts } = useVendorProductStore();
   const [reviews, setReviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRating, setSelectedRating] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
@@ -24,25 +28,29 @@ const ProductReviews = () => {
   const vendorId = vendor?.id;
 
   useEffect(() => {
-    if (!vendorId) return;
+    if (!vendorId) {
+      setReviews([]);
+      return;
+    }
 
-    // Load reviews from localStorage
-    const savedReviews = localStorage.getItem("admin-reviews");
-    const allReviews = savedReviews ? JSON.parse(savedReviews) : [];
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        await fetchProducts({ limit: 500 });
+        const res = await getVendorReviews({ limit: 500 });
+        const payload = res?.data ?? res;
+        setReviews(payload?.reviews ?? []);
+      } catch {
+        setReviews([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // Get vendor products
-    const vendorProducts = getVendorProducts(vendorId);
-    const productIds = new Set(vendorProducts.map((p) => p.id));
+    fetchData();
+  }, [vendorId, fetchProducts]);
 
-    // Filter reviews for vendor's products
-    const vendorReviews = allReviews.filter((review) =>
-      productIds.has(review.productId)
-    );
-
-    setReviews(vendorReviews);
-  }, [vendorId, getVendorProducts]);
-
-  const vendorProducts = vendorId ? getVendorProducts(vendorId) : [];
+  const vendorProducts = products || [];
 
   const filteredReviews = useMemo(() => {
     let filtered = reviews;
@@ -68,55 +76,41 @@ const ProductReviews = () => {
 
     if (selectedProduct !== "all") {
       filtered = filtered.filter(
-        (review) => review.productId === parseInt(selectedProduct)
+        (review) => String(review.productId) === String(selectedProduct)
       );
     }
 
     return filtered;
   }, [reviews, searchQuery, selectedRating, selectedProduct]);
 
-  const handleResponse = (reviewId) => {
-    const updatedReviews = reviews.map((review) => {
-      if (review.id === reviewId) {
-        return {
-          ...review,
-          vendorResponse: responseText,
-          responseDate: new Date().toISOString(),
-        };
-      }
-      return review;
-    });
-
-    setReviews(updatedReviews);
-    const savedReviews = localStorage.getItem("admin-reviews");
-    const allReviews = savedReviews ? JSON.parse(savedReviews) : [];
-    const updatedAllReviews = allReviews.map((r) =>
-      r.id === reviewId ? updatedReviews.find((ur) => ur.id === reviewId) : r
-    );
-    localStorage.setItem("admin-reviews", JSON.stringify(updatedAllReviews));
+  const handleResponse = async (reviewId) => {
+    const text = responseText.trim();
+    if (!text) return;
+    try {
+      const res = await addVendorReviewResponse(reviewId, text);
+      const updated = res?.data ?? res;
+      setReviews((prev) =>
+        prev.map((review) => (review.id === reviewId ? updated : review))
+      );
+    } catch {
+      return;
+    }
     setSelectedReview(null);
     setResponseText("");
     toast.success("Response added successfully");
   };
 
-  const handleModerate = (reviewId, action) => {
-    const updatedReviews = reviews.map((review) => {
-      if (review.id === reviewId) {
-        return {
-          ...review,
-          status: action === "hide" ? "hidden" : "approved",
-        };
-      }
-      return review;
-    });
-
-    setReviews(updatedReviews);
-    const savedReviews = localStorage.getItem("admin-reviews");
-    const allReviews = savedReviews ? JSON.parse(savedReviews) : [];
-    const updatedAllReviews = allReviews.map((r) =>
-      r.id === reviewId ? updatedReviews.find((ur) => ur.id === reviewId) : r
-    );
-    localStorage.setItem("admin-reviews", JSON.stringify(updatedAllReviews));
+  const handleModerate = async (reviewId, action) => {
+    const nextStatus = action === "hide" ? "hidden" : "approved";
+    try {
+      const res = await updateVendorReviewStatus(reviewId, nextStatus);
+      const updated = res?.data ?? res;
+      setReviews((prev) =>
+        prev.map((review) => (review.id === reviewId ? updated : review))
+      );
+    } catch {
+      return;
+    }
     toast.success(action === "hide" ? "Review hidden" : "Review approved");
   };
 
@@ -307,7 +301,7 @@ const ProductReviews = () => {
             options={[
               { value: "all", label: "All Products" },
               ...vendorProducts.map((p) => ({
-                value: p.id.toString(),
+                value: String(p._id ?? p.id),
                 label: p.name,
               })),
             ]}
@@ -336,7 +330,11 @@ const ProductReviews = () => {
       </div>
 
       {/* Reviews Table */}
-      {filteredReviews.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+          <p className="text-gray-500">Loading reviews...</p>
+        </div>
+      ) : filteredReviews.length > 0 ? (
         <DataTable
           data={filteredReviews}
           columns={columns}

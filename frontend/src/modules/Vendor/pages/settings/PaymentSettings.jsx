@@ -3,13 +3,12 @@ import { useState, useEffect } from 'react';
 import { FiSave, FiCreditCard, FiLock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { useVendorStore } from '../../store/vendorStore';
+import { updateVendorBankDetails } from '../../services/vendorService';
 import AnimatedSelect from '../../../Admin/components/AnimatedSelect';
 import toast from 'react-hot-toast';
 
 const PaymentSettings = () => {
   const { vendor } = useVendorAuthStore();
-  const { updateVendorProfile } = useVendorAuthStore();
   const [formData, setFormData] = useState({
     bankDetails: {
       accountName: '',
@@ -78,17 +77,16 @@ const PaymentSettings = () => {
     if (!vendor) return;
 
     try {
-      const updateData = {
-        bankDetails: formData.bankDetails,
-        paymentMethods: formData.paymentMethods,
-        upiId: formData.upiId,
-        paypalEmail: formData.paypalEmail,
-      };
-
-      updateVendorProfile(vendor.id, updateData);
+      // Save bank details via dedicated endpoint
+      await updateVendorBankDetails({
+        accountName: formData.bankDetails.accountName,
+        accountNumber: formData.bankDetails.accountNumber,
+        ifscCode: formData.bankDetails.ifscCode,
+        bankName: formData.bankDetails.bankName,
+      });
       toast.success('Payment settings saved successfully');
-    } catch (error) {
-      toast.error('Failed to save payment settings');
+    } catch {
+      // api.js shows toast
     }
   };
 
@@ -126,8 +124,8 @@ const PaymentSettings = () => {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap text-xs sm:text-sm ${activeSection === section.id
-                      ? 'border-purple-600 text-purple-600 font-semibold'
-                      : 'border-transparent text-gray-600 hover:text-gray-800'
+                    ? 'border-purple-600 text-purple-600 font-semibold'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
                     } `}
                 >
                   <Icon className="text-base sm:text-lg" />

@@ -3,11 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   FiSearch,
   FiEye,
-  FiClock,
-  FiCheckCircle,
-  FiPackage,
-  FiTruck,
-  FiXCircle,
   FiShoppingBag,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -17,97 +12,118 @@ import Badge from "../../../../shared/components/Badge";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import { formatPrice } from '../../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
-import { useOrderStore } from '../../../../shared/store/orderStore';
+import { getVendorOrders, updateVendorOrderStatus } from '../../services/vendorService';
 import toast from 'react-hot-toast';
 
 const AllOrders = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
-  const [vendorOrders, setVendorOrders] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
   const vendorId = vendor?.id;
 
-  // Filter orders to only show those containing vendor's products
   useEffect(() => {
-    if (!vendorId || !orders) {
-      setVendorOrders([]);
-      return;
-    }
+    if (!vendorId) return;
 
-    const filtered = orders.filter((order) => {
-      // Check if order has vendorItems array
-      if (order.vendorItems && Array.isArray(order.vendorItems)) {
-        return order.vendorItems.some((vi) => vi.vendorId === vendorId);
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorOrders({ limit: 200 });
+        const data = res?.data ?? res;
+        setOrders(data?.orders ?? []);
+      } catch {
+        // errors handled by api.js toast
+      } finally {
+        setIsLoading(false);
       }
-      // Fallback: check if items have vendorId
-      if (order.items && Array.isArray(order.items)) {
-        return order.items.some((item) => item.vendorId === vendorId);
-      }
-      return false;
-    });
+    };
 
-    setVendorOrders(filtered);
-  }, [vendorId, orders]);
+    fetchOrders();
+  }, [vendorId]);
 
   const filteredOrders = useMemo(() => {
-    let filtered = vendorOrders;
+    let filtered = orders;
 
     if (searchQuery) {
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter((order) =>
-        order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.trackingNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+        order.orderId?.toLowerCase().includes(q) ||
+        order._id?.toLowerCase().includes(q)
       );
     }
 
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter((order) =>
-        order.status?.toLowerCase() === selectedStatus.toLowerCase()
-      );
+      filtered = filtered.filter((order) => {
+        const vendorItem = order.vendorItems?.find(
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
+        );
+        const status = (vendorItem?.status ?? order.status ?? '').toLowerCase();
+        return status === selectedStatus.toLowerCase();
+      });
     }
 
     return filtered;
-  }, [vendorOrders, searchQuery, selectedStatus]);
+  }, [orders, searchQuery, selectedStatus, vendorId]);
 
-  // Get vendor-specific order data
-  const getVendorOrderData = (order) => {
-    if (order.vendorItems && Array.isArray(order.vendorItems)) {
-      const vendorItem = order.vendorItems.find((vi) => vi.vendorId === vendorId);
-      if (vendorItem) {
-        return {
-          itemCount: vendorItem.items?.length || 0,
-          subtotal: vendorItem.subtotal || 0,
-          commission: vendorItem.commission || 0,
-        };
-      }
+  // Get per-vendor subtotal from vendorItems
+  const getVendorSubtotal = (order) => {
+    const vendorItem = order.vendorItems?.find(
+      (vi) => vi.vendorId?.toString() === vendorId?.toString()
+    );
+    return vendorItem?.subtotal ?? order.total ?? order.totalAmount ?? 0;
+  };
+
+  const getOrderStatus = (order) => {
+    const vendorItem = order.vendorItems?.find(
+      (vi) => vi.vendorId?.toString() === vendorId?.toString()
+    );
+    return vendorItem?.status ?? order.status ?? 'pending';
+  };
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await updateVendorOrderStatus(orderId, newStatus);
+      setOrders((prev) =>
+        prev.map((o) => {
+          if ((o.orderId ?? o._id) !== orderId) return o;
+          return {
+            ...o,
+            vendorItems: o.vendorItems?.map((vi) =>
+              vi.vendorId?.toString() === vendorId?.toString()
+                ? { ...vi, status: newStatus }
+                : vi
+            ),
+            status: newStatus,
+          };
+        })
+      );
+      toast.success('Order status updated');
+    } catch {
+      // errors handled by api.js toast
     }
-    // Fallback
-    const vendorItems = order.items?.filter((item) => item.vendorId === vendorId) || [];
-    return {
-      itemCount: vendorItems.length,
-      subtotal: vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      commission: 0,
-    };
   };
 
   const columns = [
     {
-      key: 'id',
+      key: 'orderId',
       label: 'Order ID',
       sortable: true,
-      render: (value) => (
-        <span className="font-semibold text-gray-800">{value}</span>
+      render: (value, row) => (
+        <span className="font-semibold text-gray-800">
+          {value ?? row._id}
+        </span>
       ),
     },
     {
-      key: 'date',
+      key: 'createdAt',
       label: 'Date',
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value).toLocaleDateString()}
+          {value ? new Date(value).toLocaleDateString() : '—'}
         </span>
       ),
     },
@@ -116,45 +132,46 @@ const AllOrders = () => {
       label: 'Items',
       sortable: false,
       render: (_, row) => {
-        const vendorData = getVendorOrderData(row);
+        const vendorItem = row.vendorItems?.find(
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
+        );
+        const count = vendorItem?.items?.length ?? row.vendorItems?.length ?? 0;
         return (
-          <span className="text-sm text-gray-700">
-            {vendorData.itemCount} item(s)
-          </span>
+          <span className="text-sm text-gray-700">{count} item(s)</span>
         );
       },
     },
     {
-      key: 'subtotal',
+      key: 'totalAmount',
       label: 'Amount',
       sortable: true,
-      render: (_, row) => {
-        const vendorData = getVendorOrderData(row);
-        return (
-          <span className="font-semibold text-gray-800">
-            {formatPrice(vendorData.subtotal)}
-          </span>
-        );
-      },
+      render: (_, row) => (
+        <span className="font-semibold text-gray-800">
+          {formatPrice(getVendorSubtotal(row))}
+        </span>
+      ),
     },
     {
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (value) => (
-        <Badge
-          variant={
-            value === 'delivered'
-              ? 'success'
-              : value === 'pending'
-                ? 'warning'
-                : value === 'cancelled' || value === 'canceled'
-                  ? 'error'
-                  : 'info'
-          }>
-          {value?.toUpperCase() || 'N/A'}
-        </Badge>
-      ),
+      render: (_, row) => {
+        const status = getOrderStatus(row);
+        return (
+          <Badge
+            variant={
+              status === 'delivered'
+                ? 'success'
+                : status === 'pending'
+                  ? 'warning'
+                  : status === 'cancelled' || status === 'canceled'
+                    ? 'error'
+                    : 'info'
+            }>
+            {status?.toUpperCase() || 'N/A'}
+          </Badge>
+        );
+      },
     },
     {
       key: 'actions',
@@ -162,7 +179,7 @@ const AllOrders = () => {
       sortable: false,
       render: (_, row) => (
         <button
-          onClick={() => navigate(`/vendor/orders/${row.id}`)}
+          onClick={() => navigate(`/vendor/orders/${row.orderId ?? row._id}`)}
           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
           <FiEye />
         </button>
@@ -195,7 +212,7 @@ const AllOrders = () => {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        {/* Filters Section */}
+        {/* Filters */}
         <div className="mb-6 pb-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -204,7 +221,7 @@ const AllOrders = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by Order ID or Tracking..."
+                placeholder="Search by Order ID..."
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
               />
             </div>
@@ -227,11 +244,10 @@ const AllOrders = () => {
               <ExportButton
                 data={filteredOrders}
                 headers={[
-                  { label: 'Order ID', accessor: (row) => row.id },
-                  { label: 'Date', accessor: (row) => new Date(row.date).toLocaleDateString() },
-                  { label: 'Items', accessor: (row) => getVendorOrderData(row).itemCount },
-                  { label: 'Amount', accessor: (row) => formatPrice(getVendorOrderData(row).subtotal) },
-                  { label: 'Status', accessor: (row) => row.status },
+                  { label: 'Order ID', accessor: (row) => row.orderId ?? row._id },
+                  { label: 'Date', accessor: (row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—' },
+                  { label: 'Amount', accessor: (row) => formatPrice(getVendorSubtotal(row)) },
+                  { label: 'Status', accessor: (row) => getOrderStatus(row) },
                 ]}
                 filename="vendor-orders"
               />
@@ -239,14 +255,15 @@ const AllOrders = () => {
           </div>
         </div>
 
-        {/* DataTable */}
-        {filteredOrders.length > 0 ? (
+        {isLoading ? (
+          <p className="text-center py-12 text-gray-400">Loading orders...</p>
+        ) : filteredOrders.length > 0 ? (
           <DataTable
             data={filteredOrders}
             columns={columns}
             pagination={true}
             itemsPerPage={10}
-            onRowClick={(row) => navigate(`/vendor/orders/${row.id}`)}
+            onRowClick={(row) => navigate(`/vendor/orders/${row.orderId ?? row._id}`)}
           />
         ) : (
           <div className="text-center py-12">
@@ -265,4 +282,3 @@ const AllOrders = () => {
 };
 
 export default AllOrders;
-

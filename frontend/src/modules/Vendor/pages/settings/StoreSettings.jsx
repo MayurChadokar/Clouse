@@ -2,13 +2,11 @@ import { useState, useEffect } from "react";
 import { FiSave, FiImage, FiGlobe, FiShoppingBag } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { useVendorStore } from "../../store/vendorStore";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import toast from "react-hot-toast";
 
 const StoreSettings = () => {
-  const { vendor } = useVendorAuthStore();
-  const { updateVendorProfile } = useVendorAuthStore();
+  const { vendor, updateProfile } = useVendorAuthStore();
   const [formData, setFormData] = useState({});
   const [activeSection, setActiveSection] = useState("identity");
 
@@ -21,9 +19,8 @@ const StoreSettings = () => {
         email: vendor.email || "",
         phone: vendor.phone || "",
         address: vendor.address
-          ? `${vendor.address.street || ""}, ${vendor.address.city || ""}, ${
-              vendor.address.state || ""
-            } ${vendor.address.zipCode || ""}`
+          ? `${vendor.address.street || ""}, ${vendor.address.city || ""}, ${vendor.address.state || ""
+          } ${vendor.address.zipCode || ""}`
           : "",
         businessHours: vendor.businessHours || "Mon-Fri 9AM-6PM",
         timezone: vendor.timezone || "UTC",
@@ -58,7 +55,7 @@ const StoreSettings = () => {
     if (!vendor) return;
 
     try {
-      // Parse address if provided
+      // Parse address string into the object shape the backend expects
       let addressData = vendor.address || {};
       if (formData.address) {
         const addressParts = formData.address.split(",");
@@ -68,28 +65,22 @@ const StoreSettings = () => {
             city: addressParts[1].trim(),
             state: addressParts[2].trim().split(" ")[0],
             zipCode: addressParts[2].trim().split(" ")[1] || "",
-            country: vendor.address?.country || "USA",
+            country: vendor.address?.country || "India",
           };
         }
       }
 
-      const updateData = {
+      // Only send fields accepted by PUT /vendor/auth/profile
+      await updateProfile({
         storeName: formData.storeName,
         storeLogo: formData.storeLogo,
         storeDescription: formData.storeDescription,
-        email: formData.email,
         phone: formData.phone,
         address: addressData,
-        businessHours: formData.businessHours,
-        timezone: formData.timezone,
-        currency: formData.currency,
-        socialMedia: formData.socialMedia,
-      };
-
-      updateVendorProfile(vendor.id, updateData);
+      });
       toast.success("Store settings saved successfully");
-    } catch (error) {
-      toast.error("Failed to save settings");
+    } catch {
+      // api.js shows toast
     }
   };
 
@@ -131,11 +122,10 @@ const StoreSettings = () => {
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap text-xs sm:text-sm ${
-                    activeSection === section.id
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap text-xs sm:text-sm ${activeSection === section.id
                       ? "border-purple-600 text-purple-600 font-semibold"
                       : "border-transparent text-gray-600 hover:text-gray-800"
-                  }`}>
+                    }`}>
                   <Icon className="text-base sm:text-lg" />
                   <span>{section.label}</span>
                 </button>

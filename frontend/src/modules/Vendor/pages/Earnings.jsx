@@ -6,7 +6,6 @@ import {
   FiClock,
   FiCheckCircle,
   FiFileText,
-  FiDownload,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Badge from "../../../shared/components/Badge";
@@ -14,26 +13,18 @@ import ExportButton from "../../Admin/components/ExportButton";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useCommissionStore } from "../../../shared/store/commissionStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
+import { getVendorEarnings } from "../services/vendorService";
 
 const Earnings = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { vendor } = useVendorAuthStore();
-  const {
-    getVendorCommissions,
-    getVendorEarningsSummary,
-    getVendorSettlements,
-  } = useCommissionStore();
-  const { orders } = useOrderStore();
 
-  // Determine active tab from URL
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes("/commission-history")) return "commission";
     if (path.includes("/settlement-history")) return "settlement";
-    return "overview"; // Default to overview
+    return "overview";
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTab());
@@ -41,39 +32,39 @@ const Earnings = () => {
   const [commissions, setCommissions] = useState([]);
   const [settlements, setSettlements] = useState([]);
   const [earningsSummary, setEarningsSummary] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(getActiveTab());
   }, [location.pathname]);
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
   useEffect(() => {
     if (!vendorId) return;
 
-    const vendorCommissions = getVendorCommissions(vendorId);
-    const vendorSettlements = getVendorSettlements(vendorId);
-    const summary = getVendorEarningsSummary(vendorId);
+    const fetchEarnings = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorEarnings();
+        const data = res?.data ?? res;
+        setCommissions(data?.commissions ?? []);
+        setSettlements(data?.settlements ?? []);
+        setEarningsSummary(data?.summary ?? null);
+      } catch {
+        // errors handled by api.js toast
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setCommissions(vendorCommissions);
-    setSettlements(vendorSettlements);
-    setEarningsSummary(summary);
-  }, [
-    vendorId,
-    getVendorCommissions,
-    getVendorSettlements,
-    getVendorEarningsSummary,
-  ]);
+    fetchEarnings();
+  }, [vendorId]);
 
   const filteredCommissions = useMemo(() => {
     if (selectedStatus === "all") return commissions;
     return commissions.filter((c) => c.status === selectedStatus);
   }, [commissions, selectedStatus]);
-
-  // Get order details for commission
-  const getOrderDetails = (orderId) => {
-    return orders.find((o) => o.id === orderId);
-  };
 
   if (!vendorId) {
     return (
@@ -238,7 +229,14 @@ const Earnings = () => {
                     <ExportButton
                       data={filteredCommissions}
                       headers={[
-                        { label: "Order ID", accessor: (row) => row.orderId },
+                        {
+                          label: "Order",
+                          accessor: (row) =>
+                            row.orderDisplayId ||
+                            (typeof row.orderId === "object"
+                              ? row.orderId?.orderId || row.orderId?._id
+                              : row.orderId),
+                        },
                         {
                           label: "Date",
                           accessor: (row) =>
@@ -265,73 +263,72 @@ const Earnings = () => {
 
                 {filteredCommissions.length > 0 ? (
                   <div className="space-y-3">
-                    {filteredCommissions.map((commission) => {
-                      const order = getOrderDetails(commission.orderId);
-                      return (
-                        <div
-                          key={commission.id}
-                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold text-gray-800">
-                                {commission.orderId}
-                              </h3>
-                              <Badge
-                                variant={
-                                  commission.status === "paid"
-                                    ? "success"
-                                    : commission.status === "pending"
-                                      ? "warning"
-                                      : "error"
-                                }>
-                                {commission.status?.toUpperCase()}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <p className="text-gray-600">Date</p>
-                                <p className="font-semibold text-gray-800">
-                                  {new Date(
-                                    commission.createdAt
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-gray-600">Subtotal</p>
-                                <p className="font-semibold text-gray-800">
-                                  {formatPrice(commission.subtotal)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-gray-600">Commission</p>
-                                <p className="font-semibold text-red-600">
-                                  -{formatPrice(commission.commission)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-gray-600">Your Earnings</p>
-                                <p className="font-semibold text-green-600">
-                                  {formatPrice(commission.vendorEarnings)}
-                                </p>
-                              </div>
-                            </div>
+                    {filteredCommissions.map((commission) => (
+                      <div
+                        key={commission._id ?? commission.id}
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-gray-800">
+                              {commission.orderDisplayId ||
+                                (typeof commission.orderId === "object"
+                                  ? commission.orderId?.orderId ||
+                                    commission.orderId?._id
+                                  : commission.orderId)}
+                            </h3>
+                            <Badge
+                              variant={
+                                commission.status === "paid"
+                                  ? "success"
+                                  : commission.status === "pending"
+                                    ? "warning"
+                                    : "error"
+                              }>
+                              {commission.status?.toUpperCase()}
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {order && (
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vendor/orders/${commission.orderId}`
-                                  )
-                                }
-                                className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                                View Order
-                              </button>
-                            )}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-600">Date</p>
+                              <p className="font-semibold text-gray-800">
+                                {new Date(
+                                  commission.createdAt
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Subtotal</p>
+                              <p className="font-semibold text-gray-800">
+                                {formatPrice(commission.subtotal)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Commission</p>
+                              <p className="font-semibold text-red-600">
+                                -{formatPrice(commission.commission)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Your Earnings</p>
+                              <p className="font-semibold text-green-600">
+                                {formatPrice(commission.vendorEarnings)}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/vendor/orders/${commission.orderRef || commission.orderId}`
+                              )
+                            }
+                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                            View Order
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-12">
@@ -367,7 +364,10 @@ const Earnings = () => {
                     <ExportButton
                       data={settlements}
                       headers={[
-                        { label: "Settlement ID", accessor: (row) => row.id },
+                        {
+                          label: "Settlement ID",
+                          accessor: (row) => row._id || row.id,
+                        },
                         {
                           label: "Date",
                           accessor: (row) =>
@@ -393,12 +393,12 @@ const Earnings = () => {
                   <div className="space-y-3">
                     {settlements.map((settlement) => (
                       <div
-                        key={settlement.id}
+                        key={settlement._id || settlement.id}
                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold text-gray-800">
-                              {settlement.id}
+                              {settlement._id || settlement.id}
                             </h3>
                             <Badge variant="success">PAID</Badge>
                           </div>
@@ -448,6 +448,12 @@ const Earnings = () => {
               <p className="text-sm text-gray-400">
                 Settlements will appear here once your commissions are paid
               </p>
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Loading earnings data...</p>
             </div>
           )}
         </div>

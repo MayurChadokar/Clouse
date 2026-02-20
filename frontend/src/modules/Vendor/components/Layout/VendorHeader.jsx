@@ -1,16 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiMenu, FiBell, FiLogOut, FiShoppingBag } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
+import { useVendorNotificationStore } from "../../store/vendorNotificationStore";
 import toast from "react-hot-toast";
 import Button from "../../../Admin/components/Button";
-import NotificationWindow from "../../../Admin/components/Layout/NotificationWindow";
+import VendorNotificationWindow from "./VendorNotificationWindow";
 
 const VendorHeader = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { vendor, logout } = useVendorAuthStore();
+  const { unreadCount, fetchNotifications } = useVendorNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(() => fetchNotifications(), 60000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const handleLogout = () => {
     logout();
@@ -79,10 +87,12 @@ const VendorHeader = ({ onMenuClick }) => {
               className="text-gray-700"
               icon={FiBell}
             />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            )}
 
             {/* Notification Window - positioned relative to this container */}
-            <NotificationWindow
+            <VendorNotificationWindow
               isOpen={showNotifications}
               onClose={() => setShowNotifications(false)}
               position="right"

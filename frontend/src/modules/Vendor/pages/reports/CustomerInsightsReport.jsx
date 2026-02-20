@@ -1,27 +1,49 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { FiUsers, FiRepeat, FiDollarSign } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataTable from '../../../Admin/components/DataTable';
 import ExportButton from '../../../Admin/components/ExportButton';
 import { formatPrice } from '../../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
-import { useOrderStore } from '../../store/orderStore';
+import { getVendorOrders } from '../../services/vendorService';
 
 const CustomerInsightsReport = () => {
   const { vendor } = useVendorAuthStore();
-  const { getVendorOrders } = useOrderStore();
+  const [orders, setOrders] = useState([]);
 
   const vendorId = vendor?.id;
-  const orders = vendorId ? getVendorOrders(vendorId) : [];
+
+  useEffect(() => {
+    if (!vendorId) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const res = await getVendorOrders({ limit: 500 });
+        const data = res?.data ?? res;
+        setOrders(data?.orders ?? []);
+      } catch {
+        setOrders([]);
+      }
+    };
+
+    fetchOrders();
+  }, [vendorId]);
 
   const customerData = useMemo(() => {
     const customerMap = {};
 
     orders.forEach((order) => {
-      const vendorItem = order.vendorItems?.find((vi) => vi.vendorId === vendorId);
+      const vendorItem = order.vendorItems?.find(
+        (vi) => vi.vendorId?.toString() === vendorId?.toString()
+      );
       if (!vendorItem) return;
 
-      const customerId = order.userId || 'guest';
+      const customerId = String(
+        order.customer?._id || order.userId?._id || order.userId || 'guest'
+      );
       const customerName = order.customer?.name || 'Guest Customer';
       const customerEmail = order.customer?.email || '';
 
@@ -37,11 +59,11 @@ const CustomerInsightsReport = () => {
       }
 
       customerMap[customerId].orders += 1;
-      customerMap[customerId].totalSpent += vendorItem.vendorEarnings || 0;
+      customerMap[customerId].totalSpent += vendorItem.subtotal || vendorItem.vendorEarnings || 0;
 
-      const orderDate = new Date(order.date);
+      const orderDate = new Date(order.createdAt ?? order.date);
       if (!customerMap[customerId].lastOrderDate || orderDate > new Date(customerMap[customerId].lastOrderDate)) {
-        customerMap[customerId].lastOrderDate = order.date;
+        customerMap[customerId].lastOrderDate = order.createdAt ?? order.date;
       }
     });
 

@@ -17,11 +17,54 @@ export const uploadToCloudinary = async (localFilePath, folder, publicId) => {
 };
 
 /**
+ * Upload a local file to Cloudinary with configurable resource type.
+ * Useful for non-image assets like PDFs.
+ * @param {string} localFilePath
+ * @param {string} folder
+ * @param {'image'|'raw'|'auto'} [resourceType='auto']
+ * @param {string} [publicId]
+ */
+export const uploadFileToCloudinary = async (
+    localFilePath,
+    folder,
+    resourceType = 'auto',
+    publicId
+) => {
+    const uploadOptions = { folder, resource_type: resourceType };
+    if (publicId) uploadOptions.public_id = publicId;
+    const result = await cloudinary.uploader.upload(localFilePath, uploadOptions);
+    return { url: result.secure_url, publicId: result.public_id };
+};
+
+/**
  * Upload local file to Cloudinary and remove the local temp file.
  * Local file deletion happens only after successful Cloudinary upload.
  */
 export const uploadLocalFileToCloudinaryAndCleanup = async (localFilePath, folder, publicId) => {
     const uploaded = await uploadToCloudinary(localFilePath, folder, publicId);
+    try {
+        await fs.unlink(localFilePath);
+    } catch {
+        // Non-fatal: do not fail the request if temp cleanup fails.
+    }
+    return uploaded;
+};
+
+/**
+ * Upload local file to Cloudinary with configurable resource type and cleanup temp file.
+ */
+export const uploadLocalFileToCloudinaryAndCleanupWithType = async (
+    localFilePath,
+    folder,
+    resourceType = 'auto',
+    publicId
+) => {
+    const uploaded = await uploadFileToCloudinary(
+        localFilePath,
+        folder,
+        resourceType,
+        publicId
+    );
     try {
         await fs.unlink(localFilePath);
     } catch {

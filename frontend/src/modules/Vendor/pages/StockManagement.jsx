@@ -10,20 +10,18 @@ import {
   FiX,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { products as initialProducts } from "../../../data/products";
 import DataTable from "../../Admin/components/DataTable";
 import ExportButton from "../../Admin/components/ExportButton";
 import Badge from "../../../shared/components/Badge";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useVendorStore } from "../store/vendorStore";
+import { useVendorProductStore } from "../store/vendorProductStore";
 import toast from "react-hot-toast";
 
 const StockManagement = () => {
   const { vendor } = useVendorAuthStore();
-  const { getVendorProducts } = useVendorStore();
-  const [products, setProducts] = useState([]);
+  const { products, isLoading, fetchProducts, patchStock } = useVendorProductStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
@@ -35,19 +33,10 @@ const StockManagement = () => {
   const vendorId = vendor?.id;
 
   useEffect(() => {
-    if (!vendorId) return;
-
-    const savedProducts = localStorage.getItem("admin-products");
-    const allProducts = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
-
-    // Filter products for this vendor
-    const vendorProducts = allProducts.filter(
-      (p) => p.vendorId === parseInt(vendorId)
-    );
-    setProducts(vendorProducts);
-  }, [vendorId]);
+    if (vendorId) {
+      fetchProducts();
+    }
+  }, [vendorId, fetchProducts]);
 
   // Filtered products
   const filteredProducts = useMemo(() => {
@@ -96,57 +85,20 @@ const StockManagement = () => {
     return { totalProducts, inStock, lowStock, outOfStock, totalValue };
   }, [products, lowStockThreshold]);
 
-  const handleStockUpdate = (productId, newQuantity) => {
-    const savedProducts = localStorage.getItem("admin-products");
-    const allProducts = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
-
-    const updatedProducts = allProducts.map((p) => {
-      if (p.id === productId) {
-        const oldQuantity = p.stockQuantity || 0;
-        const newStockStatus =
-          newQuantity === 0
-            ? "out_of_stock"
-            : newQuantity <= lowStockThreshold
-            ? "low_stock"
-            : "in_stock";
-        return {
-          ...p,
-          stockQuantity: parseInt(newQuantity),
-          stock: newStockStatus,
-          stockHistory: [
-            ...(p.stockHistory || []),
-            {
-              date: new Date().toISOString(),
-              oldQuantity,
-              newQuantity: parseInt(newQuantity),
-              change: parseInt(newQuantity) - oldQuantity,
-            },
-          ].slice(-50),
-        };
-      }
-      return p;
-    });
-
-    localStorage.setItem("admin-products", JSON.stringify(updatedProducts));
-
-    // Update local state
-    const vendorProducts = updatedProducts.filter(
-      (p) => p.vendorId === parseInt(vendorId)
-    );
-    setProducts(vendorProducts);
-
-    toast.success("Stock updated successfully");
-    setStockModal({ isOpen: false, product: null });
+  const handleStockUpdate = async (productId, newQuantity) => {
+    const success = await patchStock(productId, newQuantity);
+    if (success) {
+      setStockModal({ isOpen: false, product: null });
+    }
   };
 
   // Table columns
   const columns = [
     {
-      key: "id",
+      key: "_id",
       label: "ID",
       sortable: true,
+      render: (value, row) => String(value ?? row.id ?? "").slice(-8).toUpperCase(),
     },
     {
       key: "name",
@@ -155,7 +107,7 @@ const StockManagement = () => {
       render: (value, row) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.image}
+            src={row.image || row.images?.[0]}
             alt={value}
             className="w-10 h-10 object-cover rounded-lg"
             onError={(e) => {
@@ -190,8 +142,8 @@ const StockManagement = () => {
             value === "in_stock"
               ? "success"
               : value === "low_stock"
-              ? "warning"
-              : "error"
+                ? "warning"
+                : "error"
           }>
           {value?.replace("_", " ").toUpperCase() || "N/A"}
         </Badge>
@@ -316,13 +268,17 @@ const StockManagement = () => {
         </div>
 
         {/* DataTable */}
-        {filteredProducts.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading products...</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <>
             <div className="mb-4">
               <ExportButton
                 data={filteredProducts}
                 headers={[
-                  { label: "ID", accessor: (row) => row.id },
+                  { label: "ID", accessor: (row) => String(row._id ?? row.id ?? "") },
                   { label: "Name", accessor: (row) => row.name },
                   { label: "Price", accessor: (row) => formatPrice(row.price) },
                   { label: "Stock", accessor: (row) => row.stockQuantity || 0 },
@@ -353,7 +309,7 @@ const StockManagement = () => {
         onClose={() => setStockModal({ isOpen: false, product: null })}
         onUpdate={(newQuantity) => {
           if (stockModal.product) {
-            handleStockUpdate(stockModal.product.id, newQuantity);
+            handleStockUpdate(stockModal.product._id ?? stockModal.product.id, newQuantity);
           }
         }}
       />
@@ -386,17 +342,14 @@ const StockUpdateModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     let newQuantity = stockQuantity;
+    const adjustment = Math.max(0, parseInt(stockAdjustment, 10) || 0);
 
     if (adjustmentType === "set") {
       newQuantity = stockQuantity;
     } else if (adjustmentType === "add") {
-      newQuantity =
-        (product.stockQuantity || 0) + (parseInt(stockAdjustment) || 0);
+      newQuantity = (product.stockQuantity || 0) + adjustment;
     } else if (adjustmentType === "subtract") {
-      newQuantity = Math.max(
-        0,
-        (product.stockQuantity || 0) - (parseInt(stockAdjustment) || 0)
-      );
+      newQuantity = Math.max(0, (product.stockQuantity || 0) - adjustment);
     }
 
     if (newQuantity < 0) {
@@ -416,8 +369,8 @@ const StockUpdateModal = ({
     stockQuantity === 0
       ? "out_of_stock"
       : stockQuantity <= lowStockThreshold
-      ? "low_stock"
-      : "in_stock";
+        ? "low_stock"
+        : "in_stock";
 
   return (
     <AnimatePresence>
@@ -449,9 +402,12 @@ const StockUpdateModal = ({
                 </div>
                 <div className="flex items-center gap-3">
                   <img
-                    src={product.image}
+                    src={product.image || product.images?.[0] || "https://via.placeholder.com/100x100?text=Product"}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/100x100?text=Product";
+                    }}
                   />
                   <div>
                     <h3 className="font-semibold text-gray-800">
@@ -535,8 +491,8 @@ const StockUpdateModal = ({
                       newStockStatus === "in_stock"
                         ? "success"
                         : newStockStatus === "low_stock"
-                        ? "warning"
-                        : "error"
+                          ? "warning"
+                          : "error"
                     }>
                     {newStockStatus.replace("_", " ").toUpperCase()}
                   </Badge>

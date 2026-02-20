@@ -8,15 +8,17 @@ import Badge from "../../../shared/components/Badge";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
-import { mockReturnRequests } from "../../../data/adminMockData";
+import {
+  getVendorReturnRequests,
+  updateVendorReturnRequestStatus,
+} from "../services/vendorService";
 import toast from "react-hot-toast";
 
 const ReturnRequests = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
   const [returnRequests, setReturnRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -24,53 +26,26 @@ const ReturnRequests = () => {
   const vendorId = vendor?.id;
 
   useEffect(() => {
-    if (!vendorId) return;
+    if (!vendorId) {
+      setReturnRequests([]);
+      return;
+    }
 
-    // Load return requests from localStorage or use mock data
-    const savedRequests = localStorage.getItem("admin-return-requests");
-    const allRequests = savedRequests
-      ? JSON.parse(savedRequests)
-      : mockReturnRequests;
-
-    // Filter return requests for this vendor's products
-    const vendorReturnRequests = allRequests.filter((request) => {
-      // Check if any items in the return request belong to this vendor
-      if (request.items && Array.isArray(request.items)) {
-        return request.items.some((item) => {
-          // Find the order to check vendor
-          const order = orders.find((o) => o.id === request.orderId);
-          if (order && order.vendorItems) {
-            return order.vendorItems.some((vi) => vi.vendorId === vendorId);
-          }
-          // Fallback: check if product belongs to vendor (from products data)
-          return item.vendorId === vendorId;
-        });
+    const fetchReturnRequests = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorReturnRequests({ limit: 500 });
+        const payload = res?.data ?? res;
+        setReturnRequests(payload?.returnRequests ?? []);
+      } catch {
+        setReturnRequests([]);
+      } finally {
+        setIsLoading(false);
       }
-      return false;
-    });
+    };
 
-    setReturnRequests(vendorReturnRequests);
-  }, [vendorId, orders]);
-
-  // Save return requests to localStorage
-  const saveReturnRequests = (newRequests) => {
-    const savedRequests = localStorage.getItem("admin-return-requests");
-    const allRequests = savedRequests
-      ? JSON.parse(savedRequests)
-      : mockReturnRequests;
-
-    // Update the specific requests
-    const updatedRequests = allRequests.map((req) => {
-      const updated = newRequests.find((nr) => nr.id === req.id);
-      return updated || req;
-    });
-
-    localStorage.setItem(
-      "admin-return-requests",
-      JSON.stringify(updatedRequests)
-    );
-    setReturnRequests(newRequests);
-  };
+    fetchReturnRequests();
+  }, [vendorId]);
 
   // Filtered return requests
   const filteredRequests = useMemo(() => {
@@ -131,27 +106,25 @@ const ReturnRequests = () => {
   }, [returnRequests, searchQuery, selectedStatus, dateFilter]);
 
   // Handle status update
-  const handleStatusUpdate = (requestId, newStatus, action = "") => {
-    const updatedRequests = returnRequests.map((request) => {
-      if (request.id === requestId) {
-        const updated = {
-          ...request,
-          status: newStatus,
-          updatedAt: new Date().toISOString(),
-        };
+  const handleStatusUpdate = async (requestId, newStatus, action = "") => {
+    const statusData = { status: newStatus };
+    if (newStatus === "approved" && action === "approve") {
+      statusData.refundStatus = "pending";
+    } else if (newStatus === "completed" && action === "process-refund") {
+      statusData.refundStatus = "processed";
+    }
 
-        if (newStatus === "approved" && action === "approve") {
-          updated.refundStatus = "pending";
-        } else if (newStatus === "completed" && action === "process-refund") {
-          updated.refundStatus = "processed";
-        }
-
-        return updated;
-      }
-      return request;
-    });
-
-    saveReturnRequests(updatedRequests);
+    try {
+      const res = await updateVendorReturnRequestStatus(requestId, statusData);
+      const updatedRequest = res?.data ?? res;
+      setReturnRequests((prev) =>
+        prev.map((request) =>
+          request.id === requestId ? updatedRequest : request
+        )
+      );
+    } catch {
+      return;
+    }
 
     const statusMessages = {
       approve: "Return request approved",
@@ -452,7 +425,11 @@ const ReturnRequests = () => {
       </div>
 
       {/* Return Requests Table */}
-      {filteredRequests.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+          <p className="text-gray-500">Loading return requests...</p>
+        </div>
+      ) : filteredRequests.length > 0 ? (
         <DataTable
           data={filteredRequests}
           columns={columns}

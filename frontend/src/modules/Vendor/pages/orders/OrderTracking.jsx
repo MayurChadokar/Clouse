@@ -1,102 +1,121 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiMapPin, FiPackage, FiTruck, FiCheckCircle, FiClock, FiX } from 'react-icons/fi';
-import { motion } from 'framer-motion';
-import Badge from '../../../../shared/components/Badge';
-import { formatPrice } from '../../../../shared/utils/helpers';
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FiSearch,
+  FiMapPin,
+  FiPackage,
+  FiTruck,
+  FiCheckCircle,
+  FiClock,
+  FiX,
+} from "react-icons/fi";
+import { motion } from "framer-motion";
+import Badge from "../../../../shared/components/Badge";
+import { formatPrice } from "../../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { useOrderStore } from '../../../../shared/store/orderStore';
+import { getVendorOrders } from "../../services/vendorService";
 
 const OrderTracking = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
   const [vendorOrders, setVendorOrders] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const vendorId = vendor?.id;
 
-  // Filter orders to only show those containing vendor's products
   useEffect(() => {
-    if (!vendorId || !orders) {
+    if (!vendorId) {
       setVendorOrders([]);
       return;
     }
 
-    const filtered = orders.filter((order) => {
-      if (order.vendorItems && Array.isArray(order.vendorItems)) {
-        return order.vendorItems.some((vi) => vi.vendorId === vendorId);
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorOrders({ limit: 200 });
+        const data = res?.data ?? res;
+        setVendorOrders(data?.orders ?? []);
+      } catch {
+        setVendorOrders([]);
+      } finally {
+        setIsLoading(false);
       }
-      if (order.items && Array.isArray(order.items)) {
-        return order.items.some((item) => item.vendorId === vendorId);
-      }
-      return false;
-    });
+    };
 
-    setVendorOrders(filtered);
-  }, [vendorId, orders]);
+    fetchOrders();
+  }, [vendorId]);
 
   const filteredOrders = useMemo(() => {
     if (!searchQuery) return vendorOrders;
+    const q = searchQuery.toLowerCase();
     return vendorOrders.filter((order) =>
-      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trackingNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+      String(order.orderId ?? order._id ?? "")
+        .toLowerCase()
+        .includes(q) ||
+      String(order.trackingNumber ?? "")
+        .toLowerCase()
+        .includes(q)
     );
   }, [vendorOrders, searchQuery]);
 
-  // Get status icon
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending':
+      case "pending":
         return <FiClock className="text-yellow-600" />;
-      case 'processing':
+      case "processing":
         return <FiPackage className="text-indigo-600" />;
-      case 'shipped':
+      case "shipped":
         return <FiTruck className="text-cyan-600" />;
-      case 'delivered':
+      case "delivered":
         return <FiCheckCircle className="text-green-600" />;
-      case 'cancelled':
-      case 'canceled':
+      case "cancelled":
+      case "canceled":
         return <FiX className="text-red-600" />;
       default:
         return <FiClock className="text-gray-600" />;
     }
   };
 
-  // Get status color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-indigo-100 text-indigo-800';
-      case 'shipped':
-        return 'bg-cyan-100 text-cyan-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-      case 'canceled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "processing":
+        return "bg-indigo-100 text-indigo-800";
+      case "shipped":
+        return "bg-cyan-100 text-cyan-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+      case "canceled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  // Get vendor order data
   const getVendorOrderData = (order) => {
-    if (order.vendorItems && Array.isArray(order.vendorItems)) {
-      const vendorItem = order.vendorItems.find((vi) => vi.vendorId === vendorId);
-      if (vendorItem) {
-        return {
-          itemCount: vendorItem.items?.length || 0,
-          subtotal: vendorItem.subtotal || 0,
-        };
-      }
+    const vendorItem = order.vendorItems?.find(
+      (vi) => vi.vendorId?.toString() === vendorId?.toString()
+    );
+    if (vendorItem) {
+      return {
+        itemCount: vendorItem.items?.length || 0,
+        subtotal: vendorItem.subtotal || 0,
+      };
     }
-    const vendorItems = order.items?.filter((item) => item.vendorId === vendorId) || [];
+
+    const vendorItems =
+      order.items?.filter(
+        (item) => item.vendorId?.toString() === vendorId?.toString()
+      ) || [];
     return {
       itemCount: vendorItems.length,
-      subtotal: vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+      subtotal: vendorItems.reduce(
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+        0
+      ),
     };
   };
 
@@ -112,7 +131,8 @@ const OrderTracking = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="lg:hidden">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
@@ -124,7 +144,6 @@ const OrderTracking = () => {
         </div>
       </div>
 
-      {/* Search */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <div className="relative">
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -138,30 +157,44 @@ const OrderTracking = () => {
         </div>
       </div>
 
-      {/* Orders List */}
       <div className="space-y-4">
-        {filteredOrders.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+            <p className="text-gray-500">Loading orders...</p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
           filteredOrders.map((order) => {
             const vendorData = getVendorOrderData(order);
+            const orderId = order.orderId ?? order._id;
+            const orderStatus =
+              order.vendorItems?.find(
+                (vi) => vi.vendorId?.toString() === vendorId?.toString()
+              )?.status ?? order.status;
+
             return (
               <motion.div
-                key={order.id}
+                key={orderId}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => navigate(`/vendor/orders/${order.id}`)}
+                onClick={() => navigate(`/vendor/orders/${orderId}`)}
                 className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  {/* Order Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className={`p-2 rounded-lg ${getStatusColor(order.status)}`}>
-                        {getStatusIcon(order.status)}
+                      <div
+                        className={`p-2 rounded-lg ${getStatusColor(
+                          orderStatus
+                        )}`}
+                      >
+                        {getStatusIcon(orderStatus)}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-800">{order.id}</h3>
+                        <h3 className="font-bold text-gray-800">{orderId}</h3>
                         <p className="text-xs text-gray-500">
-                          {new Date(order.date).toLocaleDateString()}
+                          {new Date(
+                            order.createdAt ?? order.date
+                          ).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -189,26 +222,28 @@ const OrderTracking = () => {
                     </div>
                   </div>
 
-                  {/* Status Badge */}
                   <div className="flex items-center gap-3">
                     <Badge
                       variant={
-                        order.status === 'delivered'
-                          ? 'success'
-                          : order.status === 'pending'
-                            ? 'warning'
-                            : order.status === 'cancelled' || order.status === 'canceled'
-                              ? 'error'
-                              : 'info'
-                      }>
-                      {order.status?.toUpperCase() || 'N/A'}
+                        orderStatus === "delivered"
+                          ? "success"
+                          : orderStatus === "pending"
+                          ? "warning"
+                          : orderStatus === "cancelled" ||
+                            orderStatus === "canceled"
+                          ? "error"
+                          : "info"
+                      }
+                    >
+                      {orderStatus?.toUpperCase() || "N/A"}
                     </Badge>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/vendor/orders/${order.id}`);
+                        navigate(`/vendor/orders/${orderId}`);
                       }}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-semibold">
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-semibold"
+                    >
                       View Details
                     </button>
                   </div>
@@ -222,8 +257,8 @@ const OrderTracking = () => {
             <p className="text-gray-500 mb-2">No orders found</p>
             <p className="text-sm text-gray-400">
               {searchQuery
-                ? 'Try a different search term'
-                : 'Orders containing your products will appear here'}
+                ? "Try a different search term"
+                : "Orders containing your products will appear here"}
             </p>
           </div>
         )}
@@ -233,4 +268,3 @@ const OrderTracking = () => {
 };
 
 export default OrderTracking;
-

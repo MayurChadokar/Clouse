@@ -5,7 +5,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_DOCUMENT_MIME_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_DOCUMENT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +51,26 @@ export const uploadSingle = (fieldName) =>
 // Multiple images upload (max 5)
 export const uploadMultiple = (fieldName, maxCount = 5) =>
     multer({ storage: imageDiskStorage, fileFilter, limits: { fileSize: MAX_FILE_SIZE } }).array(fieldName, maxCount);
+
+// Single document upload (pdf or image)
+export const uploadDocumentSingle = (fieldName) =>
+    multer({
+        storage: imageDiskStorage,
+        fileFilter: (req, file, cb) => {
+            if (ALLOWED_DOCUMENT_MIME_TYPES.includes(file.mimetype)) {
+                cb(null, true);
+            } else {
+                cb(
+                    new ApiError(
+                        400,
+                        'Invalid file type. Only PDF, JPEG, PNG, WEBP, and GIF are allowed.'
+                    ),
+                    false
+                );
+            }
+        },
+        limits: { fileSize: MAX_DOCUMENT_FILE_SIZE },
+    }).single(fieldName);
 
 // CSV upload for bulk operations
 export const uploadCSV = multer({

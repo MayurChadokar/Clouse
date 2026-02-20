@@ -7,7 +7,7 @@
   {
     "title": "Products",
     "route": "/vendor/products",
-    "children": ["Manage Products", "Add Product", "Bulk Upload", "Product FAQs", "Tax & Pricing", "Product Attributes"]
+    "children": ["Manage Products", "Add Product"]
   },
   {
     "title": "Orders",
@@ -35,11 +35,6 @@
     "children": []
   },
   {
-    "title": "Pickup Locations",
-    "route": "/vendor/pickup-locations",
-    "children": []
-  },
-  {
     "title": "Chat",
     "route": "/vendor/chat",
     "children": []
@@ -50,11 +45,6 @@
     "children": []
   },
   {
-    "title": "Notifications",
-    "route": "/vendor/notifications",
-    "children": []
-  },
-  {
     "title": "Shipping Management",
     "route": "/vendor/shipping-management",
     "children": []
@@ -62,11 +52,6 @@
   {
     "title": "Customers",
     "route": "/vendor/customers",
-    "children": []
-  },
-  {
-    "title": "Support Tickets",
-    "route": "/vendor/support-tickets",
     "children": []
   },
   {

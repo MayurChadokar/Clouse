@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FiPlus,
   FiSearch,
@@ -18,10 +17,15 @@ import ConfirmModal from "../../Admin/components/ConfirmModal";
 import AnimatedSelect from "../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
+import {
+  getVendorPromotions,
+  createVendorPromotion,
+  updateVendorPromotion,
+  deleteVendorPromotion,
+} from "../services/vendorService";
 import toast from "react-hot-toast";
 
 const Promotions = () => {
-  const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
   const [promotions, setPromotions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,65 +34,73 @@ const Promotions = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const [copiedCode, setCopiedCode] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
-  useEffect(() => {
+  const fetchPromotions = useCallback(async () => {
     if (!vendorId) return;
-
-    const savedPromos = localStorage.getItem(`vendor-${vendorId}-promotions`);
-    if (savedPromos) {
-      setPromotions(JSON.parse(savedPromos));
+    setIsLoading(true);
+    try {
+      const response = await getVendorPromotions();
+      setPromotions(Array.isArray(response?.data) ? response.data : []);
+    } finally {
+      setIsLoading(false);
     }
   }, [vendorId]);
 
-  const filteredPromotions = promotions.filter((promo) => {
-    const matchesSearch =
-      !searchQuery ||
-      promo.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      promo.code?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || promo.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    fetchPromotions();
+  }, [fetchPromotions]);
 
-  const handleSave = (promoData) => {
-    const updatedPromos =
-      editingPromo && editingPromo.id
-        ? promotions.map((p) =>
-          p.id === editingPromo.id
-            ? { ...promoData, id: editingPromo.id, vendorId }
-            : p
-        )
-        : [
-          ...promotions,
-          { ...promoData, id: Date.now(), vendorId, usageCount: 0 },
-        ];
+  const filteredPromotions = useMemo(
+    () =>
+      promotions.filter((promo) => {
+        const matchesSearch =
+          !searchQuery ||
+          promo.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          promo.code?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus =
+          statusFilter === "all" || promo.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [promotions, searchQuery, statusFilter]
+  );
 
-    setPromotions(updatedPromos);
-    localStorage.setItem(
-      `vendor-${vendorId}-promotions`,
-      JSON.stringify(updatedPromos)
-    );
-    setEditingPromo(null);
-    setShowForm(false);
-    toast.success(
-      editingPromo && editingPromo.id ? "Promotion updated" : "Promotion added"
-    );
+  const handleSave = async (promoData) => {
+    setIsSaving(true);
+    try {
+      if (editingPromo?._id) {
+        await updateVendorPromotion(editingPromo._id, promoData);
+        toast.success("Promotion updated");
+      } else {
+        await createVendorPromotion(promoData);
+        toast.success("Promotion added");
+      }
+      setEditingPromo(null);
+      setShowForm(false);
+      fetchPromotions();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = () => {
-    const updatedPromos = promotions.filter((p) => p.id !== deleteModal.id);
-    setPromotions(updatedPromos);
-    localStorage.setItem(
-      `vendor-${vendorId}-promotions`,
-      JSON.stringify(updatedPromos)
-    );
-    setDeleteModal({ isOpen: false, id: null });
-    toast.success("Promotion deleted");
+  const handleDelete = async () => {
+    if (!deleteModal.id) return;
+    setIsSaving(true);
+    try {
+      await deleteVendorPromotion(deleteModal.id);
+      toast.success("Promotion deleted");
+      setDeleteModal({ isOpen: false, id: null });
+      fetchPromotions();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCopy = (code) => {
+    if (!code) return;
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
@@ -122,7 +134,8 @@ const Promotions = () => {
                   e.stopPropagation();
                   handleCopy(row.code);
                 }}
-                className="p-1 text-gray-600 hover:text-blue-600">
+                className="p-1 text-gray-600 hover:text-blue-600"
+              >
                 {copiedCode === row.code ? <FiCheck /> : <FiCopy />}
               </button>
             </div>
@@ -173,7 +186,7 @@ const Promotions = () => {
       sortable: true,
       render: (value, row) => (
         <span className="text-sm">
-          {value || 0} / {row.usageLimit || "∞"}
+          {value || 0} / {row.usageLimit || "Unlimited"}
         </span>
       ),
     },
@@ -181,9 +194,7 @@ const Promotions = () => {
       key: "status",
       label: "Status",
       sortable: true,
-      render: (value) => (
-        <Badge variant={getStatusVariant(value)}>{value}</Badge>
-      ),
+      render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>,
     },
     {
       key: "actions",
@@ -198,16 +209,18 @@ const Promotions = () => {
               setShowForm(true);
             }}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit">
+            title="Edit"
+          >
             <FiEdit />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({ isOpen: true, id: row.id });
+              setDeleteModal({ isOpen: true, id: row._id });
             }}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete">
+            title="Delete"
+          >
             <FiTrash2 />
           </button>
         </div>
@@ -227,7 +240,8 @@ const Promotions = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="lg:hidden">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -243,13 +257,13 @@ const Promotions = () => {
             setEditingPromo(null);
             setShowForm(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold">
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+        >
           <FiPlus />
           <span>Create Promotion</span>
         </button>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -293,7 +307,7 @@ const Promotions = () => {
                 {
                   label: "Usage",
                   accessor: (row) =>
-                    `${row.usageCount || 0} / ${row.usageLimit || "∞"}`,
+                    `${row.usageCount || 0} / ${row.usageLimit || "Unlimited"}`,
                 },
               ]}
               filename="vendor-promotions"
@@ -302,8 +316,11 @@ const Promotions = () => {
         </div>
       </div>
 
-      {/* Promotions Table */}
-      {filteredPromotions.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+          <p className="text-gray-500">Loading promotions...</p>
+        </div>
+      ) : filteredPromotions.length > 0 ? (
         <DataTable
           data={filteredPromotions}
           columns={columns}
@@ -316,7 +333,6 @@ const Promotions = () => {
         </div>
       )}
 
-      {/* Promotion Form Modal */}
       {showForm && (
         <PromotionForm
           promotion={editingPromo}
@@ -325,7 +341,7 @@ const Promotions = () => {
             setShowForm(false);
             setEditingPromo(null);
           }}
-          vendorId={vendorId}
+          isSaving={isSaving}
         />
       )}
 
@@ -343,8 +359,7 @@ const Promotions = () => {
   );
 };
 
-// Promotion Form Component
-const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
+const PromotionForm = ({ promotion, onSave, onClose, isSaving }) => {
   const [formData, setFormData] = useState({
     name: promotion?.name || "",
     type: promotion?.type || "discount",
@@ -367,10 +382,26 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!formData.startDate || !formData.endDate) {
+      toast.error("Start and end dates are required");
+      return;
+    }
+
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      toast.error("End date must be after start date");
+      return;
+    }
+
     onSave({
       ...formData,
+      code: formData.type === "promo_code" ? formData.code : "",
       startDate: new Date(formData.startDate).toISOString(),
       endDate: new Date(formData.endDate).toISOString(),
+      discountValue: Number(formData.discountValue) || 0,
+      minPurchase: Number(formData.minPurchase) || 0,
+      maxDiscount: Number(formData.maxDiscount) || 0,
+      usageLimit: Number(formData.usageLimit) || 0,
     });
   };
 
@@ -383,7 +414,8 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <FiX className="text-xl text-gray-600" />
           </button>
         </div>
@@ -396,9 +428,7 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
@@ -410,11 +440,10 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
             </label>
             <select
               value={formData.type}
-              onChange={(e) =>
-                setFormData({ ...formData, type: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               required
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
               <option value="discount">Discount</option>
               <option value="flash_sale">Flash Sale</option>
               <option value="promo_code">Promo Code</option>
@@ -430,10 +459,7 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
                 type="text"
                 value={formData.code}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    code: e.target.value.toUpperCase(),
-                  })
+                  setFormData({ ...formData, code: e.target.value.toUpperCase() })
                 }
                 required
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -452,7 +478,8 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
                 setFormData({ ...formData, discountType: e.target.value })
               }
               required
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
               <option value="percentage">Percentage</option>
               <option value="fixed">Fixed Amount</option>
             </select>
@@ -515,11 +542,10 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
             </label>
             <select
               value={formData.status}
-              onChange={(e) =>
-                setFormData({ ...formData, status: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               required
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
@@ -529,13 +555,16 @@ const PromotionForm = ({ promotion, onSave, onClose, vendorId }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold"
+            >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold">
-              {promotion ? "Update" : "Create"}
+              disabled={isSaving}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : promotion ? "Update" : "Create"}
             </button>
           </div>
         </form>

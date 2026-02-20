@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getAllBrands, createBrand, updateBrand, deleteBrand } from '../../modules/Admin/services/adminService';
+import { getAllBrands, getPublicBrands, createBrand, updateBrand, deleteBrand } from '../../modules/Admin/services/adminService';
 import toast from 'react-hot-toast';
 
 export const useBrandStore = create(
@@ -13,7 +13,12 @@ export const useBrandStore = create(
       initialize: async () => {
         set({ isLoading: true });
         try {
-          const response = await getAllBrands();
+          const isVendorArea =
+            typeof window !== 'undefined' &&
+            window.location.pathname.startsWith('/vendor');
+          const response = isVendorArea
+            ? await getPublicBrands()
+            : await getAllBrands();
           const normalizedBrands = response.data.map(brand => ({
             ...brand,
             id: brand._id // Ensure UI compatibility by aliasing _id to id

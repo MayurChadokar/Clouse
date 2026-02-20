@@ -11,6 +11,9 @@ const reviewSchema = new mongoose.Schema(
         helpfulCount: { type: Number, default: 0 },
         notHelpfulCount: { type: Number, default: 0 },
         isApproved: { type: Boolean, default: false, index: true },
+        isHidden: { type: Boolean, default: false, index: true },
+        vendorResponse: { type: String, default: '' },
+        responseDate: { type: Date },
         isVerifiedPurchase: { type: Boolean, default: false },
     },
     { timestamps: true }

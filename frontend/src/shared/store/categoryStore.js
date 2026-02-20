@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { categories as initialCategories } from '../../data/categories';
-import { getAllCategories, createCategory, updateCategory, deleteCategory } from '../../modules/Admin/services/adminService';
+import { getAllCategories, getPublicCategories, createCategory, updateCategory, deleteCategory } from '../../modules/Admin/services/adminService';
 import toast from 'react-hot-toast';
 
 export const useCategoryStore = create(
@@ -14,7 +14,12 @@ export const useCategoryStore = create(
       initialize: async () => {
         set({ isLoading: true });
         try {
-          const response = await getAllCategories();
+          const isVendorArea =
+            typeof window !== 'undefined' &&
+            window.location.pathname.startsWith('/vendor');
+          const response = isVendorArea
+            ? await getPublicCategories()
+            : await getAllCategories();
           const normalizedCategories = response.data.map(cat => ({
             ...cat,
             id: cat._id // Ensure UI compatibility by aliasing _id to id
@@ -136,7 +141,10 @@ export const useCategoryStore = create(
       // Get categories by parent
       getCategoriesByParent: (parentId) => {
         return get().categories.filter((cat) => {
-          const catParentId = cat.parentId ? String(cat.parentId) : null;
+          const normalizedParent = typeof cat.parentId === 'object'
+            ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
+            : cat.parentId;
+          const catParentId = normalizedParent ? String(normalizedParent) : null;
           const targetParentId = parentId ? String(parentId) : null;
           return catParentId === targetParentId;
         });

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FiPackage, FiTrendingUp, FiTrendingDown } from "react-icons/fi";
 import { motion } from "framer-motion";
 import DataTable from "../../../Admin/components/DataTable";
@@ -6,25 +6,44 @@ import ExportButton from "../../../Admin/components/ExportButton";
 import { formatPrice } from "../../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
 import { useVendorStore } from "../../store/vendorStore";
-import { useOrderStore } from "../../../../shared/store/orderStore";
+import { getVendorOrders } from "../../services/vendorService";
 
 const ProductPerformanceReport = () => {
   const { vendor } = useVendorAuthStore();
   const { getVendorProducts } = useVendorStore();
-  const { getVendorOrders } = useOrderStore();
   const [sortBy, setSortBy] = useState("revenue");
+  const [orders, setOrders] = useState([]);
 
   const vendorId = vendor?.id;
   const products = vendorId ? getVendorProducts(vendorId) : [];
-  const orders = vendorId ? getVendorOrders(vendorId) : [];
+
+  useEffect(() => {
+    if (!vendorId) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const res = await getVendorOrders({ limit: 500 });
+        const data = res?.data ?? res;
+        setOrders(data?.orders ?? []);
+      } catch {
+        setOrders([]);
+      }
+    };
+
+    fetchOrders();
+  }, [vendorId]);
 
   const productPerformance = useMemo(() => {
     const performanceMap = {};
 
     // Initialize with products
     products.forEach((product) => {
-      performanceMap[product.id] = {
-        id: product.id,
+      const productId = product.id || product._id;
+      performanceMap[productId] = {
+        id: productId,
         name: product.name,
         stockQuantity: product.stockQuantity || 0,
         price: product.price || 0,
@@ -39,12 +58,13 @@ const ProductPerformanceReport = () => {
     // Calculate from orders
     orders.forEach((order) => {
       order.vendorItems?.forEach((vi) => {
-        if (vi.vendorId === vendorId) {
+        if (vi.vendorId?.toString() === vendorId?.toString()) {
           vi.items?.forEach((item) => {
-            if (performanceMap[item.id]) {
-              performanceMap[item.id].orders += 1;
-              performanceMap[item.id].quantitySold += item.quantity || 1;
-              performanceMap[item.id].revenue +=
+            const itemId = item.id || item._id || item.productId;
+            if (performanceMap[itemId]) {
+              performanceMap[itemId].orders += 1;
+              performanceMap[itemId].quantitySold += item.quantity || 1;
+              performanceMap[itemId].revenue +=
                 (item.price || 0) * (item.quantity || 1);
             }
           });

@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { vendors, getVendorById } from "../../../data/vendors";
-import { useVendorStore } from "./vendorStore";
-import logoImage from "../../../../data/logos/ChatGPT Image Dec 2, 2025, 03_01_19 PM.png";
+import api from "../../../shared/utils/api";
+import { registerVendor, updateVendorProfile } from "../services/vendorService";
 
 export const useVendorAuthStore = create(
   persist(
@@ -16,97 +15,51 @@ export const useVendorAuthStore = create(
       login: async (email, password, rememberMe = false) => {
         set({ isLoading: true });
         try {
-          // Mock vendor authentication
-          // In a real app, this would be an API call
-          // const response = await api.post('/vendor/auth/login', { email, password });
+          const response = await api.post("/vendor/auth/login", {
+            email,
+            password,
+          });
+          const authData = response?.data || {};
+          const vendor = authData.vendor;
+          const accessToken = authData.accessToken;
 
-          // Find vendor by email in vendor store
-          const allVendors = useVendorStore.getState().getAllVendors();
-          const vendor = allVendors.find((v) => v.email === email);
-
-          // Mock credentials: use vendor email and password "vendor123"
-          if (vendor && password === "vendor123") {
-            // Check if vendor is approved
-            if (vendor.status !== "approved") {
-              throw new Error(
-                `Vendor account is ${vendor.status}. Please contact admin for approval.`
-              );
-            }
-
-            const mockToken = "vendor-jwt-token-" + Date.now();
-
-            set({
-              vendor: vendor,
-              token: mockToken,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-
-            // Store token in localStorage for API interceptor
-            localStorage.setItem("vendor-token", mockToken);
-
-            return { success: true, vendor: vendor };
-          } else {
-            throw new Error("Invalid credentials");
+          if (!vendor || !accessToken) {
+            throw new Error("Invalid login response");
           }
+
+          set({
+            vendor,
+            token: accessToken,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          // Store token for vendor API requests
+          localStorage.setItem("vendor-token", accessToken);
+
+          return { success: true, vendor };
         } catch (error) {
           set({ isLoading: false });
           throw error;
         }
       },
 
-      // Vendor registration action
+      // Vendor registration action — calls real POST /vendor/auth/register
+      // Backend sends an OTP email; vendor is NOT authenticated until OTP verified.
       register: async (vendorData) => {
         set({ isLoading: true });
         try {
-          // Mock vendor registration
-          // In a real app, this would be an API call
-          // const response = await api.post('/vendor/auth/register', vendorData);
+          const response = await registerVendor(vendorData);
+          // response is already unwrapped by api.js interceptor → response.data
+          const data = response?.data ?? response;
 
-          // Check if email already exists in vendor store
-          const allVendors = useVendorStore.getState().getAllVendors();
-          const existingVendor = allVendors.find(
-            (v) => v.email === vendorData.email
-          );
-          if (existingVendor) {
-            throw new Error("Email already registered");
-          }
-
-          // Create new vendor (will be pending approval)
-          const newVendorData = {
-            name: vendorData.name,
-            email: vendorData.email,
-            phone: vendorData.phone || "",
-            storeName: vendorData.storeName,
-            storeLogo: vendorData.storeLogo || logoImage,
-            storeDescription: vendorData.storeDescription || "",
-            commissionRate: 10, // Default commission rate
-            address: vendorData.address || {},
-            documents: vendorData.documents || {},
-            bankDetails: vendorData.bankDetails || {},
-          };
-
-          // Add vendor to vendor store (this makes it visible to admin)
-          const newVendor = useVendorStore.getState().addVendor(newVendorData);
-
-          // In a real app, this would be saved to backend
-          // For now, we'll just return success
-          const mockToken = "vendor-jwt-token-" + Date.now();
-
-          set({
-            vendor: newVendor,
-            token: mockToken,
-            isAuthenticated: false, // Not authenticated until approved
-            isLoading: false,
-          });
-
-          localStorage.setItem("vendor-token", mockToken);
+          set({ isLoading: false });
 
           return {
             success: true,
-            vendor: newVendor,
             message:
-              "Registration successful! Your account is pending admin approval.",
+              data?.message ||
+              "Registration successful! Please check your email for the OTP.",
           };
         } catch (error) {
           set({ isLoading: false });
@@ -124,19 +77,14 @@ export const useVendorAuthStore = create(
         localStorage.removeItem("vendor-token");
       },
 
-      // Update vendor profile
+      // Update vendor profile — calls real PUT /vendor/auth/profile
       updateProfile: async (profileData) => {
         set({ isLoading: true });
         try {
-          // Mock update - replace with actual API call
-          // const response = await api.put('/vendor/profile', profileData);
-
-          const currentVendor = get().vendor;
-          if (!currentVendor) {
-            throw new Error("No vendor logged in");
-          }
-
-          const updatedVendor = { ...currentVendor, ...profileData };
+          const response = await updateVendorProfile(profileData);
+          const data = response?.data ?? response;
+          // Merge returned vendor data back into state so UI stays in sync
+          const updatedVendor = data?.vendor ?? { ...get().vendor, ...profileData };
 
           set({
             vendor: updatedVendor,
@@ -157,20 +105,14 @@ export const useVendorAuthStore = create(
           const storedState = JSON.parse(
             localStorage.getItem("vendor-auth-storage") || "{}"
           );
-          if (storedState.state?.vendor && storedState.state?.token) {
-            const vendor = storedState.state.vendor;
-            // Verify vendor is still approved
-            const currentVendor = getVendorById(vendor.id);
-            if (currentVendor && currentVendor.status === "approved") {
-              set({
-                vendor: currentVendor,
-                token: storedState.state.token,
-                isAuthenticated: true,
-              });
-            } else {
-              // Vendor status changed, logout
-              get().logout();
-            }
+          const persistedVendor = storedState.state?.vendor || null;
+          if (persistedVendor) {
+            set({
+              vendor: persistedVendor,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
           }
         }
       },

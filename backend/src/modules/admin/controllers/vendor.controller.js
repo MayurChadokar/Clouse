@@ -3,6 +3,8 @@ import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Vendor from '../../../models/Vendor.model.js';
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const toApiVendor = (vendorDoc) => {
     const vendor = typeof vendorDoc?.toObject === 'function'
         ? vendorDoc.toObject()
@@ -20,12 +22,21 @@ const toApiVendor = (vendorDoc) => {
 // GET /api/admin/vendors
 export const getAllVendors = asyncHandler(async (req, res) => {
     const { status, page = 1, limit = 20, search } = req.query;
-    const numericPage = Number(page) || 1;
-    const numericLimit = Number(limit) || 20;
+    const numericPage = Math.max(parseInt(page, 10) || 1, 1);
+    const numericLimit = Math.max(parseInt(limit, 10) || 20, 1);
     const skip = (numericPage - 1) * numericLimit;
     const filter = {};
-    if (status) filter.status = status;
-    if (search) filter.$or = [{ name: new RegExp(search, 'i') }, { email: new RegExp(search, 'i') }, { storeName: new RegExp(search, 'i') }];
+
+    const allowedStatuses = new Set(['pending', 'approved', 'suspended', 'rejected']);
+    if (typeof status === 'string' && status !== 'all' && allowedStatuses.has(status)) {
+        filter.status = status;
+    }
+
+    const trimmedSearch = String(search || '').trim();
+    if (trimmedSearch) {
+        const safeRegex = new RegExp(escapeRegex(trimmedSearch), 'i');
+        filter.$or = [{ name: safeRegex }, { email: safeRegex }, { storeName: safeRegex }];
+    }
 
     const vendors = await Vendor.find(filter)
         .select('-password -otp -otpExpiry -bankDetails')

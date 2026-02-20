@@ -79,6 +79,9 @@ export const deleteProduct = (id) =>
 export const getAllCategories = () =>
     api.get('/admin/categories');
 
+export const getPublicCategories = () =>
+    api.get('/categories/all');
+
 export const createCategory = (data) =>
     api.post('/admin/categories', data);
 
@@ -91,6 +94,9 @@ export const deleteCategory = (id) =>
 // ─── Brands ───────────────────────────────────────────────────────────────────
 export const getAllBrands = () =>
     api.get('/admin/brands');
+
+export const getPublicBrands = () =>
+    api.get('/brands/all');
 
 export const createBrand = (data) =>
     api.post('/admin/brands', data);

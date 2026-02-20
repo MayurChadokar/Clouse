@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react';
 import { FiSave, FiUser, FiLock, FiShield } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { useVendorStore } from '../../store/vendorStore';
 import toast from 'react-hot-toast';
 
 const ProfileSettings = () => {
-  const { vendor, logout } = useVendorAuthStore();
-  const { updateVendorProfile } = useVendorAuthStore();
+  const { vendor, updateProfile, logout } = useVendorAuthStore();
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     currentPassword: '',
     newPassword: '',
@@ -20,14 +17,11 @@ const ProfileSettings = () => {
 
   useEffect(() => {
     if (vendor) {
-      setFormData({
+      setFormData((prev) => ({
+        ...prev,
         name: vendor.name || '',
-        email: vendor.email || '',
         phone: vendor.phone || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      }));
     }
   }, [vendor]);
 
@@ -41,16 +35,13 @@ const ProfileSettings = () => {
     if (!vendor) return;
 
     try {
-      const updateData = {
+      await updateProfile({
         name: formData.name,
-        email: formData.email,
         phone: formData.phone,
-      };
-
-      updateVendorProfile(vendor.id, updateData);
+      });
       toast.success('Profile updated successfully');
-    } catch (error) {
-      toast.error('Failed to update profile');
+    } catch {
+      // api.js shows toast
     }
   };
 
@@ -122,8 +113,8 @@ const ProfileSettings = () => {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap text-xs sm:text-sm ${activeSection === section.id
-                      ? 'border-purple-600 text-purple-600 font-semibold'
-                      : 'border-transparent text-gray-600 hover:text-gray-800'
+                    ? 'border-purple-600 text-purple-600 font-semibold'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
                     }`}
                 >
                   <Icon className="text-base sm:text-lg" />

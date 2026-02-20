@@ -15,146 +15,82 @@ import TimePeriodFilter from "../../Admin/components/Analytics/TimePeriodFilter"
 import ExportButton from "../../Admin/components/ExportButton";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
-import { useVendorStore } from "../store/vendorStore";
-import { useCommissionStore } from "../../../shared/store/commissionStore";
+import { getVendorAnalyticsOverview } from "../services/vendorService";
 
 const Analytics = () => {
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
-  const { getVendorProducts } = useVendorStore();
-  const { getVendorEarningsSummary } = useCommissionStore();
-
   const [period, setPeriod] = useState("month");
-  const [vendorOrders, setVendorOrders] = useState([]);
   const [analyticsData, setAnalyticsData] = useState([]);
+  const [statusData, setStatusData] = useState([]);
+  const [summary, setSummary] = useState({
+    totalRevenue: 0,
+    pendingEarnings: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
-  // Filter orders to only show those containing vendor's products
   useEffect(() => {
-    if (!vendorId || !orders) {
-      setVendorOrders([]);
-      return;
-    }
-
-    const filtered = orders.filter((order) => {
-      if (order.vendorItems && Array.isArray(order.vendorItems)) {
-        return order.vendorItems.some((vi) => vi.vendorId === vendorId);
-      }
-      if (order.items && Array.isArray(order.items)) {
-        return order.items.some((item) => item.vendorId === vendorId);
-      }
-      return false;
-    });
-
-    setVendorOrders(filtered);
-  }, [vendorId, orders]);
-
-  // Generate analytics data from vendor orders
-  useEffect(() => {
-    if (!vendorOrders.length) {
+    if (!vendorId) {
       setAnalyticsData([]);
+      setStatusData([]);
+      setSummary({
+        totalRevenue: 0,
+        pendingEarnings: 0,
+        totalOrders: 0,
+        totalProducts: 0,
+      });
       return;
     }
 
-    // Group orders by date
-    const ordersByDate = {};
-    vendorOrders.forEach((order) => {
-      const date = new Date(order.date).toISOString().split("T")[0];
-      if (!ordersByDate[date]) {
-        ordersByDate[date] = {
-          date,
-          revenue: 0,
-          orders: 0,
-        };
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorAnalyticsOverview();
+        const data = res?.data ?? res;
+
+        const timeseries = Array.isArray(data?.timeseries) ? data.timeseries : [];
+        setAnalyticsData(timeseries);
+        setStatusData(Array.isArray(data?.statusBreakdown) ? data.statusBreakdown : []);
+        setSummary({
+          totalRevenue: data?.summary?.totalRevenue ?? 0,
+          pendingEarnings: data?.summary?.pendingEarnings ?? 0,
+          totalOrders: data?.summary?.totalOrders ?? 0,
+          totalProducts: data?.summary?.totalProducts ?? 0,
+        });
+      } catch {
+        setAnalyticsData([]);
+        setStatusData([]);
+        setSummary({
+          totalRevenue: 0,
+          pendingEarnings: 0,
+          totalOrders: 0,
+          totalProducts: 0,
+        });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Get vendor-specific order data
-      const vendorItem = order.vendorItems?.find(
-        (vi) => vi.vendorId === vendorId
-      );
-      if (vendorItem) {
-        ordersByDate[date].revenue += vendorItem.subtotal || 0;
-      } else {
-        const vendorItems =
-          order.items?.filter((item) => item.vendorId === vendorId) || [];
-        const subtotal = vendorItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
-        ordersByDate[date].revenue += subtotal;
-      }
-      ordersByDate[date].orders += 1;
-    });
+    fetchData();
+  }, [vendorId]);
 
-    // Convert to array and sort by date
-    const data = Object.values(ordersByDate).sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-
-    // Fill in missing dates for the last 30 days
-    const today = new Date();
-    const filledData = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-      const existing = data.find((d) => d.date === dateStr);
-      filledData.push(existing || { date: dateStr, revenue: 0, orders: 0 });
-    }
-
-    setAnalyticsData(filledData);
-  }, [vendorOrders, vendorId]);
-
-  // Calculate analytics summary
   const analyticsSummary = useMemo(() => {
-    const vendorProducts = vendorId ? getVendorProducts(vendorId) : [];
-    const earningsSummary = vendorId
-      ? getVendorEarningsSummary(vendorId)
-      : null;
-
-    // Calculate revenue from orders
-    let totalRevenue = 0;
-    vendorOrders.forEach((order) => {
-      const vendorItem = order.vendorItems?.find(
-        (vi) => vi.vendorId === vendorId
-      );
-      if (vendorItem) {
-        totalRevenue += vendorItem.subtotal || 0;
-      } else {
-        const vendorItems =
-          order.items?.filter((item) => item.vendorId === vendorId) || [];
-        totalRevenue += vendorItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
-      }
-    });
-
-    // Calculate recent period revenue (last 7 days)
-    const recentRevenue = analyticsData
-      .slice(-7)
-      .reduce((sum, d) => sum + d.revenue, 0);
-
-    // Calculate previous period revenue (7 days before that)
+    const recentRevenue = analyticsData.slice(-7).reduce((sum, d) => sum + d.revenue, 0);
     const previousRevenue = analyticsData
       .slice(-14, -7)
       .reduce((sum, d) => sum + d.revenue, 0);
 
     const revenueChange =
       previousRevenue > 0
-        ? (((recentRevenue - previousRevenue) / previousRevenue) * 100).toFixed(
-            1
-          )
+        ? (((recentRevenue - previousRevenue) / previousRevenue) * 100).toFixed(1)
         : recentRevenue > 0
-        ? 100
-        : 0;
+          ? 100
+          : 0;
 
-    // Calculate order counts
-    const recentOrders = analyticsData
-      .slice(-7)
-      .reduce((sum, d) => sum + d.orders, 0);
+    const recentOrders = analyticsData.slice(-7).reduce((sum, d) => sum + d.orders, 0);
     const previousOrders = analyticsData
       .slice(-14, -7)
       .reduce((sum, d) => sum + d.orders, 0);
@@ -163,24 +99,15 @@ const Analytics = () => {
       previousOrders > 0
         ? (((recentOrders - previousOrders) / previousOrders) * 100).toFixed(1)
         : recentOrders > 0
-        ? 100
-        : 0;
+          ? 100
+          : 0;
 
     return {
-      totalRevenue: earningsSummary?.totalEarnings || totalRevenue,
-      pendingEarnings: earningsSummary?.pendingEarnings || 0,
-      totalOrders: vendorOrders.length,
-      totalProducts: vendorProducts.length,
+      ...summary,
       revenueChange: parseFloat(revenueChange),
       ordersChange: parseFloat(ordersChange),
     };
-  }, [
-    vendorOrders,
-    analyticsData,
-    vendorId,
-    getVendorProducts,
-    getVendorEarningsSummary,
-  ]);
+  }, [analyticsData, summary]);
 
   if (!vendorId) {
     return (
@@ -194,7 +121,8 @@ const Analytics = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="lg:hidden">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
@@ -203,10 +131,7 @@ const Analytics = () => {
           <p className="text-gray-600">Your store performance and metrics</p>
         </div>
         <div className="flex items-center gap-3">
-          <TimePeriodFilter
-            selectedPeriod={period}
-            onPeriodChange={setPeriod}
-          />
+          <TimePeriodFilter selectedPeriod={period} onPeriodChange={setPeriod} />
           <ExportButton
             data={analyticsData}
             headers={[
@@ -219,7 +144,6 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -275,7 +199,6 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Charts */}
       {analyticsData.length > 0 ? (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -285,7 +208,7 @@ const Analytics = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RevenueVsOrdersChart data={analyticsData} period={period} />
-            <OrderStatusPieChart />
+            <OrderStatusPieChart data={statusData} />
           </div>
         </>
       ) : (
@@ -295,6 +218,12 @@ const Analytics = () => {
           <p className="text-sm text-gray-400">
             Analytics will appear here once you start receiving orders
           </p>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+          <p className="text-gray-500 text-center">Loading analytics...</p>
         </div>
       )}
     </motion.div>

@@ -19,7 +19,10 @@ import Badge from "../../../../shared/components/Badge";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { mockReturnRequests } from "../../../../data/adminMockData";
+import {
+  getVendorReturnRequestById,
+  updateVendorReturnRequestStatus,
+} from "../../services/vendorService";
 import toast from "react-hot-toast";
 
 const ReturnRequestDetail = () => {
@@ -35,69 +38,52 @@ const ReturnRequestDetail = () => {
   useEffect(() => {
     if (!vendorId) return;
 
-    const savedRequests = localStorage.getItem("admin-return-requests");
-    const requests = savedRequests
-      ? JSON.parse(savedRequests)
-      : mockReturnRequests;
-
-    // Filter to only show requests for this vendor
-    const vendorRequests = requests.filter((req) => {
-      if (req.items && Array.isArray(req.items)) {
-        return req.items.some((item) => item.vendorId === vendorId);
+    const fetchReturnRequest = async () => {
+      try {
+        const res = await getVendorReturnRequestById(id);
+        const data = res?.data ?? res;
+        if (!data) {
+          toast.error("Return request not found");
+          navigate("/vendor/return-requests");
+          return;
+        }
+        setReturnRequest(data);
+        setStatus(data.status);
+      } catch {
+        toast.error("Return request not found");
+        navigate("/vendor/return-requests");
       }
-      return false;
-    });
+    };
 
-    const foundRequest = vendorRequests.find((r) => r.id === id);
-
-    if (foundRequest) {
-      setReturnRequest(foundRequest);
-      setStatus(foundRequest.status);
-    } else {
-      toast.error("Return request not found");
-      navigate("/vendor/return-requests");
-    }
+    fetchReturnRequest();
   }, [id, navigate, vendorId]);
 
-  const handleStatusUpdate = (newStatus, action = "") => {
-    const savedRequests = localStorage.getItem("admin-return-requests");
-    const requests = savedRequests
-      ? JSON.parse(savedRequests)
-      : mockReturnRequests;
+  const handleStatusUpdate = async (newStatus, action = "") => {
+    const statusData = { status: newStatus };
+    if (newStatus === "approved" && action === "approve") {
+      statusData.refundStatus = "pending";
+    } else if (newStatus === "completed" && action === "process-refund") {
+      statusData.refundStatus = "processed";
+    } else if (newStatus === "completed" && !action) {
+      statusData.refundStatus = "processed";
+    } else if (
+      newStatus === "approved" &&
+      !action &&
+      returnRequest?.refundStatus !== "processed"
+    ) {
+      statusData.refundStatus = "pending";
+    }
 
-    const updatedRequests = requests.map((request) => {
-      if (request.id === id) {
-        const updated = {
-          ...request,
-          status: newStatus,
-          updatedAt: new Date().toISOString(),
-        };
-
-        if (newStatus === "approved" && action === "approve") {
-          updated.refundStatus = "pending";
-        } else if (newStatus === "completed" && action === "process-refund") {
-          updated.refundStatus = "processed";
-        } else if (newStatus === "completed" && !action) {
-          updated.refundStatus = "processed";
-        } else if (newStatus === "approved" && !action) {
-          if (updated.refundStatus !== "processed") {
-            updated.refundStatus = "pending";
-          }
-        }
-
-        return updated;
-      }
-      return request;
-    });
-
-    localStorage.setItem(
-      "admin-return-requests",
-      JSON.stringify(updatedRequests)
-    );
-    const updatedRequest = updatedRequests.find((r) => r.id === id);
-    setReturnRequest(updatedRequest);
-    setStatus(updatedRequest.status);
-    setIsEditing(false);
+    try {
+      const res = await updateVendorReturnRequestStatus(id, statusData);
+      const updatedRequest = res?.data ?? res;
+      if (!updatedRequest) return;
+      setReturnRequest(updatedRequest);
+      setStatus(updatedRequest.status);
+      setIsEditing(false);
+    } catch {
+      return;
+    }
 
     const statusMessages = {
       approve: "Return request approved",

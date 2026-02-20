@@ -9,18 +9,14 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useVendorStore } from "../store/vendorStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
-import { useCommissionStore } from "../../../shared/store/commissionStore";
+import { useVendorProductStore } from "../store/vendorProductStore";
+import { getVendorOrders, getVendorEarnings } from "../services/vendorService";
 import { formatPrice } from "../../../shared/utils/helpers";
-import { initializeFashionHubData } from "../../../shared/utils/initializeFashionHubData";
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { getVendorProducts, getVendorStats } = useVendorStore();
-  const { getVendorOrders } = useOrderStore();
-  const { getVendorEarningsSummary } = useCommissionStore();
+  const { products, fetchProducts } = useVendorProductStore();
 
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -31,55 +27,71 @@ const VendorDashboard = () => {
     pendingEarnings: 0,
   });
 
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const vendorId = vendor?.id;
 
-  // Initialize dummy data for Fashion Hub vendor (id: 1) on first load
   useEffect(() => {
-    if (vendorId === 1) {
-      // Check if data has already been initialized
-      const hasInitialized = localStorage.getItem(
-        "fashionhub-data-initialized"
-      );
-      if (!hasInitialized) {
-        initializeFashionHubData();
-        localStorage.setItem("fashionhub-data-initialized", "true");
-      }
-    }
-  }, [vendorId]);
+    if (!vendorId) return;
 
-  useEffect(() => {
-    if (vendorId) {
-      // Get vendor statistics
-      const vendorStats = getVendorStats(vendorId);
-      if (vendorStats) {
+    // Load products into the product store (reuse if already fetched)
+    if (products.length === 0) {
+      fetchProducts();
+    }
+
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch orders and earnings in parallel
+        const [ordersRes, earningsRes] = await Promise.all([
+          getVendorOrders({ page: 1, limit: 50 }),
+          getVendorEarnings(),
+        ]);
+
+        const ordersData = ordersRes?.data ?? ordersRes;
+        const earningsData = earningsRes?.data ?? earningsRes;
+
+        const orders = ordersData?.orders ?? [];
+        const summary = earningsData?.summary ?? {};
+
+        // Derive stats from real data
+        const pending = orders.filter((o) => {
+          const vendorItem = o.vendorItems?.find(
+            (vi) => vi.vendorId?.toString() === vendorId?.toString()
+          );
+          const vendorStatus = vendorItem?.status ?? o.status;
+          return vendorStatus === "pending" || vendorStatus === "processing";
+        }).length;
+
         setStats((prev) => ({
           ...prev,
-          totalProducts: vendorStats.totalProducts,
-          inStockProducts: vendorStats.inStockProducts,
+          totalOrders: ordersData?.total ?? orders.length,
+          pendingOrders: pending,
+          totalEarnings: summary.totalEarnings ?? 0,
+          pendingEarnings: summary.pendingEarnings ?? 0,
         }));
-      }
 
-      // Get vendor orders
-      const orders = getVendorOrders(vendorId);
-      setStats((prev) => ({
-        ...prev,
-        totalOrders: orders.length,
-        pendingOrders: orders.filter(
-          (o) => o.status === "pending" || o.status === "processing"
-        ).length,
-      }));
-
-      // Get earnings summary
-      const earningsSummary = getVendorEarningsSummary(vendorId);
-      if (earningsSummary) {
-        setStats((prev) => ({
-          ...prev,
-          totalEarnings: earningsSummary.totalEarnings,
-          pendingEarnings: earningsSummary.pendingEarnings,
-        }));
+        setRecentOrders(orders.slice(0, 5));
+      } catch {
+        // errors handled by api.js toast
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [vendorId, getVendorStats, getVendorOrders, getVendorEarningsSummary]);
+    };
+
+    loadDashboardData();
+  }, [vendorId, fetchProducts, products.length]);
+
+  // Sync product counts whenever the product store updates
+  useEffect(() => {
+    const inStock = products.filter((p) => p.stock === "in_stock").length;
+    setStats((prev) => ({
+      ...prev,
+      totalProducts: products.length,
+      inStockProducts: inStock,
+    }));
+  }, [products]);
 
   const statCards = [
     {
@@ -120,16 +132,7 @@ const VendorDashboard = () => {
     },
   ];
 
-  const recentOrders = useMemo(() => {
-    if (!vendorId) return [];
-    const orders = getVendorOrders(vendorId);
-    return orders.slice(0, 5);
-  }, [vendorId, getVendorOrders]);
-
-  const vendorProducts = useMemo(() => {
-    if (!vendorId) return [];
-    return getVendorProducts(vendorId).slice(0, 5);
-  }, [vendorId, getVendorProducts]);
+  const topProducts = useMemo(() => products.slice(0, 5), [products]);
 
   return (
     <motion.div
@@ -169,7 +172,7 @@ const VendorDashboard = () => {
               {stat.label}
             </h3>
             <p className={`${stat.textColor} text-2xl font-bold`}>
-              {stat.value}
+              {isLoading ? "—" : stat.value}
             </p>
           </motion.div>
         ))}
@@ -231,36 +234,50 @@ const VendorDashboard = () => {
               View All
             </button>
           </div>
-          {recentOrders.length > 0 ? (
+          {isLoading ? (
+            <p className="text-gray-400 text-center py-8">Loading orders...</p>
+          ) : recentOrders.length > 0 ? (
             <div className="space-y-3">
-              {recentOrders.map((order) => (
+              {recentOrders.map((order) => {
+                const vendorItem = order.vendorItems?.find(
+                  (vi) => vi.vendorId?.toString() === vendorId?.toString()
+                );
+                const displayStatus = vendorItem?.status ?? order.status;
+                const displayAmount =
+                  vendorItem?.subtotal ?? order.totalAmount ?? order.total ?? 0;
+
+                return (
                 <div
-                  key={order.id}
-                  onClick={() => navigate(`/vendor/orders/${order.id}`)}
+                  key={order._id ?? order.orderId}
+                  onClick={() =>
+                    navigate(`/vendor/orders/${order.orderId ?? order._id}`)
+                  }
                   className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
                   <div>
-                    <p className="font-semibold text-gray-800">{order.id}</p>
+                    <p className="font-semibold text-gray-800">
+                      {order.orderId ?? order._id}
+                    </p>
                     <p className="text-sm text-gray-600">
-                      {new Date(order.date).toLocaleDateString()}
+                      {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-800">
-                      {formatPrice(order.total || 0)}
+                      {formatPrice(displayAmount)}
                     </p>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        order.status === "delivered"
+                      className={`text-xs px-2 py-1 rounded-full ${displayStatus === "delivered"
                           ? "bg-green-100 text-green-700"
-                          : order.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}>
-                      {order.status}
+                          : displayStatus === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}>
+                      {displayStatus}
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-500 text-center py-8">No orders yet</p>
@@ -277,17 +294,23 @@ const VendorDashboard = () => {
               View All
             </button>
           </div>
-          {vendorProducts.length > 0 ? (
+          {topProducts.length > 0 ? (
             <div className="space-y-3">
-              {vendorProducts.map((product) => (
+              {topProducts.map((product) => (
                 <div
-                  key={product.id}
-                  onClick={() => navigate(`/vendor/products/${product.id}`)}
+                  key={product._id ?? product.id}
+                  onClick={() =>
+                    navigate(`/vendor/products/${product._id ?? product.id}`)
+                  }
                   className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
                   <img
-                    src={product.image}
+                    src={product.image || product.images?.[0]}
                     alt={product.name}
                     className="w-12 h-12 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://via.placeholder.com/48x48?text=P";
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 truncate">
@@ -298,18 +321,17 @@ const VendorDashboard = () => {
                     </p>
                   </div>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      product.stock === "in_stock"
+                    className={`text-xs px-2 py-1 rounded-full ${product.stock === "in_stock"
                         ? "bg-green-100 text-green-700"
                         : product.stock === "low_stock"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}>
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}>
                     {product.stock === "in_stock"
                       ? "In Stock"
                       : product.stock === "low_stock"
-                      ? "Low Stock"
-                      : "Out of Stock"}
+                        ? "Low Stock"
+                        : "Out of Stock"}
                   </span>
                 </div>
               ))}

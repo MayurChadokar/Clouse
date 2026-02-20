@@ -1,158 +1,127 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  FiMessageCircle,
-  FiSend,
-  FiUser,
-  FiSearch,
-  FiFilter,
-  FiClock,
-} from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { FiMessageCircle, FiSend, FiUser, FiSearch } from "react-icons/fi";
+import { motion } from "framer-motion";
 import Badge from "../../../shared/components/Badge";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
-import toast from "react-hot-toast";
+import {
+  getVendorChatThreads,
+  getVendorChatMessages,
+  sendVendorChatMessage,
+  markVendorChatRead,
+} from "../services/vendorService";
 
 const Chat = () => {
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
-  useEffect(() => {
+  const fetchThreads = useCallback(async () => {
     if (!vendorId) return;
-
-    // Load chats from localStorage or initialize with dummy data
-    const savedChats = localStorage.getItem(`vendor-${vendorId}-chats`);
-    if (savedChats) {
-      setChats(JSON.parse(savedChats));
-    } else {
-      // Initialize with chats from orders
-      const orderChats = orders
-        .filter((order) => {
-          if (order.vendorItems && Array.isArray(order.vendorItems)) {
-            return order.vendorItems.some((vi) => vi.vendorId === vendorId);
-          }
-          return false;
-        })
-        .slice(0, 5)
-        .map((order, index) => ({
-          id: `chat-${order.id}`,
-          customerId: order.userId || `customer-${index}`,
-          customerName: order.shippingAddress?.name || `Customer ${index + 1}`,
-          customerEmail:
-            order.shippingAddress?.email || `customer${index + 1}@example.com`,
-          orderId: order.id,
-          lastMessage:
-            index === 0
-              ? "Hello, I need help with my order"
-              : "Thank you for your help!",
-          unreadCount: index === 0 ? 2 : 0,
-          status: index === 0 ? "active" : index === 1 ? "resolved" : "active",
-          lastActivity: order.date,
-          createdAt: order.date,
-        }));
-
-      setChats(orderChats);
-      localStorage.setItem(
-        `vendor-${vendorId}-chats`,
-        JSON.stringify(orderChats)
-      );
+    setIsLoadingChats(true);
+    try {
+      const res = await getVendorChatThreads();
+      const data = res?.data ?? res;
+      setChats(Array.isArray(data) ? data : []);
+    } catch {
+      setChats([]);
+    } finally {
+      setIsLoadingChats(false);
     }
-  }, [vendorId, orders]);
+  }, [vendorId]);
 
   useEffect(() => {
-    if (selectedChat) {
-      // Load messages for selected chat
-      const savedMessages = localStorage.getItem(
-        `vendor-${vendorId}-chat-${selectedChat.id}-messages`
-      );
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      } else {
-        // Initialize with default messages
-        const defaultMessages = [
-          {
-            id: 1,
-            sender: "customer",
-            message: selectedChat.lastMessage,
-            time: selectedChat.lastActivity,
-          },
-          {
-            id: 2,
-            sender: "vendor",
-            message: "Hi! How can I help you today?",
-            time: new Date().toISOString(),
-          },
-        ];
-        setMessages(defaultMessages);
-        localStorage.setItem(
-          `vendor-${vendorId}-chat-${selectedChat.id}-messages`,
-          JSON.stringify(defaultMessages)
-        );
-      }
+    fetchThreads();
+  }, [fetchThreads]);
+
+  useEffect(() => {
+    if (!selectedChat?._id) {
+      setMessages([]);
+      return;
     }
-  }, [selectedChat, vendorId]);
+
+    const fetchMessages = async () => {
+      setIsLoadingMessages(true);
+      try {
+        const res = await getVendorChatMessages(selectedChat._id);
+        const data = res?.data ?? res;
+        setMessages(Array.isArray(data) ? data : []);
+      } catch {
+        setMessages([]);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChat?._id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSelectChat = (chat) => {
+  const handleSelectChat = async (chat) => {
     setSelectedChat(chat);
-    // Mark as read
-    const updatedChats = chats.map((c) =>
-      c.id === chat.id ? { ...c, unreadCount: 0, status: "active" } : c
+    setChats((prev) =>
+      prev.map((c) =>
+        c._id === chat._id ? { ...c, unreadCount: 0, status: "active" } : c
+      )
     );
-    setChats(updatedChats);
-    localStorage.setItem(
-      `vendor-${vendorId}-chats`,
-      JSON.stringify(updatedChats)
-    );
+    try {
+      await markVendorChatRead(chat._id);
+    } catch {
+      // global toast handled by api.js
+    }
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedChat) return;
+  const handleSendMessage = async () => {
+    const message = newMessage.trim();
+    if (!message || !selectedChat?._id || isSending) return;
 
-    const message = {
-      id: messages.length + 1,
-      sender: "vendor",
-      message: newMessage,
-      time: new Date().toISOString(),
-    };
+    setIsSending(true);
+    try {
+      const res = await sendVendorChatMessage(selectedChat._id, message);
+      const created = (res?.data ?? res) || null;
 
-    const updatedMessages = [...messages, message];
-    setMessages(updatedMessages);
-    setNewMessage("");
+      if (created) {
+        setMessages((prev) => [...prev, created]);
+      }
 
-    // Update chat last message
-    const updatedChats = chats.map((c) =>
-      c.id === selectedChat.id
-        ? {
-          ...c,
-          lastMessage: newMessage,
-          lastActivity: new Date().toISOString(),
-          unreadCount: 0,
-        }
-        : c
-    );
-    setChats(updatedChats);
-
-    // Save to localStorage
-    localStorage.setItem(
-      `vendor-${vendorId}-chat-${selectedChat.id}-messages`,
-      JSON.stringify(updatedMessages)
-    );
-    localStorage.setItem(
-      `vendor-${vendorId}-chats`,
-      JSON.stringify(updatedChats)
-    );
+      setNewMessage("");
+      const nowIso = new Date().toISOString();
+      setChats((prev) =>
+        prev.map((c) =>
+          c._id === selectedChat._id
+            ? {
+                ...c,
+                lastMessage: message,
+                lastActivity: created?.time || nowIso,
+                unreadCount: 0,
+              }
+            : c
+        )
+      );
+      setSelectedChat((prev) =>
+        prev
+          ? {
+              ...prev,
+              lastMessage: message,
+              lastActivity: created?.time || nowIso,
+              unreadCount: 0,
+            }
+          : prev
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -162,18 +131,24 @@ const Chat = () => {
     }
   };
 
-  const filteredChats = chats.filter((chat) => {
-    const matchesSearch =
-      !searchQuery ||
-      chat.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.orderId?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" || chat.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredChats = useMemo(
+    () =>
+      chats.filter((chat) => {
+        const orderText = String(chat.orderDisplayId || "").toLowerCase();
+        const customerText = String(chat.customerName || "").toLowerCase();
+        const matchesSearch =
+          !searchQuery ||
+          customerText.includes(searchQuery.toLowerCase()) ||
+          orderText.includes(searchQuery.toLowerCase());
+        const matchesStatus =
+          filterStatus === "all" || chat.status === filterStatus;
+        return matchesSearch && matchesStatus;
+      }),
+    [chats, filterStatus, searchQuery]
+  );
 
   const activeChats = chats.filter((c) => c.status === "active").length;
-  const unreadCount = chats.reduce((sum, c) => sum + c.unreadCount, 0);
+  const unreadCount = chats.reduce((sum, c) => sum + Number(c.unreadCount || 0), 0);
 
   if (!vendorId) {
     return (
@@ -187,7 +162,8 @@ const Chat = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="lg:hidden">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
@@ -207,7 +183,6 @@ const Chat = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chat List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200">
             <div className="relative mb-4">
@@ -223,34 +198,42 @@ const Chat = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setFilterStatus("all")}
-                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${filterStatus === "all"
+                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  filterStatus === "all"
                     ? "bg-primary-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}>
+                }`}
+              >
                 All ({chats.length})
               </button>
               <button
                 onClick={() => setFilterStatus("active")}
-                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${filterStatus === "active"
+                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  filterStatus === "active"
                     ? "bg-primary-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}>
+                }`}
+              >
                 Active ({activeChats})
               </button>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredChats.length > 0 ? (
+            {isLoadingChats ? (
+              <div className="p-8 text-center text-gray-500">Loading chats...</div>
+            ) : filteredChats.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {filteredChats.map((chat) => (
                   <div
-                    key={chat.id}
+                    key={chat._id}
                     onClick={() => handleSelectChat(chat)}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedChat?.id === chat.id
+                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedChat?._id === chat._id
                         ? "bg-primary-50 border-l-4 border-primary-600"
                         : ""
-                      }`}>
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -261,8 +244,8 @@ const Chat = () => {
                             {chat.customerName}
                           </h3>
                           <p className="text-xs text-gray-500 truncate">
-                            {chat.orderId
-                              ? `Order: ${chat.orderId}`
+                            {chat.orderDisplayId
+                              ? `Order: ${chat.orderDisplayId}`
                               : chat.customerEmail}
                           </p>
                         </div>
@@ -274,10 +257,12 @@ const Chat = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 truncate mb-1">
-                      {chat.lastMessage}
+                      {chat.lastMessage || "No messages yet"}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(chat.lastActivity).toLocaleDateString()}
+                      {chat.lastActivity
+                        ? new Date(chat.lastActivity).toLocaleDateString()
+                        : "N/A"}
                     </p>
                   </div>
                 ))}
@@ -291,7 +276,6 @@ const Chat = () => {
           </div>
         </div>
 
-        {/* Chat Window */}
         {selectedChat ? (
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-primary-50">
@@ -305,44 +289,53 @@ const Chat = () => {
                       {selectedChat.customerName}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      {selectedChat.orderId
-                        ? `Order: ${selectedChat.orderId}`
+                      {selectedChat.orderDisplayId
+                        ? `Order: ${selectedChat.orderDisplayId}`
                         : selectedChat.customerEmail}
                     </p>
                   </div>
                 </div>
                 <Badge
-                  variant={
-                    selectedChat.status === "active" ? "success" : "info"
-                  }
-                  className="text-xs">
+                  variant={selectedChat.status === "active" ? "success" : "info"}
+                  className="text-xs"
+                >
                   {selectedChat.status === "active" ? "Active" : "Resolved"}
                 </Badge>
               </div>
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[500px]">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === "vendor" ? "justify-end" : "justify-start"
-                    }`}>
+              {isLoadingMessages ? (
+                <div className="text-center text-gray-500">Loading messages...</div>
+              ) : (
+                messages.map((msg) => (
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.sender === "vendor"
-                        ? "bg-primary-600 text-white"
-                        : "bg-gray-100 text-gray-800"
-                      }`}>
-                    <p className="text-sm">{msg.message}</p>
-                    <p
-                      className={`text-xs mt-1 ${msg.sender === "vendor"
-                          ? "text-primary-100"
-                          : "text-gray-500"
-                        }`}>
-                      {new Date(msg.time).toLocaleTimeString()}
-                    </p>
+                    key={msg.id}
+                    className={`flex ${
+                      msg.sender === "vendor" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        msg.sender === "vendor"
+                          ? "bg-primary-600 text-white"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      <p className="text-sm">{msg.message}</p>
+                      <p
+                        className={`text-xs mt-1 ${
+                          msg.sender === "vendor"
+                            ? "text-primary-100"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {new Date(msg.time).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -352,13 +345,15 @@ const Chat = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyPress}
                   placeholder="Type a message..."
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <button
                   onClick={handleSendMessage}
-                  className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                  disabled={isSending}
+                  className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-60"
+                >
                   <FiSend />
                 </button>
               </div>
@@ -368,9 +363,7 @@ const Chat = () => {
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center justify-center p-12">
             <div className="text-center">
               <FiMessageCircle className="mx-auto text-4xl text-gray-400 mb-4" />
-              <p className="text-gray-500">
-                Select a chat to start conversation
-              </p>
+              <p className="text-gray-500">Select a chat to start conversation</p>
             </div>
           </div>
         )}

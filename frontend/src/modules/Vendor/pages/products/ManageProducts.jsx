@@ -8,26 +8,19 @@ import Badge from "../../../../shared/components/Badge";
 import ConfirmModal from "../../../Admin/components/ConfirmModal";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
-import { products as initialProducts } from "../../../../data/products";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
-import { useVendorStore } from "../../store/vendorStore";
+import { useVendorProductStore } from "../../store/vendorProductStore";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
-import { useBrandStore } from "../../../../shared/store/brandStore";
-import { initializeFashionHubProducts } from "../../../../shared/utils/initializeFashionHubProducts";
-import toast from "react-hot-toast";
 
 const ManageProducts = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { getVendorProducts } = useVendorStore();
+  const { products, isLoading, fetchProducts, removeProduct } = useVendorProductStore();
   const { categories, initialize: initCategories } = useCategoryStore();
-  const { brands, initialize: initBrands } = useBrandStore();
 
-  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedBrand, setSelectedBrand] = useState("all");
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     productId: null,
@@ -37,37 +30,10 @@ const ManageProducts = () => {
 
   useEffect(() => {
     initCategories();
-    initBrands();
-
-    // Initialize dummy products for Fashion Hub vendor (id: 1) on first load
-    if (vendorId === 1) {
-      const hasInitialized = localStorage.getItem(
-        "fashionhub-products-initialized"
-      );
-      if (!hasInitialized) {
-        initializeFashionHubProducts();
-        localStorage.setItem("fashionhub-products-initialized", "true");
-      }
+    if (vendorId) {
+      fetchProducts({ limit: 500 });
     }
-
-    loadProducts();
-  }, [vendorId]);
-
-  const loadProducts = () => {
-    if (!vendorId) return;
-
-    // Get all products (from localStorage or initial data)
-    const savedProducts = localStorage.getItem("admin-products");
-    const allProducts = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
-
-    // Filter by vendor
-    const vendorProducts = allProducts.filter(
-      (p) => p.vendorId === parseInt(vendorId)
-    );
-    setProducts(vendorProducts);
-  };
+  }, [vendorId, initCategories, fetchProducts]);
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
@@ -84,24 +50,21 @@ const ManageProducts = () => {
 
     if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (product) => product.categoryId === parseInt(selectedCategory)
-      );
-    }
-
-    if (selectedBrand !== "all") {
-      filtered = filtered.filter(
-        (product) => product.brandId === parseInt(selectedBrand)
+        (product) =>
+          String(product.categoryId?._id ?? product.categoryId ?? "") ===
+          selectedCategory
       );
     }
 
     return filtered;
-  }, [products, searchQuery, selectedStatus, selectedCategory, selectedBrand]);
+  }, [products, searchQuery, selectedStatus, selectedCategory]);
 
   const columns = [
     {
-      key: "id",
+      key: "_id",
       label: "ID",
       sortable: true,
+      render: (value) => String(value).slice(-6).toUpperCase(),
     },
     {
       key: "name",
@@ -110,7 +73,7 @@ const ManageProducts = () => {
       render: (value, row) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.image}
+            src={row.image || row.images?.[0]}
             alt={value}
             className="w-10 h-10 object-cover rounded-lg"
             onError={(e) => {
@@ -143,8 +106,8 @@ const ManageProducts = () => {
             value === "in_stock"
               ? "success"
               : value === "low_stock"
-              ? "warning"
-              : "error"
+                ? "warning"
+                : "error"
           }>
           {value?.replace("_", " ").toUpperCase() || "N/A"}
         </Badge>
@@ -159,7 +122,7 @@ const ManageProducts = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/vendor/products/${row.id}`);
+              navigate(`/vendor/products/${row._id ?? row.id}`);
             }}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
             <FiEdit />
@@ -167,7 +130,7 @@ const ManageProducts = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({ isOpen: true, productId: row.id });
+              setDeleteModal({ isOpen: true, productId: row._id ?? row.id });
             }}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
             <FiTrash2 />
@@ -177,26 +140,11 @@ const ManageProducts = () => {
     },
   ];
 
-  const confirmDelete = () => {
-    if (!vendorId) return;
-
-    // Get all products
-    const savedProducts = localStorage.getItem("admin-products");
-    const allProducts = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
-
-    // Remove the product
-    const updatedProducts = allProducts.filter(
-      (p) => p.id !== deleteModal.productId
-    );
-    localStorage.setItem("admin-products", JSON.stringify(updatedProducts));
-
-    // Reload vendor products
-    loadProducts();
-
-    setDeleteModal({ isOpen: false, productId: null });
-    toast.success("Product deleted successfully");
+  const confirmDelete = async () => {
+    const success = await removeProduct(deleteModal.productId);
+    if (success) {
+      setDeleteModal({ isOpen: false, productId: null });
+    }
   };
 
   if (!vendorId) {
@@ -257,7 +205,7 @@ const ManageProducts = () => {
                 { value: "all", label: "All Categories" },
                 ...categories
                   .filter((cat) => cat.isActive !== false)
-                  .map((cat) => ({ value: String(cat.id), label: cat.name })),
+                  .map((cat) => ({ value: String(cat._id ?? cat.id), label: cat.name })),
               ]}
               className="w-full sm:w-auto min-w-[160px]"
             />
@@ -272,7 +220,7 @@ const ManageProducts = () => {
               <ExportButton
                 data={filteredProducts}
                 headers={[
-                  { label: "ID", accessor: (row) => row.id },
+                  { label: "ID", accessor: (row) => String(row._id ?? row.id) },
                   { label: "Name", accessor: (row) => row.name },
                   { label: "Price", accessor: (row) => formatPrice(row.price) },
                   { label: "Stock", accessor: (row) => row.stockQuantity || 0 },
@@ -285,13 +233,17 @@ const ManageProducts = () => {
         </div>
 
         {/* DataTable */}
-        {filteredProducts.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading products...</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <DataTable
             data={filteredProducts}
             columns={columns}
             pagination={true}
             itemsPerPage={10}
-            onRowClick={(row) => navigate(`/vendor/products/${row.id}`)}
+            onRowClick={(row) => navigate(`/vendor/products/${row._id ?? row.id}`)}
           />
         ) : (
           <div className="text-center py-12">

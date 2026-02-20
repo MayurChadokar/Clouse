@@ -14,11 +14,14 @@ const api = axios.create({
 // Request interceptor — attach the right token based on the request path
 api.interceptors.request.use(
   (config) => {
-    // Admin routes use 'adminToken', all others use 'token'
+    // Admin routes use adminToken, vendor routes use vendor-token, all others use token
     const isAdminRoute = config.url?.startsWith('/admin');
+    const isVendorRoute = config.url?.startsWith('/vendor');
     const token = isAdminRoute
       ? localStorage.getItem('adminToken')
-      : localStorage.getItem('token');
+      : isVendorRoute
+        ? localStorage.getItem('vendor-token')
+        : localStorage.getItem('token');
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -41,15 +44,27 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       const isAdminRoute = error.config?.url?.startsWith('/admin');
+      const isVendorRoute = error.config?.url?.startsWith('/vendor');
+      const currentPath = window.location.pathname;
+      const isInAdminArea = currentPath.startsWith('/admin');
+      const isInVendorArea = currentPath.startsWith('/vendor');
       if (isAdminRoute) {
         // Clear both manual token and persisted Zustand state to break the redirect loop
         localStorage.removeItem('adminToken');
         localStorage.removeItem('admin-auth-storage');
 
         // Only redirect and toast if we're not already on the login page
-        if (!window.location.pathname.includes('/admin/login')) {
+        if (isInAdminArea && !currentPath.includes('/admin/login')) {
           toast.error('Session expired. Please login again.');
           window.location.href = '/admin/login';
+        }
+      } else if (isVendorRoute) {
+        localStorage.removeItem('vendor-token');
+        localStorage.removeItem('vendor-auth-storage');
+
+        if (isInVendorArea && !currentPath.includes('/vendor/login')) {
+          toast.error('Session expired. Please login again.');
+          window.location.href = '/vendor/login';
         }
       } else {
         localStorage.removeItem('token');

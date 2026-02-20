@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiArrowLeft, FiCheck, FiMail } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import { verifyVendorOTP, resendVendorOTP } from '../services/vendorService';
 import toast from 'react-hot-toast';
 
 const VendorVerification = () => {
@@ -10,8 +11,9 @@ const VendorVerification = () => {
   const [codes, setCodes] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef([]);
-  
-  const email = location.state?.email || 'your email';
+
+  const email = location.state?.email || '';
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Focus first input on mount
   useEffect(() => {
@@ -23,7 +25,7 @@ const VendorVerification = () => {
   const handleChange = (index, value) => {
     // Only allow single digit
     if (value.length > 1) return;
-    
+
     const newCodes = [...codes];
     newCodes[index] = value;
     setCodes(newCodes);
@@ -54,7 +56,7 @@ const VendorVerification = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const verificationCode = codes.join('');
-    
+
     if (verificationCode.length !== 4) {
       toast.error('Please enter the complete verification code');
       return;
@@ -62,19 +64,32 @@ const VendorVerification = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Verification successful! Your account is pending admin approval.');
+      await verifyVendorOTP(email, verificationCode);
+      toast.success('Email verified! Your account is pending admin approval.');
       navigate('/vendor/login');
-    } catch (error) {
-      toast.error('Invalid verification code. Please try again.');
+    } catch {
+      // Error toast is shown by api.js interceptor
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResend = () => {
-    toast.success('Verification code sent to your email');
+  const handleResend = async () => {
+    if (resendCooldown > 0 || !email) return;
+    try {
+      await resendVendorOTP(email);
+      toast.success('OTP resent! Please check your email.');
+      // Start 30 second cooldown
+      setResendCooldown(30);
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) { clearInterval(timer); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch {
+      // api.js shows toast
+    }
   };
 
   return (
@@ -121,9 +136,12 @@ const VendorVerification = () => {
             <button
               type="button"
               onClick={handleResend}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              disabled={resendCooldown > 0}
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              Didn't receive the code? Resend
+              {resendCooldown > 0
+                ? `Resend in ${resendCooldown}s`
+                : "Didn't receive the code? Resend"}
             </button>
           </div>
 

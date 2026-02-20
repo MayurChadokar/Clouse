@@ -35,6 +35,19 @@ export const verifyOTP = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, null, 'Email verified. Awaiting admin approval.'));
 });
 
+// POST /api/vendor/auth/resend-otp
+export const resendOTP = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) throw new ApiError(400, 'Email is required.');
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) throw new ApiError(404, 'Vendor not found.');
+    if (vendor.isVerified) throw new ApiError(400, 'Email is already verified.');
+
+    await sendOTP(vendor, 'vendor_verification');
+    res.status(200).json(new ApiResponse(200, null, 'OTP resent successfully. Please check your email.'));
+});
+
 // POST /api/vendor/auth/login
 export const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -62,8 +75,30 @@ export const getProfile = asyncHandler(async (req, res) => {
 
 // PUT /api/vendor/auth/profile
 export const updateProfile = asyncHandler(async (req, res) => {
-    const allowed = ['name', 'phone', 'storeName', 'storeDescription', 'address'];
+    const allowed = ['name', 'phone', 'storeName', 'storeDescription', 'storeLogo', 'address'];
     const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
     const vendor = await Vendor.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true }).select('-password -otp -otpExpiry');
     res.status(200).json(new ApiResponse(200, vendor, 'Profile updated.'));
+});
+
+// PUT /api/vendor/auth/bank-details
+export const updateBankDetails = asyncHandler(async (req, res) => {
+    const { accountName, accountNumber, bankName, ifscCode } = req.body;
+    if (!accountName && !accountNumber && !bankName && !ifscCode) {
+        throw new ApiError(400, 'At least one bank detail field is required.');
+    }
+
+    const updates = {};
+    if (accountName) updates['bankDetails.accountName'] = accountName;
+    if (accountNumber) updates['bankDetails.accountNumber'] = accountNumber;
+    if (bankName) updates['bankDetails.bankName'] = bankName;
+    if (ifscCode) updates['bankDetails.ifscCode'] = ifscCode;
+
+    const vendor = await Vendor.findByIdAndUpdate(
+        req.user.id,
+        { $set: updates },
+        { new: true, runValidators: true }
+    ).select('-password -otp -otpExpiry');
+
+    res.status(200).json(new ApiResponse(200, vendor, 'Bank details updated.'));
 });

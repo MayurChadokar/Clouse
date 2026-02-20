@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSave, FiUpload, FiX } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { products as initialProducts } from "../../../../data/products";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
+import { useVendorProductStore } from "../../store/vendorProductStore";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
+import { uploadVendorImage, uploadVendorImages } from "../../services/vendorService";
 import CategorySelector from "../../../Admin/components/CategorySelector";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import toast from "react-hot-toast";
@@ -13,11 +14,11 @@ import toast from "react-hot-toast";
 const AddProduct = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { categories, initialize: initCategories } = useCategoryStore();
+  const { addProduct, isSaving } = useVendorProductStore();
+  const { initialize: initCategories } = useCategoryStore();
   const { brands, initialize: initBrands } = useBrandStore();
 
   const vendorId = vendor?.id;
-  const vendorName = vendor?.storeName || vendor?.name || "Vendor";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -57,6 +58,7 @@ const AddProduct = () => {
     seoDescription: "",
     relatedProducts: [],
   });
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   useEffect(() => {
     initCategories();
@@ -78,7 +80,7 @@ const AddProduct = () => {
     });
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -91,21 +93,24 @@ const AddProduct = () => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          image: reader.result,
-        });
-      };
-      reader.onerror = () => {
-        toast.error("Error reading image file");
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingMedia(true);
+      try {
+        const res = await uploadVendorImage(file, "vendors/products");
+        const uploaded = res?.data ?? res;
+        setFormData((prev) => ({
+          ...prev,
+          image: uploaded?.url || "",
+        }));
+        toast.success("Main image uploaded");
+      } catch {
+        // errors handled by api.js
+      } finally {
+        setIsUploadingMedia(false);
+      }
     }
   };
 
-  const handleGalleryUpload = (e) => {
+  const handleGalleryUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
@@ -123,26 +128,24 @@ const AddProduct = () => {
 
     if (validFiles.length === 0) return;
 
-    const readers = validFiles.map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
+    setIsUploadingMedia(true);
+    try {
+      const res = await uploadVendorImages(validFiles, "vendors/products");
+      const uploaded = res?.data ?? res;
+      const uploadedUrls = Array.isArray(uploaded)
+        ? uploaded.map((u) => u?.url).filter(Boolean)
+        : [];
 
-    Promise.all(readers)
-      .then((results) => {
-        setFormData({
-          ...formData,
-          images: [...formData.images, ...results],
-        });
-        toast.success(`${validFiles.length} image(s) added to gallery`);
-      })
-      .catch(() => {
-        toast.error("Error reading image files");
-      });
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls],
+      }));
+      toast.success(`${uploadedUrls.length} image(s) added to gallery`);
+    } catch {
+      // errors handled by api.js
+    } finally {
+      setIsUploadingMedia(false);
+    }
   };
 
   const removeGalleryImage = (index) => {
@@ -152,7 +155,7 @@ const AddProduct = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!vendorId) {
@@ -160,60 +163,52 @@ const AddProduct = () => {
       return;
     }
 
-    // Validation
-    if (!formData.name || !formData.price || !formData.stockQuantity) {
+    if (!formData.name || !formData.price || !formData.stockQuantity || !formData.categoryId) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    const savedProducts = localStorage.getItem("admin-products");
-    const products = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
-
     // Determine final categoryId
     const finalCategoryId = formData.subcategoryId
-      ? parseInt(formData.subcategoryId)
-      : formData.categoryId
-        ? parseInt(formData.categoryId)
-        : null;
+      ? formData.subcategoryId
+      : formData.categoryId ?? null;
 
-    // Create new product with vendorId auto-assigned
-    const newId = Math.max(...products.map((p) => p.id || 0), 0) + 1;
-    const newProduct = {
-      id: newId,
+    const parsedPrice = parseFloat(formData.price);
+    const parsedOriginalPrice = formData.originalPrice
+      ? parseFloat(formData.originalPrice)
+      : null;
+    const parsedStockQuantity = parseInt(formData.stockQuantity, 10);
+    const parsedTotalAllowedQuantity = formData.totalAllowedQuantity
+      ? parseInt(formData.totalAllowedQuantity, 10)
+      : null;
+    const parsedMinimumOrderQuantity = formData.minimumOrderQuantity
+      ? parseInt(formData.minimumOrderQuantity, 10)
+      : null;
+
+    if (!Number.isFinite(parsedPrice) || !Number.isFinite(parsedStockQuantity)) {
+      toast.error("Please enter valid numeric values");
+      return;
+    }
+
+    const payload = {
       ...formData,
-      price: parseFloat(formData.price),
-      originalPrice: formData.originalPrice
-        ? parseFloat(formData.originalPrice)
-        : null,
-      stockQuantity: parseInt(formData.stockQuantity),
-      totalAllowedQuantity: formData.totalAllowedQuantity
-        ? parseInt(formData.totalAllowedQuantity)
-        : null,
-      minimumOrderQuantity: formData.minimumOrderQuantity
-        ? parseInt(formData.minimumOrderQuantity)
-        : null,
+      price: parsedPrice,
+      originalPrice: parsedOriginalPrice,
+      stockQuantity: parsedStockQuantity,
+      totalAllowedQuantity: parsedTotalAllowedQuantity,
+      minimumOrderQuantity: parsedMinimumOrderQuantity,
       warrantyPeriod: formData.warrantyPeriod || null,
       guaranteePeriod: formData.guaranteePeriod || null,
       hsnCode: formData.hsnCode || null,
       categoryId: finalCategoryId,
-      subcategoryId: formData.subcategoryId
-        ? parseInt(formData.subcategoryId)
-        : null,
-      brandId: formData.brandId ? parseInt(formData.brandId) : null,
-      rating: 0,
-      reviewCount: 0,
-      // Auto-assign vendor information
-      vendorId: parseInt(vendorId),
-      vendorName: vendorName,
+      subcategoryId: formData.subcategoryId ?? null,
+      brandId: formData.brandId ?? null,
     };
 
-    const updatedProducts = [...products, newProduct];
-    localStorage.setItem("admin-products", JSON.stringify(updatedProducts));
-    toast.success("Product created successfully");
-
-    navigate("/vendor/products/manage-products");
+    const result = await addProduct(payload);
+    if (result) {
+      navigate("/vendor/products/manage-products");
+    }
   };
 
   if (!vendorId) {
@@ -649,9 +644,10 @@ const AddProduct = () => {
           </button>
           <button
             type="submit"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 gradient-green text-white rounded-lg hover:shadow-glow-green transition-all font-semibold text-sm">
+            disabled={isSaving || isUploadingMedia}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 gradient-green text-white rounded-lg hover:shadow-glow-green transition-all font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed">
             <FiSave />
-            Create Product
+            {isUploadingMedia ? "Uploading Media..." : isSaving ? "Creating..." : "Create Product"}
           </button>
         </div>
       </form>

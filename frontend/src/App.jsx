@@ -140,7 +140,6 @@ import VendorDashboard from "./modules/Vendor/pages/Dashboard";
 import VendorProducts from "./modules/Vendor/pages/Products";
 import VendorManageProducts from "./modules/Vendor/pages/products/ManageProducts";
 import VendorAddProduct from "./modules/Vendor/pages/products/AddProduct";
-import VendorBulkUpload from "./modules/Vendor/pages/products/BulkUpload";
 import VendorProductForm from "./modules/Vendor/pages/products/ProductForm";
 import VendorOrders from "./modules/Vendor/pages/Orders";
 import VendorAllOrders from "./modules/Vendor/pages/orders/AllOrders";
@@ -151,23 +150,22 @@ import VendorEarnings from "./modules/Vendor/pages/Earnings";
 import VendorSettings from "./modules/Vendor/pages/Settings";
 import VendorStockManagement from "./modules/Vendor/pages/StockManagement";
 import VendorWalletHistory from "./modules/Vendor/pages/WalletHistory";
-import VendorPickupLocations from "./modules/Vendor/pages/PickupLocations";
 import VendorChat from "./modules/Vendor/pages/Chat";
 import VendorReturnRequests from "./modules/Vendor/pages/ReturnRequests";
 import VendorReturnRequestDetail from "./modules/Vendor/pages/returns/ReturnRequestDetail";
 import VendorProductReviews from "./modules/Vendor/pages/ProductReviews";
 import VendorPromotions from "./modules/Vendor/pages/Promotions";
-import VendorNotifications from "./modules/Vendor/pages/Notifications";
-import VendorProductFAQs from "./modules/Vendor/pages/ProductFAQs";
-import VendorTaxPricing from "./modules/Vendor/pages/TaxPricing";
 import VendorShippingManagement from "./modules/Vendor/pages/ShippingManagement";
 import VendorCustomers from "./modules/Vendor/pages/Customers";
 import VendorCustomerDetail from "./modules/Vendor/pages/CustomerDetail";
-import VendorSupportTickets from "./modules/Vendor/pages/SupportTickets";
-import VendorProductAttributes from "./modules/Vendor/pages/ProductAttributes";
 import VendorInventoryReports from "./modules/Vendor/pages/InventoryReports";
 import VendorPerformanceMetrics from "./modules/Vendor/pages/PerformanceMetrics";
 import VendorDocuments from "./modules/Vendor/pages/Documents";
+import VendorNotifications from "./modules/Vendor/pages/Notifications";
+import VendorSupportTickets from "./modules/Vendor/pages/SupportTickets";
+import VendorPickupLocations from "./modules/Vendor/pages/PickupLocations";
+import VendorReports from "./modules/Vendor/pages/Reports";
+import VendorLanguageSettings from "./modules/Vendor/pages/LanguageSettings";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -497,19 +495,13 @@ const AppRoutes = () => {
           element={<VendorManageProducts />}
         />
         <Route path="products/add-product" element={<VendorAddProduct />} />
-        <Route path="products/bulk-upload" element={<VendorBulkUpload />} />
-        <Route path="products/product-faqs" element={<VendorProductFAQs />} />
-        <Route path="products/tax-pricing" element={<VendorTaxPricing />} />
-        <Route
-          path="products/product-attributes"
-          element={<VendorProductAttributes />}
-        />
         <Route path="products/:id" element={<VendorProductForm />} />
         <Route path="orders" element={<VendorOrders />} />
         <Route path="orders/all-orders" element={<VendorAllOrders />} />
         <Route path="orders/order-tracking" element={<VendorOrderTracking />} />
         <Route path="orders/:id" element={<VendorOrderDetail />} />
         <Route path="analytics" element={<VendorAnalytics />} />
+        <Route path="reports" element={<VendorReports />} />
         <Route path="earnings" element={<VendorEarnings />} />
         <Route path="earnings/overview" element={<VendorEarnings />} />
         <Route
@@ -522,8 +514,8 @@ const AppRoutes = () => {
         />
         <Route path="stock-management" element={<VendorStockManagement />} />
         <Route path="wallet-history" element={<VendorWalletHistory />} />
-        <Route path="pickup-locations" element={<VendorPickupLocations />} />
         <Route path="chat" element={<VendorChat />} />
+        <Route path="notifications" element={<VendorNotifications />} />
         <Route path="return-requests" element={<VendorReturnRequests />} />
         <Route
           path="return-requests/:id"
@@ -531,21 +523,21 @@ const AppRoutes = () => {
         />
         <Route path="product-reviews" element={<VendorProductReviews />} />
         <Route path="promotions" element={<VendorPromotions />} />
-        <Route path="notifications" element={<VendorNotifications />} />
         <Route
           path="shipping-management"
           element={<VendorShippingManagement />}
         />
+        <Route path="pickup-locations" element={<VendorPickupLocations />} />
         <Route path="customers/:id" element={<VendorCustomerDetail />} />
         <Route path="customers" element={<VendorCustomers />} />
         <Route path="support-tickets" element={<VendorSupportTickets />} />
-        <Route path="support-tickets/:id" element={<VendorSupportTickets />} />
         <Route path="inventory-reports" element={<VendorInventoryReports />} />
         <Route
           path="performance-metrics"
           element={<VendorPerformanceMetrics />}
         />
         <Route path="documents" element={<VendorDocuments />} />
+        <Route path="language-settings" element={<VendorLanguageSettings />} />
         <Route path="settings" element={<VendorSettings />} />
         <Route path="settings/store" element={<VendorSettings />} />
         <Route path="settings/payment" element={<VendorSettings />} />

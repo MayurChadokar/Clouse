@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FiDownload, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataTable from '../../../Admin/components/DataTable';
@@ -6,16 +6,34 @@ import ExportButton from '../../../Admin/components/ExportButton';
 import AnimatedSelect from '../../../Admin/components/AnimatedSelect';
 import { formatPrice } from '../../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
-import { useOrderStore } from '../../store/orderStore';
+import { getVendorOrders } from '../../services/vendorService';
 
 const SalesReport = () => {
   const { vendor } = useVendorAuthStore();
-  const { getVendorOrders } = useOrderStore();
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [periodFilter, setPeriodFilter] = useState('all');
+  const [orders, setOrders] = useState([]);
 
   const vendorId = vendor?.id;
-  const orders = vendorId ? getVendorOrders(vendorId) : [];
+
+  useEffect(() => {
+    if (!vendorId) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const res = await getVendorOrders({ limit: 500 });
+        const data = res?.data ?? res;
+        setOrders(data?.orders ?? []);
+      } catch {
+        setOrders([]);
+      }
+    };
+
+    fetchOrders();
+  }, [vendorId]);
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
@@ -27,19 +45,19 @@ const SalesReport = () => {
       switch (periodFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter((order) => new Date(order.date) >= filterDate);
+          filtered = filtered.filter((order) => new Date(order.createdAt ?? order.date) >= filterDate);
           break;
         case 'week':
           filterDate.setDate(now.getDate() - 7);
-          filtered = filtered.filter((order) => new Date(order.date) >= filterDate);
+          filtered = filtered.filter((order) => new Date(order.createdAt ?? order.date) >= filterDate);
           break;
         case 'month':
           filterDate.setMonth(now.getMonth() - 1);
-          filtered = filtered.filter((order) => new Date(order.date) >= filterDate);
+          filtered = filtered.filter((order) => new Date(order.createdAt ?? order.date) >= filterDate);
           break;
         case 'year':
           filterDate.setFullYear(now.getFullYear() - 1);
-          filtered = filtered.filter((order) => new Date(order.date) >= filterDate);
+          filtered = filtered.filter((order) => new Date(order.createdAt ?? order.date) >= filterDate);
           break;
         default:
           break;
@@ -48,7 +66,7 @@ const SalesReport = () => {
 
     if (dateRange.start || dateRange.end) {
       filtered = filtered.filter((order) => {
-        const orderDate = new Date(order.date);
+        const orderDate = new Date(order.createdAt ?? order.date);
         const start = dateRange.start ? new Date(dateRange.start) : null;
         const end = dateRange.end ? new Date(dateRange.end) : null;
         return (!start || orderDate >= start) && (!end || orderDate <= end);
@@ -60,8 +78,10 @@ const SalesReport = () => {
 
   const totalSales = useMemo(() => {
     return filteredOrders.reduce((sum, order) => {
-      const vendorItem = order.vendorItems?.find((vi) => vi.vendorId === vendorId);
-      return sum + (vendorItem?.vendorEarnings || 0);
+      const vendorItem = order.vendorItems?.find(
+        (vi) => vi.vendorId?.toString() === vendorId?.toString()
+      );
+      return sum + (vendorItem?.subtotal || vendorItem?.vendorEarnings || 0);
     }, 0);
   }, [filteredOrders, vendorId]);
 
@@ -73,7 +93,7 @@ const SalesReport = () => {
     const productMap = {};
     filteredOrders.forEach((order) => {
       order.vendorItems?.forEach((vi) => {
-        if (vi.vendorId === vendorId) {
+        if (vi.vendorId?.toString() === vendorId?.toString()) {
           vi.items?.forEach((item) => {
             if (!productMap[item.id]) {
               productMap[item.id] = { name: item.name, quantity: 0, revenue: 0 };
@@ -89,26 +109,30 @@ const SalesReport = () => {
 
   const columns = [
     {
-      key: 'id',
+      key: 'orderId',
       label: 'Order ID',
       sortable: true,
-      render: (value) => <span className="font-semibold text-gray-800">{value}</span>,
+      render: (_, row) => (
+        <span className="font-semibold text-gray-800">{row.orderId ?? row._id}</span>
+      ),
     },
     {
-      key: 'date',
+      key: 'createdAt',
       label: 'Date',
       sortable: true,
-      render: (value) => new Date(value).toLocaleDateString(),
+      render: (_, row) => new Date(row.createdAt ?? row.date).toLocaleDateString(),
     },
     {
       key: 'vendorItems',
       label: 'Amount',
       sortable: false,
       render: (value, row) => {
-        const vendorItem = value?.find((vi) => vi.vendorId === vendorId);
+        const vendorItem = value?.find(
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
+        );
         return (
           <span className="font-bold text-gray-800">
-            {formatPrice(vendorItem?.vendorEarnings || 0)}
+            {formatPrice(vendorItem?.subtotal || vendorItem?.vendorEarnings || 0)}
           </span>
         );
       },
@@ -200,12 +224,18 @@ const SalesReport = () => {
           <ExportButton
             data={filteredOrders}
             headers={[
-              { label: 'Order ID', accessor: (row) => row.id },
-              { label: 'Date', accessor: (row) => new Date(row.date).toLocaleDateString() },
+              { label: 'Order ID', accessor: (row) => row.orderId ?? row._id },
+              {
+                label: 'Date',
+                accessor: (row) =>
+                  new Date(row.createdAt ?? row.date).toLocaleDateString(),
+              },
               {
                 label: 'Amount', accessor: (row) => {
-                  const vendorItem = row.vendorItems?.find((vi) => vi.vendorId === vendorId);
-                  return formatPrice(vendorItem?.vendorEarnings || 0);
+                  const vendorItem = row.vendorItems?.find(
+                    (vi) => vi.vendorId?.toString() === vendorId?.toString()
+                  );
+                  return formatPrice(vendorItem?.subtotal || vendorItem?.vendorEarnings || 0);
                 }
               },
               { label: 'Status', accessor: (row) => row.status },

@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiSave, FiX, FiUpload } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { products as initialProducts } from "../../../../data/products";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
+import { useVendorProductStore } from "../../store/vendorProductStore";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
+import { uploadVendorImage, uploadVendorImages } from "../../services/vendorService";
 import CategorySelector from "../../../Admin/components/CategorySelector";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import toast from "react-hot-toast";
@@ -14,10 +15,11 @@ const ProductForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { vendor } = useVendorAuthStore();
+  const { fetchProductById, editProduct, addProduct, getById, isSaving } =
+    useVendorProductStore();
   const isEdit = id && id !== "new";
 
   const vendorId = vendor?.id;
-  const vendorName = vendor?.storeName || vendor?.name || "Vendor";
 
   const { categories, initialize: initCategories } = useCategoryStore();
   const { brands, initialize: initBrands } = useBrandStore();
@@ -60,11 +62,18 @@ const ProductForm = () => {
     seoDescription: "",
     relatedProducts: [],
   });
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+
+  const normalizeId = (value) => {
+    if (!value) return null;
+    if (typeof value === "object") return value._id ?? value.id ?? null;
+    return value;
+  };
 
   useEffect(() => {
     initCategories();
     initBrands();
-  }, []);
+  }, [initCategories, initBrands]);
 
   useEffect(() => {
     if (!vendorId) {
@@ -73,76 +82,77 @@ const ProductForm = () => {
       return;
     }
 
-    if (isEdit && categories.length > 0) {
-      const savedProducts = localStorage.getItem("admin-products");
-      const products = savedProducts
-        ? JSON.parse(savedProducts)
-        : initialProducts;
-      const product = products.find((p) => p.id === parseInt(id));
-
-      if (!product) {
-        toast.error("Product not found");
-        navigate("/vendor/products/manage-products");
-        return;
+    if (isEdit) {
+      // First try local cache, then fetch from API by id
+      const cached = getById(id);
+      if (cached) {
+        populateForm(cached, categories);
+      } else {
+        fetchProductById(id).then((product) => {
+          if (!product) {
+            toast.error("Product not found");
+            navigate("/vendor/products/manage-products");
+            return;
+          }
+          populateForm(product, categories);
+        });
       }
-
-      // Verify product belongs to vendor
-      if (product.vendorId !== parseInt(vendorId)) {
-        toast.error("You don't have permission to edit this product");
-        navigate("/vendor/products/manage-products");
-        return;
-      }
-
-      // Determine if categoryId is a subcategory
-      const category = categories.find(
-        (cat) => cat.id === product.categoryId
-      );
-      const isSubcategory = category && category.parentId;
-
-      setFormData({
-        name: product.name || "",
-        unit: product.unit || "",
-        price: product.price || "",
-        originalPrice: product.originalPrice || product.price || "",
-        image: product.image || "",
-        images: product.images || [],
-        categoryId: isSubcategory
-          ? category.parentId
-          : product.categoryId || null,
-        subcategoryId: isSubcategory
-          ? product.categoryId
-          : product.subcategoryId || null,
-        brandId: product.brandId || null,
-        stock: product.stock || "in_stock",
-        stockQuantity: product.stockQuantity || "",
-        totalAllowedQuantity: product.totalAllowedQuantity || "",
-        minimumOrderQuantity: product.minimumOrderQuantity || "",
-        warrantyPeriod: product.warrantyPeriod || "",
-        guaranteePeriod: product.guaranteePeriod || "",
-        hsnCode: product.hsnCode || "",
-        flashSale: product.flashSale || false,
-        isNew: product.isNew || false,
-        isFeatured: product.isFeatured || false,
-        isVisible: product.isVisible !== undefined ? product.isVisible : true,
-        codAllowed: product.codAllowed !== undefined ? product.codAllowed : true,
-        returnable: product.returnable !== undefined ? product.returnable : true,
-        cancelable: product.cancelable !== undefined ? product.cancelable : true,
-        taxIncluded: product.taxIncluded || false,
-        description: product.description || "",
-        tags: product.tags || [],
-        variants: {
-          sizes: product.variants?.sizes || [],
-          colors: product.variants?.colors || [],
-          materials: product.variants?.materials || [],
-          prices: product.variants?.prices || {},
-          defaultVariant: product.variants?.defaultVariant || {},
-        },
-        seoTitle: product.seoTitle || "",
-        seoDescription: product.seoDescription || "",
-        relatedProducts: product.relatedProducts || [],
-      });
     }
-  }, [isEdit, id, categories, vendorId, navigate]);
+  }, [isEdit, id, vendorId, navigate, categories, getById, fetchProductById]);
+
+  const populateForm = (product, cats) => {
+    const normalizedCategoryId = normalizeId(product.categoryId);
+    const normalizedBrandId = normalizeId(product.brandId);
+    const normalizedSubcategoryId = normalizeId(product.subcategoryId);
+    const category = cats.find(
+      (cat) => String(cat._id ?? cat.id) === String(normalizedCategoryId)
+    );
+    const normalizedParentCategoryId = normalizeId(category?.parentId);
+    const isSubcategory = Boolean(normalizedParentCategoryId);
+
+    setFormData({
+      name: product.name || "",
+      unit: product.unit || "",
+      price: product.price || "",
+      originalPrice: product.originalPrice || product.price || "",
+      image: product.image || "",
+      images: product.images || [],
+      categoryId: isSubcategory
+        ? normalizedParentCategoryId
+        : normalizedCategoryId || null,
+      subcategoryId: isSubcategory
+        ? normalizedCategoryId
+        : normalizedSubcategoryId || null,
+      brandId: normalizedBrandId || null,
+      stock: product.stock || "in_stock",
+      stockQuantity: product.stockQuantity || "",
+      totalAllowedQuantity: product.totalAllowedQuantity || "",
+      minimumOrderQuantity: product.minimumOrderQuantity || "",
+      warrantyPeriod: product.warrantyPeriod || "",
+      guaranteePeriod: product.guaranteePeriod || "",
+      hsnCode: product.hsnCode || "",
+      flashSale: product.flashSale || false,
+      isNew: product.isNew || false,
+      isFeatured: product.isFeatured || false,
+      isVisible: product.isVisible !== undefined ? product.isVisible : true,
+      codAllowed: product.codAllowed !== undefined ? product.codAllowed : true,
+      returnable: product.returnable !== undefined ? product.returnable : true,
+      cancelable: product.cancelable !== undefined ? product.cancelable : true,
+      taxIncluded: product.taxIncluded || false,
+      description: product.description || "",
+      tags: product.tags || [],
+      variants: {
+        sizes: product.variants?.sizes || [],
+        colors: product.variants?.colors || [],
+        materials: product.variants?.materials || [],
+        prices: product.variants?.prices || {},
+        defaultVariant: product.variants?.defaultVariant || {},
+      },
+      seoTitle: product.seoTitle || "",
+      seoDescription: product.seoDescription || "",
+      relatedProducts: product.relatedProducts || [],
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -152,7 +162,7 @@ const ProductForm = () => {
     });
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -165,21 +175,24 @@ const ProductForm = () => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          image: reader.result,
-        });
-      };
-      reader.onerror = () => {
-        toast.error("Error reading image file");
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingMedia(true);
+      try {
+        const res = await uploadVendorImage(file, "vendors/products");
+        const uploaded = res?.data ?? res;
+        setFormData((prev) => ({
+          ...prev,
+          image: uploaded?.url || "",
+        }));
+        toast.success("Main image uploaded");
+      } catch {
+        // errors handled by api.js
+      } finally {
+        setIsUploadingMedia(false);
+      }
     }
   };
 
-  const handleGalleryUpload = (e) => {
+  const handleGalleryUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
@@ -197,26 +210,24 @@ const ProductForm = () => {
 
     if (validFiles.length === 0) return;
 
-    const readers = validFiles.map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
+    setIsUploadingMedia(true);
+    try {
+      const res = await uploadVendorImages(validFiles, "vendors/products");
+      const uploaded = res?.data ?? res;
+      const uploadedUrls = Array.isArray(uploaded)
+        ? uploaded.map((u) => u?.url).filter(Boolean)
+        : [];
 
-    Promise.all(readers)
-      .then((results) => {
-        setFormData({
-          ...formData,
-          images: [...formData.images, ...results],
-        });
-        toast.success(`${validFiles.length} image(s) added to gallery`);
-      })
-      .catch(() => {
-        toast.error("Error reading image files");
-      });
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls],
+      }));
+      toast.success(`${uploadedUrls.length} image(s) added to gallery`);
+    } catch {
+      // errors handled by api.js
+    } finally {
+      setIsUploadingMedia(false);
+    }
   };
 
   const removeGalleryImage = (index) => {
@@ -226,7 +237,7 @@ const ProductForm = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!vendorId) {
@@ -234,102 +245,52 @@ const ProductForm = () => {
       return;
     }
 
-    // Validation
-    if (!formData.name || !formData.price || !formData.stockQuantity) {
+    if (!formData.name || !formData.price || !formData.stockQuantity || !formData.categoryId) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    const savedProducts = localStorage.getItem("admin-products");
-    const products = savedProducts
-      ? JSON.parse(savedProducts)
-      : initialProducts;
+    const finalCategoryId = formData.subcategoryId ?? formData.categoryId ?? null;
 
-    // Determine final categoryId
-    const finalCategoryId = formData.subcategoryId
-      ? parseInt(formData.subcategoryId)
-      : formData.categoryId
-        ? parseInt(formData.categoryId)
-        : null;
+    const parsedPrice = parseFloat(formData.price);
+    const parsedOriginalPrice = formData.originalPrice
+      ? parseFloat(formData.originalPrice)
+      : null;
+    const parsedStockQuantity = parseInt(formData.stockQuantity, 10);
+    const parsedTotalAllowedQuantity = formData.totalAllowedQuantity
+      ? parseInt(formData.totalAllowedQuantity, 10)
+      : null;
+    const parsedMinimumOrderQuantity = formData.minimumOrderQuantity
+      ? parseInt(formData.minimumOrderQuantity, 10)
+      : null;
 
-    if (isEdit) {
-      // Update existing product
-      const productIndex = products.findIndex((p) => p.id === parseInt(id));
-      if (productIndex === -1) {
-        toast.error("Product not found");
-        return;
-      }
-
-      // Verify product belongs to vendor
-      if (products[productIndex].vendorId !== parseInt(vendorId)) {
-        toast.error("You don't have permission to edit this product");
-        return;
-      }
-
-      const updatedProduct = {
-        ...products[productIndex],
-        ...formData,
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice
-          ? parseFloat(formData.originalPrice)
-          : null,
-        stockQuantity: parseInt(formData.stockQuantity),
-        totalAllowedQuantity: formData.totalAllowedQuantity
-          ? parseInt(formData.totalAllowedQuantity)
-          : null,
-        minimumOrderQuantity: formData.minimumOrderQuantity
-          ? parseInt(formData.minimumOrderQuantity)
-          : null,
-        categoryId: finalCategoryId,
-        subcategoryId: formData.subcategoryId
-          ? parseInt(formData.subcategoryId)
-          : null,
-        brandId: formData.brandId ? parseInt(formData.brandId) : null,
-        // Keep vendor information
-        vendorId: parseInt(vendorId),
-        vendorName: vendorName,
-      };
-
-      products[productIndex] = updatedProduct;
-      localStorage.setItem("admin-products", JSON.stringify(products));
-      toast.success("Product updated successfully");
-    } else {
-      // Create new product
-      const newId = Math.max(...products.map((p) => p.id || 0), 0) + 1;
-      const newProduct = {
-        id: newId,
-        ...formData,
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice
-          ? parseFloat(formData.originalPrice)
-          : null,
-        stockQuantity: parseInt(formData.stockQuantity),
-        totalAllowedQuantity: formData.totalAllowedQuantity
-          ? parseInt(formData.totalAllowedQuantity)
-          : null,
-        minimumOrderQuantity: formData.minimumOrderQuantity
-          ? parseInt(formData.minimumOrderQuantity)
-          : null,
-        warrantyPeriod: formData.warrantyPeriod || null,
-        guaranteePeriod: formData.guaranteePeriod || null,
-        hsnCode: formData.hsnCode || null,
-        categoryId: finalCategoryId,
-        subcategoryId: formData.subcategoryId
-          ? parseInt(formData.subcategoryId)
-          : null,
-        brandId: formData.brandId ? parseInt(formData.brandId) : null,
-        rating: 0,
-        reviewCount: 0,
-        vendorId: parseInt(vendorId),
-        vendorName: vendorName,
-      };
-
-      const updatedProducts = [...products, newProduct];
-      localStorage.setItem("admin-products", JSON.stringify(updatedProducts));
-      toast.success("Product created successfully");
+    if (!Number.isFinite(parsedPrice) || !Number.isFinite(parsedStockQuantity)) {
+      toast.error("Please enter valid numeric values");
+      return;
     }
 
-    navigate("/vendor/products/manage-products");
+    const payload = {
+      ...formData,
+      price: parsedPrice,
+      originalPrice: parsedOriginalPrice,
+      stockQuantity: parsedStockQuantity,
+      totalAllowedQuantity: parsedTotalAllowedQuantity,
+      minimumOrderQuantity: parsedMinimumOrderQuantity,
+      categoryId: finalCategoryId,
+      subcategoryId: formData.subcategoryId ?? null,
+      brandId: formData.brandId ?? null,
+    };
+
+    let result;
+    if (isEdit) {
+      result = await editProduct(id, payload);
+    } else {
+      result = await addProduct(payload);
+    }
+
+    if (result) {
+      navigate("/vendor/products/manage-products");
+    }
   };
 
   if (!vendorId) {
@@ -765,9 +726,10 @@ const ProductForm = () => {
           </button>
           <button
             type="submit"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 gradient-green text-white rounded-lg hover:shadow-glow-green transition-all font-semibold text-sm">
+            disabled={isSaving || isUploadingMedia}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 gradient-green text-white rounded-lg hover:shadow-glow-green transition-all font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed">
             <FiSave />
-            {isEdit ? "Update Product" : "Create Product"}
+            {isUploadingMedia ? "Uploading Media..." : isSaving ? "Saving..." : isEdit ? "Update Product" : "Create Product"}
           </button>
         </div>
       </form>

@@ -12,39 +12,36 @@ import {
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from '../../../shared/store/orderStore';
+import { getVendorOrders } from '../services/vendorService';
 
 const Orders = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { orders } = useOrderStore();
-  const [vendorOrders, setVendorOrders] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const vendorId = vendor?.id;
 
-  // Filter orders to only show those containing vendor's products
   useEffect(() => {
-    if (!vendorId || !orders) {
-      setVendorOrders([]);
-      return;
-    }
+    if (!vendorId) return;
 
-    const filtered = orders.filter((order) => {
-      // Check if order has vendorItems array
-      if (order.vendorItems && Array.isArray(order.vendorItems)) {
-        return order.vendorItems.some((vi) => vi.vendorId === vendorId);
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorOrders({ limit: 100 });
+        const data = res?.data ?? res;
+        setOrders(data?.orders ?? []);
+      } catch {
+        // errors handled by api.js toast
+      } finally {
+        setIsLoading(false);
       }
-      // Fallback: check if items have vendorId
-      if (order.items && Array.isArray(order.items)) {
-        return order.items.some((item) => item.vendorId === vendorId);
-      }
-      return false;
-    });
+    };
 
-    setVendorOrders(filtered);
-  }, [vendorId, orders]);
+    fetchOrders();
+  }, [vendorId]);
 
-  // Calculate order statistics for vendor
+  // Derive stat counts from real orders
   const orderStats = useMemo(() => {
     const stats = {
       pending: 0,
@@ -52,38 +49,26 @@ const Orders = () => {
       shipped: 0,
       delivered: 0,
       cancelled: 0,
-      total: vendorOrders.length,
-      totalRevenue: 0,
+      total: orders.length,
     };
 
-    vendorOrders.forEach((order) => {
-      const status = order.status?.toLowerCase() || '';
+    orders.forEach((order) => {
+      // Each order's vendorItems may carry per-vendor status
+      const vendorItem = order.vendorItems?.find(
+        (vi) => vi.vendorId?.toString() === vendorId?.toString()
+      );
+      const status = (vendorItem?.status ?? order.status ?? '').toLowerCase();
 
-      if (status === 'pending') {
-        stats.pending++;
-      } else if (status === 'processing') {
-        stats.processing++;
-      } else if (status === 'shipped') {
-        stats.shipped++;
-      } else if (status === 'delivered') {
-        stats.delivered++;
-      } else if (status === 'cancelled' || status === 'canceled') {
-        stats.cancelled++;
-      }
-
-      // Calculate vendor revenue from delivered orders
-      if (status === 'delivered' && order.vendorItems) {
-        const vendorItem = order.vendorItems.find((vi) => vi.vendorId === vendorId);
-        if (vendorItem) {
-          stats.totalRevenue += vendorItem.subtotal || 0;
-        }
-      }
+      if (status === 'pending') stats.pending++;
+      else if (status === 'processing') stats.processing++;
+      else if (status === 'shipped') stats.shipped++;
+      else if (status === 'delivered') stats.delivered++;
+      else if (status === 'cancelled' || status === 'canceled') stats.cancelled++;
     });
 
     return stats;
-  }, [vendorOrders, vendorId]);
+  }, [orders, vendorId]);
 
-  // Analytics cards configuration
   const analyticsCards = [
     {
       title: 'Total Orders',
@@ -129,7 +114,6 @@ const Orders = () => {
     },
   ];
 
-  // Option cards configuration
   const optionCards = [
     {
       path: '/vendor/orders/all-orders',
@@ -189,7 +173,6 @@ const Orders = () => {
               transition={{ delay: index * 0.05 }}
               className={`${card.cardBg} rounded-xl p-3 sm:p-4 shadow-md border-2 border-transparent hover:shadow-lg transition-all duration-300 relative overflow-hidden`}
             >
-              {/* Decorative gradient overlay */}
               <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 ${card.bgColor} opacity-10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16`}></div>
 
               <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
@@ -202,7 +185,7 @@ const Orders = () => {
                   {card.title}
                 </h3>
                 <p className="text-gray-800 text-lg sm:text-xl font-bold">
-                  {card.value.toLocaleString()}
+                  {isLoading ? '—' : card.value.toLocaleString()}
                 </p>
               </div>
             </motion.div>
@@ -245,7 +228,6 @@ const Orders = () => {
                 overflow-hidden
               `}
               >
-                {/* Animated Background Gradient */}
                 <div
                   className={`
                   absolute inset-0
@@ -254,12 +236,9 @@ const Orders = () => {
                   transition-opacity duration-500
                 `}
                 />
-
-                {/* Decorative Circles */}
                 <div className="absolute -top-6 -right-6 sm:-top-8 sm:-right-8 w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-white/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-white/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-                {/* Icon Container with Enhanced Design */}
                 <div
                   className={`
                   relative z-10
@@ -281,12 +260,9 @@ const Orders = () => {
                     className="text-white text-lg sm:text-3xl relative z-10"
                     strokeWidth={2.5}
                   />
-
-                  {/* Shine Effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent rounded-xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
 
-                {/* Content */}
                 <div className="relative z-10 text-center space-y-0.5 sm:space-y-1">
                   <h3 className="text-xs sm:text-base font-bold text-gray-900 group-hover:text-gray-950 transition-colors duration-300 leading-tight">
                     {item.label}
@@ -296,7 +272,6 @@ const Orders = () => {
                   </p>
                 </div>
 
-                {/* Bottom Accent Line */}
                 <div
                   className={`
                   absolute bottom-0 left-0 right-0
@@ -317,4 +292,3 @@ const Orders = () => {
 };
 
 export default Orders;
-

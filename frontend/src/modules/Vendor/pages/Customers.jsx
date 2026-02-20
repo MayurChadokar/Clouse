@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiUsers, FiSearch, FiEye, FiMail, FiPhone } from "react-icons/fi";
 import { motion } from "framer-motion";
@@ -6,64 +6,46 @@ import DataTable from "../../Admin/components/DataTable";
 import ExportButton from "../../Admin/components/ExportButton";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
+import { getVendorCustomers } from "../services/vendorService";
 
 const Customers = () => {
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { getVendorOrders } = useOrderStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const vendorId = vendor?.id;
-  const orders = vendorId ? getVendorOrders(vendorId) : [];
+  const vendorId = vendor?.id || vendor?._id;
 
-  const customers = useMemo(() => {
-    const customerMap = {};
+  useEffect(() => {
+    if (!vendorId) {
+      setCustomers([]);
+      return;
+    }
 
-    orders.forEach((order) => {
-      const vendorItem = order.vendorItems?.find(
-        (vi) => vi.vendorId === vendorId
-      );
-      if (!vendorItem) return;
-
-      const customerId = order.userId || `guest-${order.id}`;
-      const customerName = order.customer?.name || "Guest Customer";
-      const customerEmail = order.customer?.email || "";
-      const customerPhone = order.customer?.phone || "";
-
-      if (!customerMap[customerId]) {
-        customerMap[customerId] = {
-          id: customerId,
-          name: customerName,
-          email: customerEmail,
-          phone: customerPhone,
-          orders: 0,
-          totalSpent: 0,
-          lastOrderDate: null,
-        };
+    const fetchCustomers = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorCustomers();
+        const data = res?.data ?? res;
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch {
+        setCustomers([]);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      customerMap[customerId].orders += 1;
-      customerMap[customerId].totalSpent += vendorItem.vendorEarnings || 0;
-
-      const orderDate = new Date(order.date);
-      if (
-        !customerMap[customerId].lastOrderDate ||
-        orderDate > new Date(customerMap[customerId].lastOrderDate)
-      ) {
-        customerMap[customerId].lastOrderDate = order.date;
-      }
-    });
-
-    return Object.values(customerMap);
-  }, [orders, vendorId]);
+    fetchCustomers();
+  }, [vendorId]);
 
   const filteredCustomers = useMemo(() => {
     if (!searchQuery) return customers;
+    const q = searchQuery.toLowerCase();
     return customers.filter(
       (c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q)
     );
   }, [customers, searchQuery]);
 
@@ -120,7 +102,8 @@ const Customers = () => {
       render: (_, row) => (
         <button
           onClick={() => navigate(`/vendor/customers/${row.id}`)}
-          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        >
           <FiEye />
         </button>
       ),
@@ -139,7 +122,8 @@ const Customers = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
+      className="space-y-6"
+    >
       <div className="lg:hidden">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
           <FiUsers className="text-primary-600" />
@@ -150,7 +134,6 @@ const Customers = () => {
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Total Customers</p>
@@ -168,14 +151,13 @@ const Customers = () => {
             {formatPrice(
               customers.length > 0
                 ? customers.reduce((sum, c) => sum + c.totalSpent, 0) /
-                customers.length
+                    customers.length
                 : 0
             )}
           </p>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -196,10 +178,7 @@ const Customers = () => {
               { label: "Email", accessor: (row) => row.email },
               { label: "Phone", accessor: (row) => row.phone },
               { label: "Orders", accessor: (row) => row.orders },
-              {
-                label: "Total Spent",
-                accessor: (row) => formatPrice(row.totalSpent),
-              },
+              { label: "Total Spent", accessor: (row) => formatPrice(row.totalSpent) },
               {
                 label: "Last Order",
                 accessor: (row) =>
@@ -213,8 +192,11 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Customers Table */}
-      {filteredCustomers.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+          <p className="text-gray-500">Loading customers...</p>
+        </div>
+      ) : filteredCustomers.length > 0 ? (
         <DataTable
           data={filteredCustomers}
           columns={columns}

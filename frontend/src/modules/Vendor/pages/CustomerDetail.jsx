@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiArrowLeft,
@@ -14,98 +14,98 @@ import Badge from "../../../shared/components/Badge";
 import DataTable from "../../Admin/components/DataTable";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
-import { useOrderStore } from "../../../shared/store/orderStore";
+import { getVendorCustomerById } from "../services/vendorService";
 import toast from "react-hot-toast";
 
 const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { vendor } = useVendorAuthStore();
-  const { getVendorOrders } = useOrderStore();
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
   useEffect(() => {
     if (!vendorId) return;
 
-    // Get all vendor orders
-    const allOrders = getVendorOrders(vendorId);
+    const loadCustomer = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getVendorCustomerById(id);
+        const data = res?.data ?? res;
+        if (!data?.id) {
+          toast.error("Customer not found");
+          navigate("/vendor/customers");
+          return;
+        }
 
-    // Find customer from orders
-    const customerOrders = allOrders.filter((order) => {
-      const customerId = order.userId || `guest-${order.id}`;
-      return customerId === id;
-    });
-
-    if (customerOrders.length === 0) {
-      toast.error("Customer not found");
-      navigate(-1);
-      return;
-    }
-
-    // Extract customer info from first order
-    const firstOrder = customerOrders[0];
-    const customerData = {
-      id: id,
-      name: firstOrder.customer?.name || "Guest Customer",
-      email: firstOrder.customer?.email || "",
-      phone: firstOrder.customer?.phone || "",
-      orders: customerOrders.length,
-      totalSpent: customerOrders.reduce((sum, order) => {
-        const vendorItem = order.vendorItems?.find(
-          (vi) => vi.vendorId === vendorId
-        );
-        return sum + (vendorItem?.vendorEarnings || 0);
-      }, 0),
-      lastOrderDate: customerOrders[0].date,
+        setCustomer({
+          id: data.id,
+          name: data.name || "Guest Customer",
+          email: data.email || "",
+          phone: data.phone || "",
+          orders: data.orders || 0,
+          totalSpent: data.totalSpent || 0,
+          lastOrderDate: data.lastOrderDate || null,
+        });
+        setOrders(Array.isArray(data.orderHistory) ? data.orderHistory : []);
+      } catch {
+        toast.error("Failed to load customer details");
+        navigate("/vendor/customers");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setCustomer(customerData);
-    setOrders(customerOrders);
-  }, [id, vendorId, getVendorOrders, navigate]);
+    loadCustomer();
+  }, [id, vendorId, navigate]);
 
   const getStatusBadge = (status) => {
+    const normalized = (status || "").toLowerCase();
     const statusConfig = {
       delivered: { variant: "delivered", label: "Delivered" },
       shipped: { variant: "shipped", label: "Shipped" },
       processing: { variant: "pending", label: "Processing" },
       pending: { variant: "pending", label: "Pending" },
       cancelled: { variant: "cancelled", label: "Cancelled" },
+      canceled: { variant: "cancelled", label: "Cancelled" },
     };
-    const config = statusConfig[status] || {
+    const config = statusConfig[normalized] || {
       variant: "pending",
-      label: status,
+      label: status || "Pending",
     };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const orderColumns = [
     {
-      key: "id",
+      key: "orderId",
       label: "Order ID",
       sortable: true,
-      render: (value) => (
-        <span className="font-semibold text-gray-800">{value}</span>
+      render: (_, row) => (
+        <span className="font-semibold text-gray-800">
+          {row.orderId ?? row._id}
+        </span>
       ),
     },
     {
-      key: "date",
+      key: "createdAt",
       label: "Date",
       sortable: true,
-      render: (value) => (
+      render: (_, row) => (
         <span className="text-sm text-gray-600">
-          {new Date(value).toLocaleDateString()}
+          {new Date(row.createdAt ?? row.date).toLocaleDateString()}
         </span>
       ),
     },
     {
       key: "items",
       label: "Items",
-      render: (value, row) => {
+      render: (_, row) => {
         const vendorItem = row.vendorItems?.find(
-          (vi) => vi.vendorId === vendorId
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
         );
         return (
           <span className="text-sm text-gray-600">
@@ -115,16 +115,16 @@ const CustomerDetail = () => {
       },
     },
     {
-      key: "total",
+      key: "amount",
       label: "Amount",
       sortable: true,
-      render: (value, row) => {
+      render: (_, row) => {
         const vendorItem = row.vendorItems?.find(
-          (vi) => vi.vendorId === vendorId
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
         );
         return (
           <span className="font-semibold text-gray-800">
-            {formatPrice(vendorItem?.vendorEarnings || 0)}
+            {formatPrice(vendorItem?.subtotal || vendorItem?.vendorEarnings || 0)}
           </span>
         );
       },
@@ -132,22 +132,28 @@ const CustomerDetail = () => {
     {
       key: "status",
       label: "Status",
-      render: (value) => getStatusBadge(value),
+      render: (_, row) => {
+        const vendorStatus = row.vendorItems?.find(
+          (vi) => vi.vendorId?.toString() === vendorId?.toString()
+        )?.status;
+        return getStatusBadge(vendorStatus || row.status);
+      },
     },
     {
       key: "actions",
       label: "Actions",
       render: (_, row) => (
         <button
-          onClick={() => navigate(`/vendor/orders/${row.id}`)}
-          className="text-primary-600 hover:text-primary-700 font-medium text-sm">
+          onClick={() => navigate(`/vendor/orders/${row.orderId ?? row._id}`)}
+          className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+        >
           View Details
         </button>
       ),
     },
   ];
 
-  if (!customer) {
+  if (isLoading || !customer) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -190,13 +196,14 @@ const CustomerDetail = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
-      {/* Header */}
+      className="space-y-6"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <FiArrowLeft className="text-xl text-gray-600" />
           </button>
           <div>
@@ -208,7 +215,6 @@ const CustomerDetail = () => {
         </div>
       </div>
 
-      {/* Customer Info Card */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full">
@@ -236,7 +242,6 @@ const CustomerDetail = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((stat, index) => (
           <motion.div
@@ -244,7 +249,8 @@ const CustomerDetail = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`${stat.bgColor} rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200`}>
+            className={`${stat.bgColor} rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200`}
+          >
             <div className="flex items-center justify-between mb-2">
               <div className={`${stat.color} p-3 rounded-lg`}>
                 <stat.icon className="text-white text-xl" />
@@ -253,14 +259,11 @@ const CustomerDetail = () => {
             <h3 className={`${stat.textColor} text-sm font-medium mb-1`}>
               {stat.label}
             </h3>
-            <p className={`${stat.textColor} text-2xl font-bold`}>
-              {stat.value}
-            </p>
+            <p className={`${stat.textColor} text-2xl font-bold`}>{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Orders Table */}
       <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800">Order History</h2>

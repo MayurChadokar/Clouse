@@ -2,18 +2,50 @@ import asyncHandler from '../../../utils/asyncHandler.js';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Vendor from '../../../models/Vendor.model.js';
+import Admin from '../../../models/Admin.model.js';
 import { generateTokens } from '../../../utils/generateToken.js';
 import { sendOTP } from '../../../services/otp.service.js';
+import { createNotification } from '../../../services/notification.service.js';
+import { sendEmail } from '../../../services/email.service.js';
 
 // POST /api/vendor/auth/register
 export const register = asyncHandler(async (req, res) => {
-    const { name, email, password, phone, storeName, storeDescription } = req.body;
+    const { name, email, password, phone, storeName, storeDescription, address } = req.body;
 
-    const existing = await Vendor.findOne({ email });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const existing = await Vendor.findOne({ email: normalizedEmail });
     if (existing) throw new ApiError(409, 'Email already registered.');
 
-    const vendor = await Vendor.create({ name, email, password, phone, storeName, storeDescription, status: 'pending' });
+    const vendor = await Vendor.create({
+        name: String(name || '').trim(),
+        email: normalizedEmail,
+        password,
+        phone: String(phone || '').trim(),
+        storeName: String(storeName || '').trim(),
+        storeDescription: String(storeDescription || '').trim(),
+        address,
+        status: 'pending'
+    });
     await sendOTP(vendor, 'vendor_verification');
+
+    // Notify all active admins about a new vendor registration request.
+    const admins = await Admin.find({ isActive: true }).select('_id');
+    await Promise.all(
+        admins.map((admin) =>
+            createNotification({
+                recipientId: admin._id,
+                recipientType: 'admin',
+                title: 'New Vendor Registration',
+                message: `${vendor.storeName || vendor.name} has registered and is awaiting review.`,
+                type: 'system',
+                data: {
+                    vendorId: String(vendor._id),
+                    vendorEmail: vendor.email,
+                    status: vendor.status,
+                },
+            })
+        )
+    );
 
     res.status(201).json(new ApiResponse(201, { email: vendor.email }, 'Registration submitted. Please verify your email and await admin approval.'));
 });
@@ -46,6 +78,80 @@ export const resendOTP = asyncHandler(async (req, res) => {
 
     await sendOTP(vendor, 'vendor_verification');
     res.status(200).json(new ApiResponse(200, null, 'OTP resent successfully. Please check your email.'));
+});
+
+// POST /api/vendor/auth/forgot-password
+export const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const vendor = await Vendor.findOne({ email: normalizedEmail }).select('+resetOtp +resetOtpExpiry +resetOtpVerified');
+
+    // Keep response generic to avoid account enumeration.
+    if (!vendor) {
+        return res.status(200).json(
+            new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.')
+        );
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    vendor.resetOtp = otp;
+    vendor.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    vendor.resetOtpVerified = false;
+    await vendor.save({ validateBeforeSave: false });
+
+    try {
+        await sendEmail({
+            to: vendor.email,
+            subject: 'Vendor password reset OTP',
+            text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
+            html: `<p>Your password reset OTP is <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
+        });
+    } catch (err) {
+        console.warn(`[Vendor Forgot Password] Email send failed for ${vendor.email}: ${err.message}`);
+        console.log(`[Vendor Forgot Password] OTP for ${vendor.email}: ${otp}`);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.')
+    );
+});
+
+// POST /api/vendor/auth/verify-reset-otp
+export const verifyResetOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const vendor = await Vendor.findOne({ email: normalizedEmail }).select('+resetOtp +resetOtpExpiry +resetOtpVerified');
+    if (!vendor) throw new ApiError(404, 'Vendor not found.');
+    if (!vendor.resetOtp || !vendor.resetOtpExpiry) throw new ApiError(400, 'No reset OTP requested.');
+    if (vendor.resetOtpExpiry < new Date()) throw new ApiError(400, 'Reset OTP has expired.');
+    if (vendor.resetOtp !== String(otp)) throw new ApiError(400, 'Invalid reset OTP.');
+
+    vendor.resetOtpVerified = true;
+    await vendor.save({ validateBeforeSave: false });
+
+    return res.status(200).json(new ApiResponse(200, null, 'Reset OTP verified.'));
+});
+
+// POST /api/vendor/auth/reset-password
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const vendor = await Vendor.findOne({ email: normalizedEmail }).select('+password +resetOtp +resetOtpExpiry +resetOtpVerified');
+    if (!vendor) throw new ApiError(404, 'Vendor not found.');
+    if (!vendor.resetOtpVerified) throw new ApiError(400, 'Please verify reset OTP first.');
+    if (!vendor.resetOtp || !vendor.resetOtpExpiry) throw new ApiError(400, 'No reset OTP requested.');
+    if (vendor.resetOtpExpiry < new Date()) throw new ApiError(400, 'Reset OTP has expired.');
+
+    vendor.password = password;
+    vendor.resetOtp = undefined;
+    vendor.resetOtpExpiry = undefined;
+    vendor.resetOtpVerified = false;
+    await vendor.save();
+
+    return res.status(200).json(new ApiResponse(200, null, 'Password reset successful. Please login.'));
 });
 
 // POST /api/vendor/auth/login

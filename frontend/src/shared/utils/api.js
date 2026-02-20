@@ -17,10 +17,13 @@ api.interceptors.request.use(
     // Admin routes use adminToken, vendor routes use vendor-token, all others use token
     const isAdminRoute = config.url?.startsWith('/admin');
     const isVendorRoute = config.url?.startsWith('/vendor');
+    const isDeliveryRoute = config.url?.startsWith('/delivery');
     const token = isAdminRoute
       ? localStorage.getItem('adminToken')
       : isVendorRoute
         ? localStorage.getItem('vendor-token')
+        : isDeliveryRoute
+          ? localStorage.getItem('delivery-token')
         : localStorage.getItem('token');
 
     if (token) {
@@ -45,9 +48,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isAdminRoute = error.config?.url?.startsWith('/admin');
       const isVendorRoute = error.config?.url?.startsWith('/vendor');
+      const isDeliveryRoute = error.config?.url?.startsWith('/delivery');
       const currentPath = window.location.pathname;
       const isInAdminArea = currentPath.startsWith('/admin');
       const isInVendorArea = currentPath.startsWith('/vendor');
+      const isInDeliveryArea = currentPath.startsWith('/delivery');
       if (isAdminRoute) {
         // Clear both manual token and persisted Zustand state to break the redirect loop
         localStorage.removeItem('adminToken');
@@ -65,6 +70,14 @@ api.interceptors.response.use(
         if (isInVendorArea && !currentPath.includes('/vendor/login')) {
           toast.error('Session expired. Please login again.');
           window.location.href = '/vendor/login';
+        }
+      } else if (isDeliveryRoute) {
+        localStorage.removeItem('delivery-token');
+        localStorage.removeItem('delivery-auth-storage');
+
+        if (isInDeliveryArea && !currentPath.includes('/delivery/login')) {
+          toast.error('Session expired. Please login again.');
+          window.location.href = '/delivery/login';
         }
       } else {
         localStorage.removeItem('token');

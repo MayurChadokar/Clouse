@@ -2,6 +2,8 @@ import asyncHandler from '../../../utils/asyncHandler.js';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Vendor from '../../../models/Vendor.model.js';
+import { sendEmail } from '../../../services/email.service.js';
+import { createNotification } from '../../../services/notification.service.js';
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -39,7 +41,7 @@ export const getAllVendors = asyncHandler(async (req, res) => {
     }
 
     const vendors = await Vendor.find(filter)
-        .select('-password -otp -otpExpiry -bankDetails')
+        .select('-password -otp -otpExpiry')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(numericLimit);
@@ -69,6 +71,37 @@ export const updateVendorStatus = asyncHandler(async (req, res) => {
 
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { status, suspensionReason: reason || '' }, { new: true });
     if (!vendor) throw new ApiError(404, 'Vendor not found.');
+
+    const statusMessageMap = {
+        approved: `Your vendor account for ${vendor.storeName || vendor.name} has been approved.`,
+        rejected: `Your vendor account for ${vendor.storeName || vendor.name} has been rejected.${reason ? ` Reason: ${reason}` : ''}`,
+        suspended: `Your vendor account for ${vendor.storeName || vendor.name} has been suspended.${reason ? ` Reason: ${reason}` : ''}`,
+    };
+    const vendorMessage = statusMessageMap[status] || `Your vendor account status was updated to ${status}.`;
+
+    await createNotification({
+        recipientId: vendor._id,
+        recipientType: 'vendor',
+        title: 'Vendor Account Status Updated',
+        message: vendorMessage,
+        type: 'system',
+        data: {
+            status,
+            reason: reason || '',
+        },
+    });
+
+    try {
+        await sendEmail({
+            to: vendor.email,
+            subject: `Vendor Account ${status[0].toUpperCase()}${status.slice(1)}`,
+            text: vendorMessage,
+            html: `<p>${vendorMessage}</p>`,
+        });
+    } catch (err) {
+        console.warn(`Vendor status email failed for ${vendor.email}: ${err.message}`);
+    }
+
     res.status(200).json(new ApiResponse(200, toApiVendor(vendor), `Vendor ${status} successfully.`));
 });
 

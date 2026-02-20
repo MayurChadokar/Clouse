@@ -114,6 +114,42 @@ export const useAuthStore = create(
         }
       },
 
+      forgotPassword: async (email) => {
+        set({ isLoading: true });
+        try {
+          await api.post('/user/auth/forgot-password', { email });
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      verifyResetOtp: async (email, otp) => {
+        set({ isLoading: true });
+        try {
+          await api.post('/user/auth/verify-reset-otp', { email, otp });
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      resetPassword: async (email, password, confirmPassword) => {
+        set({ isLoading: true });
+        try {
+          await api.post('/user/auth/reset-password', { email, password, confirmPassword });
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
       // Logout action
       logout: () => {
         set({

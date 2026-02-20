@@ -4,15 +4,23 @@ import ApiError from '../../../utils/ApiError.js';
 import User from '../../../models/User.model.js';
 import { generateTokens } from '../../../utils/generateToken.js';
 import { sendOTP } from '../../../services/otp.service.js';
+import { sendEmail } from '../../../services/email.service.js';
 
 // POST /api/user/auth/register
 export const register = asyncHandler(async (req, res) => {
     const { name, email, password, phone } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedPhone = String(phone || '').replace(/\D/g, '').slice(-10);
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) throw new ApiError(409, 'Email already registered.');
 
-    const user = await User.create({ name, email, password, phone });
+    const user = await User.create({
+        name: String(name || '').trim(),
+        email: normalizedEmail,
+        password,
+        ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+    });
     await sendOTP(user, 'email_verification');
 
     res.status(201).json(new ApiResponse(201, { email: user.email }, 'Registration successful. Please verify your email.'));
@@ -21,8 +29,9 @@ export const register = asyncHandler(async (req, res) => {
 // POST /api/user/auth/verify-otp
 export const verifyOTP = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    const user = await User.findOne({ email }).select('+otp +otpExpiry');
+    const user = await User.findOne({ email: normalizedEmail }).select('+otp +otpExpiry');
     if (!user) throw new ApiError(404, 'User not found.');
     if (user.otp !== otp) throw new ApiError(400, 'Invalid OTP.');
     if (user.otpExpiry < Date.now()) throw new ApiError(400, 'OTP has expired. Please request a new one.');
@@ -39,8 +48,9 @@ export const verifyOTP = asyncHandler(async (req, res) => {
 // POST /api/user/auth/login
 export const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user) throw new ApiError(401, 'Invalid email or password.');
     if (!user.isActive) throw new ApiError(403, 'Your account has been deactivated.');
     if (!user.isVerified) throw new ApiError(403, 'Please verify your email before logging in.');
@@ -55,12 +65,83 @@ export const login = asyncHandler(async (req, res) => {
 // POST /api/user/auth/resend-otp
 export const resendOTP = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) throw new ApiError(404, 'User not found.');
     if (user.isVerified) throw new ApiError(400, 'Email already verified.');
 
     await sendOTP(user, 'email_verification');
     res.status(200).json(new ApiResponse(200, null, 'OTP resent successfully.'));
+});
+
+// POST /api/user/auth/forgot-password
+export const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+resetOtp +resetOtpExpiry +resetOtpVerified');
+
+    // Generic response to avoid account enumeration.
+    if (!user) {
+        return res.status(200).json(new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.'));
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.resetOtp = otp;
+    user.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    user.resetOtpVerified = false;
+    await user.save({ validateBeforeSave: false });
+
+    try {
+        await sendEmail({
+            to: user.email,
+            subject: 'Password reset OTP',
+            text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
+            html: `<p>Your password reset OTP is <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
+        });
+    } catch (err) {
+        console.warn(`[User Forgot Password] Email send failed for ${user.email}: ${err.message}`);
+        console.log(`[User Forgot Password] OTP for ${user.email}: ${otp}`);
+    }
+
+    return res.status(200).json(new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.'));
+});
+
+// POST /api/user/auth/verify-reset-otp
+export const verifyResetOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+resetOtp +resetOtpExpiry +resetOtpVerified');
+    if (!user) throw new ApiError(404, 'User not found.');
+    if (!user.resetOtp || !user.resetOtpExpiry) throw new ApiError(400, 'No reset OTP requested.');
+    if (user.resetOtpExpiry < new Date()) throw new ApiError(400, 'Reset OTP has expired.');
+    if (user.resetOtp !== String(otp)) throw new ApiError(400, 'Invalid reset OTP.');
+
+    user.resetOtpVerified = true;
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json(new ApiResponse(200, null, 'Reset OTP verified.'));
+});
+
+// POST /api/user/auth/reset-password
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+password +resetOtp +resetOtpExpiry +resetOtpVerified');
+    if (!user) throw new ApiError(404, 'User not found.');
+    if (!user.resetOtpVerified) throw new ApiError(400, 'Please verify reset OTP first.');
+    if (!user.resetOtp || !user.resetOtpExpiry) throw new ApiError(400, 'No reset OTP requested.');
+    if (user.resetOtpExpiry < new Date()) throw new ApiError(400, 'Reset OTP has expired.');
+
+    user.password = password;
+    user.resetOtp = undefined;
+    user.resetOtpExpiry = undefined;
+    user.resetOtpVerified = false;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200, null, 'Password reset successful. Please login.'));
 });
 
 // GET /api/user/auth/profile

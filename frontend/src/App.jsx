@@ -68,6 +68,7 @@ import FestivalOffers from "./modules/Admin/pages/offers/FestivalOffers";
 // Notifications child pages
 import PushNotifications from "./modules/Admin/pages/notifications/PushNotifications";
 import CustomMessages from "./modules/Admin/pages/notifications/CustomMessages";
+import AllNotifications from "./modules/Admin/pages/notifications/AllNotifications";
 // Support Desk child pages
 import LiveChat from "./modules/Admin/pages/support/LiveChat";
 import TicketTypes from "./modules/Admin/pages/support/TicketTypes";
@@ -112,6 +113,8 @@ import MobileSearch from "./modules/UserApp/pages/Search";
 import MobileLogin from "./modules/UserApp/pages/Login";
 import MobileRegister from "./modules/UserApp/pages/Register";
 import MobileVerification from "./modules/UserApp/pages/Verification";
+import MobileForgotPassword from "./modules/UserApp/pages/ForgotPassword";
+import MobileResetPassword from "./modules/UserApp/pages/ResetPassword";
 import MobileProfile from "./modules/UserApp/pages/Profile";
 import MobileOrders from "./modules/UserApp/pages/Orders";
 import MobileOrderDetail from "./modules/UserApp/pages/OrderDetail";
@@ -126,6 +129,9 @@ import MobileOrderConfirmation from "./modules/UserApp/pages/OrderConfirmation";
 import ComingSoon from "./modules/UserApp/pages/ComingSoon";
 // Delivery Routes
 import DeliveryLogin from "./modules/Delivery/pages/Login";
+import DeliveryRegister from "./modules/Delivery/pages/Register";
+import DeliveryForgotPassword from "./modules/Delivery/pages/ForgotPassword";
+import DeliveryResetPassword from "./modules/Delivery/pages/ResetPassword";
 import DeliveryProtectedRoute from "./modules/Delivery/components/DeliveryProtectedRoute";
 import DeliveryLayout from "./modules/Delivery/components/Layout/DeliveryLayout";
 import DeliveryDashboard from "./modules/Delivery/pages/Dashboard";
@@ -136,6 +142,8 @@ import DeliveryProfile from "./modules/Delivery/pages/Profile";
 import VendorLogin from "./modules/Vendor/pages/Login";
 import VendorRegister from "./modules/Vendor/pages/Register";
 import VendorVerification from "./modules/Vendor/pages/Verification";
+import VendorForgotPassword from "./modules/Vendor/pages/ForgotPassword";
+import VendorResetPassword from "./modules/Vendor/pages/ResetPassword";
 import VendorProtectedRoute from "./modules/Vendor/components/VendorProtectedRoute";
 import VendorLayout from "./modules/Vendor/components/Layout/VendorLayout";
 import VendorDashboard from "./modules/Vendor/pages/Dashboard";
@@ -259,6 +267,22 @@ const AppRoutes = () => {
         element={
           <RouteWrapper>
             <MobileVerification />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <RouteWrapper>
+            <MobileForgotPassword />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <RouteWrapper>
+            <MobileResetPassword />
           </RouteWrapper>
         }
       />
@@ -414,7 +438,7 @@ const AppRoutes = () => {
         <Route path="offers/home-sliders" element={<HomeSliders />} />
         <Route path="offers/festival-offers" element={<FestivalOffers />} />
         <Route path="promocodes" element={<PromoCodes />} />
-        <Route path="notifications" element={<PushNotifications />} />
+        <Route path="notifications" element={<AllNotifications />} />
         <Route
           path="notifications/push-notifications"
           element={<PushNotifications />}
@@ -465,6 +489,9 @@ const AppRoutes = () => {
       </Route>
       {/* Delivery Routes */}
       <Route path="/delivery/login" element={<DeliveryLogin />} />
+      <Route path="/delivery/register" element={<DeliveryRegister />} />
+      <Route path="/delivery/forgot-password" element={<DeliveryForgotPassword />} />
+      <Route path="/delivery/reset-password" element={<DeliveryResetPassword />} />
       <Route
         path="/delivery"
         element={
@@ -482,6 +509,8 @@ const AppRoutes = () => {
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/vendor/register" element={<VendorRegister />} />
       <Route path="/vendor/verification" element={<VendorVerification />} />
+      <Route path="/vendor/forgot-password" element={<VendorForgotPassword />} />
+      <Route path="/vendor/reset-password" element={<VendorResetPassword />} />
       <Route
         path="/vendor"
         element={

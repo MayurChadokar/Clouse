@@ -17,16 +17,29 @@ import * as uploadController from '../controllers/upload.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
 import { authLimiter } from '../../../middlewares/rateLimiter.js';
+import { validate } from '../../../middlewares/validate.js';
+import {
+    registerSchema,
+    loginSchema,
+    verifyOtpSchema,
+    resendOtpSchema,
+    forgotPasswordSchema,
+    verifyResetOtpSchema,
+    resetPasswordSchema
+} from '../validators/auth.validator.js';
 import { uploadSingle, uploadMultiple, uploadDocumentSingle } from '../../../middlewares/upload.js';
 
 const router = Router();
 const vendorAuth = [authenticate, authorize('vendor')];
 
 // Auth
-router.post('/auth/register', authLimiter, authController.register);
-router.post('/auth/verify-otp', authController.verifyOTP);
-router.post('/auth/resend-otp', authController.resendOTP);
-router.post('/auth/login', authLimiter, authController.login);
+router.post('/auth/register', authLimiter, validate(registerSchema), authController.register);
+router.post('/auth/verify-otp', validate(verifyOtpSchema), authController.verifyOTP);
+router.post('/auth/resend-otp', validate(resendOtpSchema), authController.resendOTP);
+router.post('/auth/forgot-password', authLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post('/auth/verify-reset-otp', authLimiter, validate(verifyResetOtpSchema), authController.verifyResetOTP);
+router.post('/auth/reset-password', authLimiter, validate(resetPasswordSchema), authController.resetPassword);
+router.post('/auth/login', authLimiter, validate(loginSchema), authController.login);
 router.get('/auth/profile', ...vendorAuth, authController.getProfile);
 router.put('/auth/profile', ...vendorAuth, authController.updateProfile);
 router.put('/auth/bank-details', ...vendorAuth, authController.updateBankDetails);

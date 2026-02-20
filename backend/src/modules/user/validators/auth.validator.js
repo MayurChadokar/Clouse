@@ -16,3 +16,24 @@ export const otpSchema = Joi.object({
     email: Joi.string().email().required(),
     otp: Joi.string().length(6).required(),
 });
+
+export const resendOtpSchema = Joi.object({
+    email: Joi.string().email().required(),
+});
+
+export const forgotPasswordSchema = Joi.object({
+    email: Joi.string().email().required(),
+});
+
+export const verifyResetOtpSchema = Joi.object({
+    email: Joi.string().email().required(),
+    otp: Joi.string().length(6).required(),
+});
+
+export const resetPasswordSchema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required(),
+    confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
+        'any.only': 'Confirm password must match password.',
+    }),
+});

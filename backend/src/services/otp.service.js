@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { sendEmail } from './email.service.js';
 
 /**
  * Generates a 6-digit OTP and sets expiry (10 minutes)
@@ -13,9 +14,18 @@ export const sendOTP = async (user, type = 'verification') => {
     user.otpExpiry = otpExpiry;
     await user.save({ validateBeforeSave: false });
 
-    // TODO: Integrate with email.service.js to send actual email
-    // await sendEmail({ to: user.email, subject: 'Your OTP', text: `Your OTP is: ${otp}` });
+    try {
+        await sendEmail({
+            to: user.email,
+            subject: 'Your verification code',
+            text: `Your verification code is ${otp}. It expires in 10 minutes.`,
+            html: `<p>Your verification code is <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
+        });
+    } catch (err) {
+        // Keep auth flow working in environments where SMTP is not configured.
+        console.warn(`[OTP] Email send failed for ${user.email}: ${err.message}`);
+        console.log(`[OTP] ${type} OTP for ${user.email}: ${otp}`);
+    }
 
-    console.log(`[OTP] ${type} OTP for ${user.email}: ${otp}`); // Remove in production
     return otp;
 };

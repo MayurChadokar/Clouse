@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Route imports
 import publicRoutes from './routes/public.routes.js';
@@ -16,6 +18,8 @@ import errorHandler from './middlewares/errorHandler.js';
 import notFound from './middlewares/notFound.js';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ─── Security Middleware ─────────────────────────────────────────────────────
 app.use(helmet());
@@ -54,6 +58,7 @@ app.get('/health', (req, res) => {
 });
 
 // ─── API Routes ──────────────────────────────────────────────────────────────
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 app.use('/api', publicRoutes);            // Public: products, categories, brands, coupons, banners
 app.use('/api/user', userRoutes);         // Customer: auth, addresses, wishlist, reviews, orders
 app.use('/api/admin', adminRoutes);       // Admin: auth, vendors, orders, catalog, analytics

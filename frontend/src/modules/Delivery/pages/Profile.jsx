@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useDeliveryAuthStore } from '../store/deliveryStore';
@@ -9,8 +9,9 @@ import { formatPrice } from '../../../shared/utils/helpers';
 
 const DeliveryProfile = () => {
   const navigate = useNavigate();
-  const { deliveryBoy, updateStatus, logout } = useDeliveryAuthStore();
+  const { deliveryBoy, updateProfile, fetchProfile, isLoading, logout } = useDeliveryAuthStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [formData, setFormData] = useState({
     name: deliveryBoy?.name || '',
     email: deliveryBoy?.email || '',
@@ -19,6 +20,29 @@ const DeliveryProfile = () => {
     vehicleNumber: deliveryBoy?.vehicleNumber || '',
   });
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoadFailed(false);
+        await fetchProfile();
+      } catch {
+        setLoadFailed(true);
+      }
+    };
+
+    loadProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    setFormData({
+      name: deliveryBoy?.name || '',
+      email: deliveryBoy?.email || '',
+      phone: deliveryBoy?.phone || '',
+      vehicleType: deliveryBoy?.vehicleType || '',
+      vehicleNumber: deliveryBoy?.vehicleNumber || '',
+    });
+  }, [deliveryBoy]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -26,10 +50,32 @@ const DeliveryProfile = () => {
     });
   };
 
-  const handleSave = () => {
-    // Save profile changes - replace with actual API call
-    setIsEditing(false);
-    // Update store with new data
+  const handleSave = async () => {
+    if (!formData.name?.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!formData.email?.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+    if (!formData.phone?.trim()) {
+      toast.error('Phone is required');
+      return;
+    }
+    try {
+      await updateProfile({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        vehicleType: formData.vehicleType?.trim() || '',
+        vehicleNumber: formData.vehicleNumber?.trim() || '',
+      });
+      setIsEditing(false);
+      toast.success('Profile updated successfully');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
   };
 
   const handleCancel = () => {
@@ -50,10 +96,10 @@ const DeliveryProfile = () => {
   };
 
   const stats = [
-    { label: 'Total Deliveries', value: '156' },
-    { label: 'Completed Today', value: '8' },
-    { label: 'Rating', value: '4.8' },
-    { label: 'Earnings', value: formatPrice(2450) },
+    { label: 'Total Deliveries', value: Number(deliveryBoy?.totalDeliveries || 0) },
+    { label: 'Completed Today', value: '0' },
+    { label: 'Rating', value: Number(deliveryBoy?.rating || 0).toFixed(1) },
+    { label: 'Earnings', value: formatPrice(Number(deliveryBoy?.cashCollected || 0)) },
   ];
 
   return (
@@ -67,6 +113,14 @@ const DeliveryProfile = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">My Profile</h1>
+            {loadFailed && (
+              <button
+                onClick={fetchProfile}
+                className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded-lg font-semibold"
+              >
+                Retry
+              </button>
+            )}
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -78,6 +132,7 @@ const DeliveryProfile = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleSave}
+                  disabled={isLoading}
                   className="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30"
                 >
                   <FiSave />
@@ -243,6 +298,7 @@ const DeliveryProfile = () => {
         >
           <button
             onClick={handleLogout}
+            disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors"
           >
             <FiLogOut className="text-xl" />

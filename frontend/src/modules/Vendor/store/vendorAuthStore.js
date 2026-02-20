@@ -1,7 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import api from "../../../shared/utils/api";
-import { registerVendor, updateVendorProfile } from "../services/vendorService";
+import {
+  registerVendor,
+  updateVendorProfile,
+  forgotVendorPassword,
+  verifyVendorResetOTP,
+  resetVendorPassword,
+} from "../services/vendorService";
 
 export const useVendorAuthStore = create(
   persist(
@@ -61,6 +67,45 @@ export const useVendorAuthStore = create(
               data?.message ||
               "Registration successful! Please check your email for the OTP.",
           };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      forgotPassword: async (email) => {
+        set({ isLoading: true });
+        try {
+          const response = await forgotVendorPassword(email);
+          const data = response?.data ?? response;
+          set({ isLoading: false });
+          return { success: true, message: data?.message };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      verifyResetOtp: async (email, otp) => {
+        set({ isLoading: true });
+        try {
+          const response = await verifyVendorResetOTP(email, otp);
+          const data = response?.data ?? response;
+          set({ isLoading: false });
+          return { success: true, message: data?.message };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      resetPassword: async (email, password, confirmPassword) => {
+        set({ isLoading: true });
+        try {
+          const response = await resetVendorPassword(email, password, confirmPassword);
+          const data = response?.data ?? response;
+          set({ isLoading: false });
+          return { success: true, message: data?.message };
         } catch (error) {
           set({ isLoading: false });
           throw error;

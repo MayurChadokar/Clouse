@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import Badge from "../../../../shared/components/Badge";
 import ConfirmModal from "../../components/ConfirmModal";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../store/vendorStore";
 import toast from "react-hot-toast";
 
 const PendingApprovals = () => {
@@ -157,7 +157,7 @@ const PendingApprovals = () => {
   };
 
   const handleReject = async () => {
-    const success = await updateVendorStatus(actionModal.vendorId, "suspended");
+    const success = await updateVendorStatus(actionModal.vendorId, "rejected");
     if (success) {
       toast.success("Vendor registration rejected");
       setActionModal({

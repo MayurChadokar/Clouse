@@ -11,8 +11,27 @@ const deliveryBoySchema = new mongoose.Schema(
         vehicleType: { type: String, trim: true },
         vehicleNumber: { type: String, trim: true },
         avatar: { type: String },
+        applicationStatus: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'approved',
+            index: true,
+        },
+        rejectionReason: { type: String, trim: true },
+        documents: {
+            drivingLicense: { type: String, trim: true },
+            aadharCard: { type: String, trim: true },
+        },
+        resetOtp: { type: String, select: false },
+        resetOtpExpiry: { type: Date, select: false },
+        resetOtpVerified: { type: Boolean, default: false, select: false },
         isActive: { type: Boolean, default: true },
         isAvailable: { type: Boolean, default: true },
+        status: {
+            type: String,
+            enum: ['available', 'busy', 'offline'],
+            default: 'available',
+        },
         currentLocation: {
             lat: { type: Number },
             lng: { type: Number },

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiPhone, FiCalendar } from 'react-icons/fi';
+import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiPhone } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { isValidEmail, isValidPhone } from '../../../shared/utils/helpers';
@@ -171,29 +171,6 @@ const MobileRegister = () => {
                   </div>
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                  )}
-                </div>
-
-                {/* Birth Date */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Birth of date
-                  </label>
-                  <div className="relative">
-                    <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      {...register('birthDate', {
-                        required: 'Birth date is required',
-                      })}
-                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${errors.birthDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 focus:border-primary-500'
-                        } focus:outline-none transition-colors text-base`}
-                    />
-                  </div>
-                  {errors.birthDate && (
-                    <p className="mt-1 text-sm text-red-600">{errors.birthDate.message}</p>
                   )}
                 </div>
 

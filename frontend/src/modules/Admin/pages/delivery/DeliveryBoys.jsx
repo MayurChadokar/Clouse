@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FiPlus, FiSearch, FiEdit, FiTrash2, FiMapPin, FiPhone } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit, FiTrash2, FiMapPin, FiPhone, FiFileText } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import DataTable from '../../components/DataTable';
 import Badge from '../../../../shared/components/Badge';
@@ -17,6 +17,7 @@ const DeliveryBoys = () => {
     fetchDeliveryBoys,
     addDeliveryBoy,
     updateStatus,
+    updateApplicationStatus,
     updateDeliveryBoyDetail,
     removeDeliveryBoy,
     pagination
@@ -24,6 +25,7 @@ const DeliveryBoys = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [applicationFilter, setApplicationFilter] = useState('all');
   const [editingBoy, setEditingBoy] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,20 +35,23 @@ const DeliveryBoys = () => {
     const params = {
       search: searchQuery,
       status: statusFilter === 'all' ? undefined : statusFilter,
+      applicationStatus: applicationFilter === 'all' ? undefined : applicationFilter,
       page: currentPage,
       limit: itemsPerPage
     };
     fetchDeliveryBoys(params);
-  }, [searchQuery, statusFilter, currentPage, fetchDeliveryBoys]);
+  }, [searchQuery, statusFilter, applicationFilter, currentPage, fetchDeliveryBoys]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, applicationFilter]);
 
   const handleSave = async (boyData) => {
+    const currentApplicationStatus =
+      (editingBoy && editingBoy.applicationStatus) || boyData.applicationStatus || 'approved';
     const payload = {
       ...boyData,
-      isActive: boyData.status === 'active',
+      isActive: currentApplicationStatus === 'approved' && boyData.status === 'active',
     };
     if (editingBoy && editingBoy.id) {
       const success = await updateDeliveryBoyDetail(editingBoy.id, payload);
@@ -66,6 +71,29 @@ const DeliveryBoys = () => {
     if (success) {
       setDeleteModal({ isOpen: false, id: null });
     }
+  };
+
+  const handleApplicationAction = async (row, nextStatus) => {
+    const reason =
+      nextStatus === 'rejected'
+        ? (window.prompt('Enter rejection reason (required):') || '').trim()
+        : '';
+
+    if (nextStatus === 'rejected' && !reason) return;
+
+    const success = await updateApplicationStatus(row.id, nextStatus, reason);
+    if (success && editingBoy && String(editingBoy.id) === String(row.id)) {
+      setEditingBoy({
+        ...editingBoy,
+        applicationStatus: nextStatus,
+      });
+    }
+  };
+
+  const renderApplicationBadge = (value) => {
+    if (value === 'approved') return <Badge variant="success">approved</Badge>;
+    if (value === 'rejected') return <Badge variant="error">rejected</Badge>;
+    return <Badge variant="warning">pending</Badge>;
   };
 
   const columns = [
@@ -138,17 +166,72 @@ const DeliveryBoys = () => {
       render: (value) => <Badge variant={value === 'active' ? 'success' : 'error'}>{value}</Badge>,
     },
     {
+      key: 'applicationStatus',
+      label: 'Application',
+      sortable: true,
+      render: (value) => renderApplicationBadge(value),
+    },
+    {
+      key: 'documents',
+      label: 'Documents',
+      sortable: false,
+      render: (_, row) => (
+        <div className="flex items-center gap-2">
+          {row.documentUrls?.drivingLicense && (
+            <a
+              href={row.documentUrls.drivingLicense}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
+            >
+              License
+            </a>
+          )}
+          {row.documentUrls?.aadharCard && (
+            <a
+              href={row.documentUrls.aadharCard}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
+            >
+              Aadhar
+            </a>
+          )}
+          {!row.documentUrls?.drivingLicense && !row.documentUrls?.aadharCard && (
+            <span className="text-xs text-gray-500">N/A</span>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'actions',
       label: 'Actions',
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-2">
+          {row.applicationStatus === 'pending' && (
+            <>
+              <button
+                onClick={() => handleApplicationAction(row, 'approved')}
+                className="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-green-50 text-green-600 hover:bg-green-100"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => handleApplicationAction(row, 'rejected')}
+                className="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-red-50 text-red-600 hover:bg-red-100"
+              >
+                Reject
+              </button>
+            </>
+          )}
           <button
             onClick={() => updateStatus(row.id, !row.isActive)}
+            disabled={row.applicationStatus !== 'approved'}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${row.isActive
                 ? 'bg-red-50 text-red-600 hover:bg-red-100'
                 : 'bg-green-50 text-green-600 hover:bg-green-100'
-              }`}
+              } ${row.applicationStatus !== 'approved' ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {row.isActive ? 'Deactivate' : 'Activate'}
           </button>
@@ -224,6 +307,18 @@ const DeliveryBoys = () => {
               { value: 'inactive', label: 'Inactive' },
             ]}
             className="min-w-[140px]"
+          />
+
+          <AnimatedSelect
+            value={applicationFilter}
+            onChange={(e) => setApplicationFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Applications' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+            ]}
+            className="min-w-[160px]"
           />
         </div>
       </div>
@@ -303,6 +398,56 @@ const DeliveryBoys = () => {
                 <h3 className="text-lg font-bold text-gray-800 mb-4">
                   {editingBoy.id ? 'Edit Delivery Boy' : 'Add Delivery Boy'}
                 </h3>
+                {editingBoy.id && (
+                  <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-sm font-semibold text-gray-800 mb-2">Application Status</p>
+                    <div className="flex items-center justify-between gap-2">
+                      {renderApplicationBadge(editingBoy.applicationStatus)}
+                      {editingBoy.applicationStatus === 'pending' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleApplicationAction(editingBoy, 'approved')}
+                            className="px-3 py-1 text-xs font-semibold rounded-md bg-green-50 text-green-700 hover:bg-green-100"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleApplicationAction(editingBoy, 'rejected')}
+                            className="px-3 py-1 text-xs font-semibold rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 flex items-center gap-3">
+                      {editingBoy.documentUrls?.drivingLicense && (
+                        <a
+                          href={editingBoy.documentUrls.drivingLicense}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-semibold"
+                        >
+                          <FiFileText />
+                          Driving License
+                        </a>
+                      )}
+                      {editingBoy.documentUrls?.aadharCard && (
+                        <a
+                          href={editingBoy.documentUrls.aadharCard}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-semibold"
+                        >
+                          <FiFileText />
+                          Aadhar Card
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();

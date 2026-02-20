@@ -15,7 +15,7 @@ import Badge from "../../../../shared/components/Badge";
 import ConfirmModal from "../../components/ConfirmModal";
 import AnimatedSelect from "../../components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../store/vendorStore";
 import { useOrderStore } from "../../../../shared/store/orderStore";
 import { useCommissionStore } from "../../../../shared/store/commissionStore";
 import toast from "react-hot-toast";

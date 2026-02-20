@@ -149,6 +149,9 @@ export const getDeliveryBoyById = (id) =>
 export const updateDeliveryBoyStatus = (id, isActive) =>
     api.patch(`/admin/delivery-boys/${id}/status`, { isActive });
 
+export const updateDeliveryBoyApplicationStatus = (id, applicationStatus, reason = '') =>
+    api.patch(`/admin/delivery-boys/${id}/application-status`, { applicationStatus, reason });
+
 export const settleCash = (id, amount) =>
     api.post(`/admin/delivery-boys/${id}/settle-cash`, { amount });
 

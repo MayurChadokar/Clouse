@@ -81,6 +81,7 @@ const getChildRoute = (parentRoute, childName) => {
       "Festival Offers": "/admin/offers/festival-offers",
     },
     "/admin/notifications": {
+      "All Notifications": "/admin/notifications",
       "Push Notifications": "/admin/notifications/push-notifications",
       "Custom Messages": "/admin/notifications/custom-messages",
     },

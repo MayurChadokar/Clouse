@@ -8,29 +8,17 @@ import toast from 'react-hot-toast';
 import { formatPrice } from '../../../shared/utils/helpers';
 
 const DeliveryDashboard = () => {
-  const { deliveryBoy, updateStatus } = useDeliveryAuthStore();
+  const { deliveryBoy, updateStatus, fetchOrders, fetchProfile, isUpdatingStatus } = useDeliveryAuthStore();
   const navigate = useNavigate();
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [stats, setStats] = useState({
     totalOrders: 0,
     completedToday: 0,
     pending: 0,
     earnings: 0,
   });
-
-  // Mock data - replace with actual API call
-  useEffect(() => {
-    // Simulate loading stats
-    setTimeout(() => {
-      setStats({
-        totalOrders: 24,
-        completedToday: 8,
-        pending: 3,
-        earnings: 1250,
-      });
-    }, 500);
-  }, []);
-
   const statCards = [
     {
       icon: FiPackage,
@@ -66,37 +54,61 @@ const DeliveryDashboard = () => {
     },
   ];
 
-  const recentOrders = [
-    {
-      id: 'ORD-001',
-      customer: 'John Doe',
-      address: '123 Main St, City',
-      amount: 45.99,
-      status: 'pending',
-      distance: '2.5 km',
-    },
-    {
-      id: 'ORD-002',
-      customer: 'Jane Smith',
-      address: '456 Oak Ave, City',
-      amount: 89.50,
-      status: 'in-transit',
-      distance: '5.1 km',
-    },
-    {
-      id: 'ORD-003',
-      customer: 'Bob Johnson',
-      address: '789 Pine Rd, City',
-      amount: 32.00,
-      status: 'pending',
-      distance: '1.8 km',
-    },
-  ];
+  const loadDashboardData = async () => {
+    try {
+      setLoadFailed(false);
+      await fetchProfile();
+      const orders = await fetchOrders();
+      const today = new Date();
+      const isToday = (dateString) => {
+        const date = new Date(dateString);
+        return (
+          date.getDate() === today.getDate() &&
+          date.getMonth() === today.getMonth() &&
+          date.getFullYear() === today.getFullYear()
+        );
+      };
 
-  const handleStatusChange = (newStatus) => {
-    updateStatus(newStatus);
-    toast.success(`Status updated to ${newStatus}`);
-    setStatusMenuOpen(false);
+      const completedToday = orders.filter(
+        (order) => order.status === 'completed' && isToday(order.updatedAt || order.createdAt)
+      ).length;
+      const pending = orders.filter((order) => order.status === 'pending').length;
+      const earnings = orders
+        .filter((order) => order.status === 'completed')
+        .reduce((sum, order) => sum + Number(order.deliveryFee || 0), 0);
+
+      setRecentOrders(orders.slice(0, 3));
+      setStats({
+        totalOrders: orders.length,
+        completedToday,
+        pending,
+        earnings,
+      });
+    } catch {
+      setLoadFailed(true);
+      setRecentOrders([]);
+      setStats({
+        totalOrders: 0,
+        completedToday: 0,
+        pending: 0,
+        earnings: 0,
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [fetchOrders, fetchProfile]);
+
+  const handleStatusChange = async (newStatus) => {
+    if (isUpdatingStatus) return;
+    try {
+      await updateStatus(newStatus);
+      toast.success(`Status updated to ${newStatus}`);
+      setStatusMenuOpen(false);
+    } catch {
+      // Error toast already handled by API interceptor.
+    }
   };
 
   const getStatusColor = (status) => {
@@ -124,6 +136,8 @@ const DeliveryDashboard = () => {
         return '#6b7280';
     }
   };
+
+  const displayOrders = recentOrders.length > 0 ? recentOrders : [];
 
   return (
     <PageTransition>
@@ -165,18 +179,21 @@ const DeliveryDashboard = () => {
                   >
                     <button
                       onClick={() => handleStatusChange('available')}
+                      disabled={isUpdatingStatus}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-green-50 text-green-700"
                     >
                       Available
                     </button>
                     <button
                       onClick={() => handleStatusChange('busy')}
+                      disabled={isUpdatingStatus}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-yellow-50 text-yellow-700"
                     >
                       Busy
                     </button>
                     <button
                       onClick={() => handleStatusChange('offline')}
+                      disabled={isUpdatingStatus}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 text-gray-700"
                     >
                       Offline
@@ -231,16 +248,29 @@ const DeliveryDashboard = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-800">Recent Orders</h2>
-            <button
-              onClick={() => navigate('/delivery/orders')}
-              className="text-primary-600 text-sm font-semibold"
-            >
-              View All
-            </button>
+            <div className="flex items-center gap-3">
+              {loadFailed && (
+                <button
+                  onClick={loadDashboardData}
+                  className="text-red-500 text-xs font-semibold"
+                >
+                  Retry
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/delivery/orders')}
+                className="text-primary-600 text-sm font-semibold"
+              >
+                View All
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
-            {recentOrders.map((order, index) => (
+            {displayOrders.length === 0 && (
+              <div className="text-sm text-gray-500 py-3 text-center">No assigned orders yet.</div>
+            )}
+            {displayOrders.map((order, index) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, x: -20 }}
@@ -260,10 +290,10 @@ const DeliveryDashboard = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                   <FiMapPin className="text-primary-600" />
-                  <span>{order.address}</span>
+                  <span>{order.address || 'Address unavailable'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Distance: {order.distance}</span>
+                  <span className="text-sm text-gray-600">Distance: {order.distance || '-'}</span>
                   <span className="font-bold text-primary-600">{formatPrice(order.amount)}</span>
                 </div>
               </motion.div>

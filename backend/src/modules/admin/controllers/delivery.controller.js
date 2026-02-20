@@ -3,6 +3,14 @@ import { Order } from '../../../models/Order.model.js';
 import { ApiError } from '../../../utils/ApiError.js';
 import { ApiResponse } from '../../../utils/ApiResponse.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
+import { sendEmail } from '../../../services/email.service.js';
+import { createNotification } from '../../../services/notification.service.js';
+
+const buildDocUrl = (req, relativePath = '') => {
+    if (!relativePath) return '';
+    if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) return relativePath;
+    return `${req.protocol}://${req.get('host')}${relativePath}`;
+};
 
 /**
  * @desc    Get all delivery boys with filtering and pagination
@@ -10,7 +18,7 @@ import { asyncHandler } from '../../../utils/asyncHandler.js';
  * @access  Private (Admin)
  */
 export const getAllDeliveryBoys = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, search = '', status } = req.query;
+    const { page = 1, limit = 10, search = '', status, applicationStatus } = req.query;
     const numericPage = Number(page) || 1;
     const numericLimit = Number(limit) || 10;
 
@@ -27,6 +35,10 @@ export const getAllDeliveryBoys = asyncHandler(async (req, res) => {
 
     if (status) {
         filter.isActive = status === 'active';
+    }
+
+    if (applicationStatus) {
+        filter.applicationStatus = applicationStatus;
     }
 
     const deliveryBoys = await DeliveryBoy.find(filter)
@@ -70,6 +82,15 @@ export const getAllDeliveryBoys = asyncHandler(async (req, res) => {
             ...boy._doc,
             id: boy._id,
             status: boy.isActive ? 'active' : 'inactive',
+            applicationStatus: boy.applicationStatus || 'approved',
+            documents: {
+                drivingLicense: boy.documents?.drivingLicense || '',
+                aadharCard: boy.documents?.aadharCard || '',
+            },
+            documentUrls: {
+                drivingLicense: buildDocUrl(req, boy.documents?.drivingLicense || ''),
+                aadharCard: buildDocUrl(req, boy.documents?.aadharCard || ''),
+            },
             stats: {
                 totalDeliveries: boyStats.totalDeliveries,
                 pendingDeliveries: boyStats.pendingDeliveries,
@@ -138,6 +159,11 @@ export const getDeliveryBoyById = asyncHandler(async (req, res) => {
             ...boy._doc,
             id: boy._id,
             status: boy.isActive ? 'active' : 'inactive',
+            applicationStatus: boy.applicationStatus || 'approved',
+            documentUrls: {
+                drivingLicense: buildDocUrl(req, boy.documents?.drivingLicense || ''),
+                aadharCard: buildDocUrl(req, boy.documents?.aadharCard || ''),
+            },
             stats: boyStats,
             recentOrders: orders
         }, 'Delivery boy details fetched successfully')
@@ -168,7 +194,8 @@ export const createDeliveryBoy = asyncHandler(async (req, res) => {
         address,
         vehicleType,
         vehicleNumber,
-        isActive: typeof isActive === 'boolean' ? isActive : true
+        isActive: typeof isActive === 'boolean' ? isActive : true,
+        applicationStatus: 'approved',
     });
 
     const createdBoy = await DeliveryBoy.findById(boy._id).select('-password');
@@ -205,6 +232,73 @@ export const updateDeliveryBoyStatus = asyncHandler(async (req, res) => {
 
     res.status(200).json(
         new ApiResponse(200, boy, `Delivery boy status updated to ${isActive ? 'active' : 'inactive'}`)
+    );
+});
+
+/**
+ * @desc    Approve or reject delivery registration
+ * @route   PATCH /api/admin/delivery-boys/:id/application-status
+ * @access  Private (Admin)
+ */
+export const updateDeliveryBoyApplicationStatus = asyncHandler(async (req, res) => {
+    const { applicationStatus, reason = '' } = req.body;
+
+    if (!['approved', 'rejected'].includes(applicationStatus)) {
+        throw new ApiError(400, 'applicationStatus must be approved or rejected');
+    }
+
+    const boy = await DeliveryBoy.findById(req.params.id);
+    if (!boy) {
+        throw new ApiError(404, 'Delivery boy not found');
+    }
+
+    boy.applicationStatus = applicationStatus;
+    boy.rejectionReason = applicationStatus === 'rejected' ? String(reason || '').trim() : '';
+    boy.isActive = applicationStatus === 'approved';
+    if (applicationStatus === 'rejected') {
+        boy.isAvailable = false;
+        boy.status = 'offline';
+    }
+    await boy.save();
+
+    try {
+        if (applicationStatus === 'approved') {
+            await sendEmail({
+                to: boy.email,
+                subject: 'Delivery account approved',
+                text: 'Your delivery account has been approved. You can now log in.',
+                html: '<p>Your delivery account has been <strong>approved</strong>. You can now log in.</p>',
+            });
+        } else {
+            await sendEmail({
+                to: boy.email,
+                subject: 'Delivery account rejected',
+                text: `Your delivery account was rejected.${boy.rejectionReason ? ` Reason: ${boy.rejectionReason}` : ''}`,
+                html: `<p>Your delivery account was <strong>rejected</strong>.${boy.rejectionReason ? ` Reason: ${boy.rejectionReason}` : ''}</p>`,
+            });
+        }
+    } catch (err) {
+        console.warn(`[Delivery Approval Email] Failed for ${boy.email}: ${err.message}`);
+    }
+
+    await createNotification({
+        recipientId: boy._id,
+        recipientType: 'delivery',
+        title: `Application ${applicationStatus}`,
+        message:
+            applicationStatus === 'approved'
+                ? 'Your delivery account has been approved by admin.'
+                : `Your delivery account was rejected${boy.rejectionReason ? `: ${boy.rejectionReason}` : '.'}`,
+        type: 'system',
+        data: {
+            applicationStatus,
+            reason: boy.rejectionReason || '',
+        },
+    });
+
+    const refreshed = await DeliveryBoy.findById(boy._id).select('-password');
+    res.status(200).json(
+        new ApiResponse(200, refreshed, `Delivery registration ${applicationStatus} successfully`)
     );
 });
 

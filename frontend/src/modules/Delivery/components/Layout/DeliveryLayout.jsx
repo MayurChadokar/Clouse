@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
-import { FiLogOut, FiTruck, FiPackage, FiHome, FiUser } from "react-icons/fi";
+import { FiLogOut, FiTruck, FiPackage, FiHome, FiUser, FiMenu } from "react-icons/fi";
 import { useDeliveryAuthStore } from "../../store/deliveryStore";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -81,6 +81,12 @@ const DeliveryLayout = () => {
           <div
             className="flex items-center gap-2"
             style={{ marginLeft: "30px" }}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100"
+              aria-label="Open menu">
+              <FiMenu className="text-gray-700 text-xl" />
+            </button>
             <FiTruck className="text-primary-600 text-xl" />
             <h1 className="text-lg font-bold text-gray-800">Delivery</h1>
           </div>

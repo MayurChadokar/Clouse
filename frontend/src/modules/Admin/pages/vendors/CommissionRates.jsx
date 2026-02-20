@@ -6,7 +6,7 @@ import DataTable from "../../components/DataTable";
 import ExportButton from "../../components/ExportButton";
 import Badge from "../../../../shared/components/Badge";
 import ConfirmModal from "../../components/ConfirmModal";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../store/vendorStore";
 import toast from "react-hot-toast";
 
 const CommissionRates = () => {

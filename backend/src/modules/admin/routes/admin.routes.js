@@ -84,6 +84,7 @@ router.get('/delivery-boys/:id', ...adminAuth, deliveryController.getDeliveryBoy
 router.put('/delivery-boys/:id', ...adminAuth, deliveryController.updateDeliveryBoy);
 router.delete('/delivery-boys/:id', ...adminAuth, deliveryController.deleteDeliveryBoy);
 router.patch('/delivery-boys/:id/status', ...adminAuth, deliveryController.updateDeliveryBoyStatus);
+router.patch('/delivery-boys/:id/application-status', ...adminAuth, deliveryController.updateDeliveryBoyApplicationStatus);
 router.post('/delivery-boys/:id/settle-cash', ...adminAuth, deliveryController.settleCash);
 
 // ─── Return Requests ──────────────────────────────────────────────────────────

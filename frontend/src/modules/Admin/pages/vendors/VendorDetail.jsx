@@ -17,7 +17,7 @@ import {
   FiFileText,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../store/vendorStore";
 import { getAllOrders } from "../../services/adminService";
 import Badge from "../../../../shared/components/Badge";
 import DataTable from "../../components/DataTable";

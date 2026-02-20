@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { formatPrice } from "../../../../shared/utils/helpers";
-import { useVendorStore } from "../../../Vendor/store/vendorStore";
+import { useVendorStore } from "../../store/vendorStore";
 import { useOrderStore } from "../../../../shared/store/orderStore";
 import { useCommissionStore } from "../../../../shared/store/commissionStore";
 

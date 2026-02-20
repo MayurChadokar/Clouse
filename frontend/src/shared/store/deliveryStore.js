@@ -22,6 +22,8 @@ export const useDeliveryStore = create(
                     ...boy,
                     id: boy.id || boy._id,
                     status: boy.status || (boy.isActive ? 'active' : 'inactive'),
+                    applicationStatus: boy.applicationStatus || 'approved',
+                    documentUrls: boy.documentUrls || {},
                     totalDeliveries: boy.totalDeliveries ?? boy.stats?.totalDeliveries ?? 0,
                     pendingDeliveries: boy.pendingDeliveries ?? boy.stats?.pendingDeliveries ?? 0,
                     cashInHand: boy.cashInHand ?? boy.stats?.cashInHand ?? 0
@@ -73,6 +75,31 @@ export const useDeliveryStore = create(
                 toast.success('Status updated successfully');
             } catch (error) {
                 toast.error(error.message || 'Failed to update status');
+            }
+        },
+
+        updateApplicationStatus: async (id, applicationStatus, reason = '') => {
+            try {
+                const response = await adminService.updateDeliveryBoyApplicationStatus(id, applicationStatus, reason);
+                const updated = response?.data || {};
+                set((state) => ({
+                    deliveryBoys: state.deliveryBoys.map((boy) =>
+                        String(boy.id) === String(id)
+                            ? {
+                                ...boy,
+                                ...updated,
+                                id: updated.id || updated._id || boy.id,
+                                applicationStatus: updated.applicationStatus || applicationStatus,
+                                status: updated.isActive ? 'active' : 'inactive',
+                            }
+                            : boy
+                    ),
+                }));
+                toast.success(`Application ${applicationStatus} successfully`);
+                return true;
+            } catch (error) {
+                toast.error(error.message || `Failed to ${applicationStatus} application`);
+                return false;
             }
         },
 

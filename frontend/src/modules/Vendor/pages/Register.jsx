@@ -69,11 +69,12 @@ const VendorRegister = () => {
 
     try {
       const result = await registerVendor({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        storeName: formData.storeName,
-        storeDescription: formData.storeDescription,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        phone: formData.phone.trim(),
+        storeName: formData.storeName.trim(),
+        storeDescription: formData.storeDescription.trim(),
         address: formData.address,
       });
 
@@ -98,7 +99,7 @@ const VendorRegister = () => {
             <FiShoppingBag className="text-white text-2xl" />
           </div>
           <h1 className="text-3xl font-extrabold text-gray-800 mb-2">Become a Vendor</h1>
-          <p className="text-gray-600">Register your store and start selling today</p>
+          <p className="text-gray-600">Register your store, verify your email, then await admin approval</p>
         </div>
 
         {/* Registration Form */}
@@ -331,8 +332,8 @@ const VendorRegister = () => {
           {/* Info Message */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Your registration will be reviewed by our admin team.
-              You'll receive an email once your account is approved.
+              <strong>Note:</strong> You must verify your email first, then your registration will be reviewed by admin.
+              You will receive an email when your account is approved or rejected.
             </p>
           </div>
 

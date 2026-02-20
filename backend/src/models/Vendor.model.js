@@ -44,6 +44,9 @@ const vendorSchema = new mongoose.Schema(
         },
         otp: { type: String, select: false },
         otpExpiry: { type: Date, select: false },
+        resetOtp: { type: String, select: false },
+        resetOtpExpiry: { type: Date, select: false },
+        resetOtpVerified: { type: Boolean, default: false, select: false },
         joinDate: { type: Date, default: Date.now },
     },
     { timestamps: true }

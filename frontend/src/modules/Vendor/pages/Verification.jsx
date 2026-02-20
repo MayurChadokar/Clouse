@@ -8,7 +8,8 @@ import toast from 'react-hot-toast';
 const VendorVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [codes, setCodes] = useState(['', '', '', '']);
+  const OTP_LENGTH = 6;
+  const [codes, setCodes] = useState(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef([]);
 
@@ -31,7 +32,7 @@ const VendorVerification = () => {
     setCodes(newCodes);
 
     // Auto-focus next input
-    if (value && index < 3) {
+    if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -46,10 +47,10 @@ const VendorVerification = () => {
   const handlePaste = (e) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim();
-    if (pastedData.length === 4 && /^\d+$/.test(pastedData)) {
+    if (pastedData.length === OTP_LENGTH && /^\d+$/.test(pastedData)) {
       const newCodes = pastedData.split('');
       setCodes(newCodes);
-      inputRefs.current[3]?.focus();
+      inputRefs.current[OTP_LENGTH - 1]?.focus();
     }
   };
 
@@ -57,7 +58,7 @@ const VendorVerification = () => {
     e.preventDefault();
     const verificationCode = codes.join('');
 
-    if (verificationCode.length !== 4) {
+    if (verificationCode.length !== OTP_LENGTH) {
       toast.error('Please enter the complete verification code');
       return;
     }

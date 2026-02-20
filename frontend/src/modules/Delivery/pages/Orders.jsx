@@ -4,66 +4,35 @@ import { FiPackage, FiMapPin, FiClock, FiCheckCircle, FiXCircle, FiNavigation } 
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
+import toast from 'react-hot-toast';
+import { useDeliveryAuthStore } from '../store/deliveryStore';
 
 const DeliveryOrders = () => {
   const navigate = useNavigate();
+  const {
+    orders,
+    isLoadingOrders,
+    isUpdatingOrderStatus,
+    fetchOrders,
+    acceptOrder,
+    completeOrder,
+  } = useDeliveryAuthStore();
   const [filter, setFilter] = useState('all'); // all, pending, in-transit, completed
-  const [orders, setOrders] = useState([]);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  // Mock orders data - replace with actual API call
+  const loadOrders = async () => {
+    try {
+      setLoadFailed(false);
+      await fetchOrders();
+    } catch {
+      setLoadFailed(true);
+      // Error toast handled by API interceptor.
+    }
+  };
+
   useEffect(() => {
-    const mockOrders = [
-      {
-        id: 'ORD-001',
-        customer: 'John Doe',
-        phone: '+1234567890',
-        address: '123 Main St, City, State 12345',
-        amount: 45.99,
-        status: 'pending',
-        distance: '2.5 km',
-        estimatedTime: '15 min',
-        items: 3,
-        createdAt: '2024-01-15T10:30:00',
-      },
-      {
-        id: 'ORD-002',
-        customer: 'Jane Smith',
-        phone: '+1234567891',
-        address: '456 Oak Ave, City, State 12345',
-        amount: 89.50,
-        status: 'in-transit',
-        distance: '5.1 km',
-        estimatedTime: '25 min',
-        items: 5,
-        createdAt: '2024-01-15T09:15:00',
-      },
-      {
-        id: 'ORD-003',
-        customer: 'Bob Johnson',
-        phone: '+1234567892',
-        address: '789 Pine Rd, City, State 12345',
-        amount: 32.00,
-        status: 'pending',
-        distance: '1.8 km',
-        estimatedTime: '10 min',
-        items: 2,
-        createdAt: '2024-01-15T11:00:00',
-      },
-      {
-        id: 'ORD-004',
-        customer: 'Alice Brown',
-        phone: '+1234567893',
-        address: '321 Elm St, City, State 12345',
-        amount: 67.25,
-        status: 'completed',
-        distance: '3.2 km',
-        estimatedTime: '20 min',
-        items: 4,
-        createdAt: '2024-01-15T08:00:00',
-      },
-    ];
-    setOrders(mockOrders);
-  }, []);
+    loadOrders();
+  }, [fetchOrders]);
 
   const filteredOrders = orders.filter((order) => {
     if (filter === 'all') return true;
@@ -100,22 +69,22 @@ const DeliveryOrders = () => {
     }
   };
 
-  const handleAcceptOrder = (orderId) => {
-    // Update order status to in-transit
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'in-transit' } : order
-      )
-    );
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      await acceptOrder(orderId);
+      toast.success('Order accepted successfully');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
   };
 
-  const handleCompleteOrder = (orderId) => {
-    // Update order status to completed
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'completed' } : order
-      )
-    );
+  const handleCompleteOrder = async (orderId) => {
+    try {
+      await completeOrder(orderId);
+      toast.success('Order marked as delivered');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
   };
 
   return (
@@ -155,7 +124,30 @@ const DeliveryOrders = () => {
 
         {/* Orders List */}
         <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
+          {isLoadingOrders ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12"
+            >
+              <p className="text-gray-600">Loading orders...</p>
+            </motion.div>
+          ) : loadFailed ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12"
+            >
+              <FiXCircle className="text-red-400 text-5xl mx-auto mb-4" />
+              <p className="text-gray-700 mb-3">Could not load orders.</p>
+              <button
+                onClick={loadOrders}
+                className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold"
+              >
+                Retry
+              </button>
+            </motion.div>
+          ) : filteredOrders.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -182,7 +174,7 @@ const DeliveryOrders = () => {
                       <p className="font-bold text-gray-800">{order.id}</p>
                     </div>
                     <p className="text-sm text-gray-600">{order.customer}</p>
-                    <p className="text-xs text-gray-500">{order.phone}</p>
+                    <p className="text-xs text-gray-500">{order.phone || 'Phone unavailable'}</p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
@@ -196,7 +188,7 @@ const DeliveryOrders = () => {
                 {/* Address */}
                 <div className="flex items-start gap-2 mb-3 p-3 bg-gray-50 rounded-xl">
                   <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">{order.address}</p>
+                  <p className="text-sm text-gray-700">{order.address || 'Address unavailable'}</p>
                 </div>
 
                 {/* Order Details */}
@@ -208,11 +200,11 @@ const DeliveryOrders = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <FiClock />
-                      <span>{order.estimatedTime}</span>
+                      <span>{order.estimatedTime || '-'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiNavigation />
-                      <span>{order.distance}</span>
+                      <span>{order.distance || '-'}</span>
                     </div>
                   </div>
                   <p className="font-bold text-primary-600">{formatPrice(order.amount)}</p>
@@ -226,9 +218,10 @@ const DeliveryOrders = () => {
                         e.stopPropagation();
                         handleAcceptOrder(order.id);
                       }}
-                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm"
+                      disabled={isUpdatingOrderStatus}
+                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Accept Order
+                      {isUpdatingOrderStatus ? 'Please wait...' : 'Accept Order'}
                     </button>
                   )}
                   {order.status === 'in-transit' && (
@@ -237,9 +230,10 @@ const DeliveryOrders = () => {
                         e.stopPropagation();
                         handleCompleteOrder(order.id);
                       }}
-                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm"
+                      disabled={isUpdatingOrderStatus}
+                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Mark Complete
+                      {isUpdatingOrderStatus ? 'Please wait...' : 'Mark Complete'}
                     </button>
                   )}
                   <button

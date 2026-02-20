@@ -24,6 +24,30 @@ export const resendVendorOTP = (email) =>
     api.post('/vendor/auth/resend-otp', { email });
 
 /**
+ * Request reset OTP for vendor forgot password flow
+ * @param {string} email
+ */
+export const forgotVendorPassword = (email) =>
+    api.post('/vendor/auth/forgot-password', { email });
+
+/**
+ * Verify reset OTP
+ * @param {string} email
+ * @param {string} otp
+ */
+export const verifyVendorResetOTP = (email, otp) =>
+    api.post('/vendor/auth/verify-reset-otp', { email, otp });
+
+/**
+ * Reset vendor password after reset OTP verification
+ * @param {string} email
+ * @param {string} password
+ * @param {string} confirmPassword
+ */
+export const resetVendorPassword = (email, password, confirmPassword) =>
+    api.post('/vendor/auth/reset-password', { email, password, confirmPassword });
+
+/**
  * Login vendor — returns { accessToken, refreshToken, vendor }
  * @param {string} email
  * @param {string} password

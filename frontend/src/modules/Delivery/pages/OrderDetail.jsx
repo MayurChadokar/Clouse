@@ -15,40 +15,29 @@ import {
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
 import toast from 'react-hot-toast';
+import { useDeliveryAuthStore } from '../store/deliveryStore';
 
 const DeliveryOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { fetchOrderById, acceptOrder, completeOrder, isLoadingOrder, isUpdatingOrderStatus } = useDeliveryAuthStore();
   const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const loadOrder = async () => {
+    try {
+      setLoadFailed(false);
+      const response = await fetchOrderById(id);
+      setOrder(response);
+    } catch {
+      setLoadFailed(true);
+      setOrder(null);
+    }
+  };
 
   useEffect(() => {
-    // Mock order data - replace with actual API call
-    setTimeout(() => {
-      setOrder({
-        id: id,
-        customer: 'John Doe',
-        phone: '+1234567890',
-        email: 'john.doe@example.com',
-        address: '123 Main St, City, State 12345',
-        latitude: 40.7128, // New York City coordinates (example)
-        longitude: -74.0060,
-        amount: 45.99,
-        deliveryFee: 5.00,
-        total: 50.99,
-        status: 'pending',
-        distance: '2.5 km',
-        estimatedTime: '15 min',
-        items: [
-          { name: 'Product 1', quantity: 2, price: 15.99 },
-          { name: 'Product 2', quantity: 1, price: 14.00 },
-        ],
-        createdAt: '2024-01-15T10:30:00',
-        instructions: 'Please ring the doorbell twice',
-      });
-      setLoading(false);
-    }, 500);
-  }, [id]);
+    loadOrder();
+  }, [id, fetchOrderById]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -63,13 +52,26 @@ const DeliveryOrderDetail = () => {
     }
   };
 
-  const handleAcceptOrder = () => {
-    setOrder({ ...order, status: 'in-transit' });
-    toast.success('Order accepted! Map location is now available.');
+  const handleAcceptOrder = async () => {
+    if (!order || order.status !== 'pending') return;
+    try {
+      const updated = await acceptOrder(order.id);
+      setOrder(updated);
+      toast.success('Order accepted successfully');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
   };
 
-  const handleCompleteOrder = () => {
-    setOrder({ ...order, status: 'completed' });
+  const handleCompleteOrder = async () => {
+    if (!order || order.status !== 'in-transit') return;
+    try {
+      const updated = await completeOrder(order.id);
+      setOrder(updated);
+      toast.success('Order marked as delivered');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
   };
 
   const openInGoogleMaps = () => {
@@ -109,7 +111,7 @@ const DeliveryOrderDetail = () => {
     }
   };
 
-  if (loading) {
+  if (isLoadingOrder) {
     return (
       <PageTransition>
         <div className="px-4 py-6">
@@ -125,8 +127,16 @@ const DeliveryOrderDetail = () => {
   if (!order) {
     return (
       <PageTransition>
-        <div className="px-4 py-6 text-center">
-          <p className="text-gray-600">Order not found</p>
+        <div className="px-4 py-6 text-center space-y-3">
+          <p className="text-gray-600">{loadFailed ? 'Unable to load order details' : 'Order not found'}</p>
+          {loadFailed && (
+            <button
+              onClick={loadOrder}
+              className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold"
+            >
+              Retry
+            </button>
+          )}
         </div>
       </PageTransition>
     );
@@ -165,11 +175,14 @@ const DeliveryOrderDetail = () => {
             <p className="text-gray-800 font-semibold">{order.customer}</p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FiPhone />
-              <a href={`tel:${order.phone}`} className="hover:text-primary-600">
-                {order.phone}
+              <a
+                href={order.phone ? `tel:${order.phone}` : '#'}
+                className={`hover:text-primary-600 ${!order.phone ? 'pointer-events-none opacity-60' : ''}`}
+              >
+                {order.phone || 'Phone unavailable'}
               </a>
             </div>
-            <p className="text-sm text-gray-600">{order.email}</p>
+            <p className="text-sm text-gray-600">{order.email || '-'}</p>
           </div>
         </motion.div>
 
@@ -184,7 +197,7 @@ const DeliveryOrderDetail = () => {
             <FiMapPin />
             Delivery Address
           </h2>
-          <p className="text-gray-700 mb-3">{order.address}</p>
+          <p className="text-gray-700 mb-3">{order.address || 'Address unavailable'}</p>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <FiNavigation />
@@ -253,13 +266,16 @@ const DeliveryOrderDetail = () => {
             Order Items
           </h2>
           <div className="space-y-3">
+            {order.items.length === 0 && (
+              <p className="text-sm text-gray-500">No items available for this order.</p>
+            )}
             {order.items.map((item, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <div>
-                  <p className="font-semibold text-gray-800">{item.name}</p>
-                  <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  <p className="font-semibold text-gray-800">{item.name || 'Item'}</p>
+                  <p className="text-sm text-gray-600">Quantity: {item.quantity || 0}</p>
                 </div>
-                <p className="font-semibold text-gray-800">{formatPrice(item.price)}</p>
+                <p className="font-semibold text-gray-800">{formatPrice(item.price || 0)}</p>
               </div>
             ))}
           </div>
@@ -302,24 +318,27 @@ const DeliveryOrderDetail = () => {
           {order.status === 'pending' && (
             <button
               onClick={handleAcceptOrder}
-              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2"
+              disabled={isUpdatingOrderStatus}
+              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <FiCheckCircle />
-              Accept Order
+              {isUpdatingOrderStatus ? 'Please wait...' : 'Accept Order'}
             </button>
           )}
           {order.status === 'in-transit' && (
             <button
               onClick={handleCompleteOrder}
-              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2"
+              disabled={isUpdatingOrderStatus}
+              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <FiCheckCircle />
-              Mark as Delivered
+              {isUpdatingOrderStatus ? 'Please wait...' : 'Mark as Delivered'}
             </button>
           )}
           <button
-            onClick={() => window.open(`tel:${order.phone}`, '_self')}
-            className="w-full bg-gray-100 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-200"
+            onClick={() => order.phone && window.open(`tel:${order.phone}`, '_self')}
+            disabled={!order.phone}
+            className="w-full bg-gray-100 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <FiPhone />
             Call Customer

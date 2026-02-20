@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiTruck } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useDeliveryAuthStore } from '../store/deliveryStore';
@@ -20,7 +20,8 @@ const DeliveryLogin = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    const hasDeliveryToken = Boolean(localStorage.getItem('delivery-token'));
+    if (isAuthenticated && hasDeliveryToken) {
       const from = location.state?.from?.pathname || '/delivery/dashboard';
       navigate(from, { replace: true });
     }
@@ -128,6 +129,12 @@ const DeliveryLogin = () => {
                   />
                   <span className="ml-2 text-sm text-gray-700">Remember me</span>
                 </label>
+                <Link
+                  to="/delivery/forgot-password"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               {/* Submit Button */}
@@ -145,6 +152,15 @@ const DeliveryLogin = () => {
               <p className="text-sm text-gray-700 font-semibold mb-2">Demo Credentials:</p>
               <p className="text-xs text-gray-600">Email: delivery@delivery.com</p>
               <p className="text-xs text-gray-600">Password: delivery123</p>
+            </div>
+
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-600">
+                New delivery partner?{' '}
+                <Link to="/delivery/register" className="text-primary-600 hover:text-primary-700 font-semibold">
+                  Register here
+                </Link>
+              </p>
             </div>
           </div>
         </motion.div>

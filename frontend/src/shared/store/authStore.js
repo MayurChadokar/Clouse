@@ -15,7 +15,8 @@ export const useAuthStore = create(
       login: async (email, password, rememberMe = false) => {
         set({ isLoading: true });
         try {
-          const response = await api.post('/user/auth/login', { email, password });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          const response = await api.post('/user/auth/login', { email: normalizedEmail, password });
           const payload = response?.data ?? response;
           const accessToken = payload?.accessToken;
           const user = payload?.user;
@@ -36,6 +37,19 @@ export const useAuthStore = create(
 
           return { success: true, user };
         } catch (error) {
+          const backendMessage = String(
+            error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            ''
+          ).toLowerCase();
+          if (
+            backendMessage.includes('email not verified') ||
+            backendMessage.includes('verify your email')
+          ) {
+            set({ pendingEmail: normalizedEmail, isLoading: false });
+            throw error;
+          }
           set({ isLoading: false });
           throw error;
         }
@@ -76,7 +90,8 @@ export const useAuthStore = create(
       verifyOTP: async (email, otp) => {
         set({ isLoading: true });
         try {
-          const response = await api.post('/user/auth/verify-otp', { email, otp });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          const response = await api.post('/user/auth/verify-otp', { email: normalizedEmail, otp });
           const payload = response?.data ?? response;
           const accessToken = payload?.accessToken;
           const user = payload?.user;
@@ -105,7 +120,8 @@ export const useAuthStore = create(
       resendOTP: async (email) => {
         set({ isLoading: true });
         try {
-          await api.post('/user/auth/resend-otp', { email });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          await api.post('/user/auth/resend-otp', { email: normalizedEmail });
           set({ isLoading: false });
           return { success: true };
         } catch (error) {
@@ -117,7 +133,8 @@ export const useAuthStore = create(
       forgotPassword: async (email) => {
         set({ isLoading: true });
         try {
-          await api.post('/user/auth/forgot-password', { email });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          await api.post('/user/auth/forgot-password', { email: normalizedEmail });
           set({ isLoading: false });
           return { success: true };
         } catch (error) {
@@ -129,7 +146,8 @@ export const useAuthStore = create(
       verifyResetOtp: async (email, otp) => {
         set({ isLoading: true });
         try {
-          await api.post('/user/auth/verify-reset-otp', { email, otp });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          await api.post('/user/auth/verify-reset-otp', { email: normalizedEmail, otp });
           set({ isLoading: false });
           return { success: true };
         } catch (error) {
@@ -141,7 +159,8 @@ export const useAuthStore = create(
       resetPassword: async (email, password, confirmPassword) => {
         set({ isLoading: true });
         try {
-          await api.post('/user/auth/reset-password', { email, password, confirmPassword });
+          const normalizedEmail = String(email || '').trim().toLowerCase();
+          await api.post('/user/auth/reset-password', { email: normalizedEmail, password, confirmPassword });
           set({ isLoading: false });
           return { success: true };
         } catch (error) {
@@ -199,6 +218,41 @@ export const useAuthStore = create(
           });
           set({ isLoading: false });
           return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Upload profile avatar
+      uploadProfileAvatar: async (file) => {
+        if (!file) {
+          throw new Error('Avatar file is required.');
+        }
+
+        set({ isLoading: true });
+        try {
+          const formData = new FormData();
+          formData.append('avatar', file);
+
+          const response = await api.post('/user/auth/profile/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          const payload = response?.data ?? response;
+          const currentUser = get().user || {};
+          const nextUser = {
+            ...currentUser,
+            ...(payload?.user || {}),
+            avatar: payload?.avatar || payload?.user?.avatar || currentUser.avatar,
+            email: currentUser.email || payload?.user?.email,
+          };
+
+          set({
+            user: nextUser,
+            isLoading: false,
+          });
+
+          return { success: true, user: nextUser };
         } catch (error) {
           set({ isLoading: false });
           throw error;

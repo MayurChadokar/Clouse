@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { FiSearch, FiFilter, FiX, FiMic, FiGrid, FiList, FiShoppingBag } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileLayout from "../components/Layout/MobileLayout";
@@ -7,14 +7,26 @@ import ProductCard from '../../../shared/components/ProductCard';
 import ProductListItem from '../components/Mobile/ProductListItem';
 import SearchSuggestions from '../components/Mobile/SearchSuggestions';
 import { getCatalogProducts, getApprovedVendors } from '../data/catalogData';
-import { categories } from '../../../data/categories';
+import { categories as fallbackCategories } from '../../../data/categories';
 import PageTransition from '../../../shared/components/PageTransition';
 import useInfiniteScroll from '../../../shared/hooks/useInfiniteScroll';
+import { useCategoryStore } from '../../../shared/store/categoryStore';
 import toast from 'react-hot-toast';
+
+const normalizeId = (value) => String(value ?? '').trim();
+
+const getParentId = (category) => {
+  const parent = category?.parentId;
+  if (!parent) return null;
+  if (typeof parent === 'object') {
+    return normalizeId(parent?._id ?? parent?.id ?? '');
+  }
+  return normalizeId(parent);
+};
 
 const MobileSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { categories: storeCategories, initialize: initializeCategories } = useCategoryStore();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -37,9 +49,7 @@ const MobileSearch = () => {
   // Sync searchQuery with URL params
   useEffect(() => {
     const q = searchParams.get('q');
-    if (q !== null) {
-      setSearchQuery(q);
-    }
+    setSearchQuery(q || '');
 
     setFilters({
       category: searchParams.get('category') || '',
@@ -49,6 +59,10 @@ const MobileSearch = () => {
       minRating: searchParams.get('minRating') || '',
     });
   }, [searchParams]);
+
+  useEffect(() => {
+    initializeCategories();
+  }, [initializeCategories]);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -70,6 +84,11 @@ const MobileSearch = () => {
     const updated = recentSearches.filter((_, i) => i !== index);
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('recentSearches');
   };
 
   const handleVoiceSearch = () => {
@@ -106,40 +125,57 @@ const MobileSearch = () => {
     recognition.start();
   };
 
+  const categories = useMemo(() => {
+    const activeStoreCategories = storeCategories.filter((cat) => cat.isActive !== false);
+    if (activeStoreCategories.length) {
+      return activeStoreCategories;
+    }
+    return fallbackCategories;
+  }, [storeCategories]);
+
   const filteredProducts = useMemo(() => {
     let result = getCatalogProducts();
+    const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    if (searchQuery) {
+    if (normalizedQuery) {
       result = result.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name?.toLowerCase().includes(normalizedQuery) ||
+        product.categoryName?.toLowerCase().includes(normalizedQuery) ||
+        product.brandName?.toLowerCase().includes(normalizedQuery) ||
+        product.vendorName?.toLowerCase().includes(normalizedQuery)
       );
     }
 
     if (filters.category) {
-      const categoryMap = {
-        '1': ['t-shirt', 'shirt', 'jeans', 'dress', 'gown', 'skirt', 'blazer', 'jacket', 'cardigan', 'sweater', 'flannel', 'maxi'],
-        '2': ['sneakers', 'pumps', 'boots', 'heels', 'shoes'],
-        '3': ['bag', 'crossbody', 'handbag'],
-        '4': ['necklace', 'watch', 'wristwatch'],
-        '5': ['sunglasses', 'belt', 'scarf'],
-        '6': ['athletic', 'running', 'track', 'sporty'],
-      };
+      const selectedCategoryId = normalizeId(filters.category);
+      result = result.filter((product) => {
+        const productCategoryId = normalizeId(product.categoryId);
+        const productCategory = categories.find(
+          (cat) => normalizeId(cat.id) === productCategoryId
+        );
+        const productParentId = getParentId(productCategory);
+        return productCategoryId === selectedCategoryId || productParentId === selectedCategoryId;
+      });
 
-      const categoryKeywords = categoryMap[filters.category] || [];
-      result = result.filter((product) =>
-        categoryKeywords.some((keyword) =>
-          product.name.toLowerCase().includes(keyword)
-        )
-      );
+      if (!result.length) {
+        const selectedCategory = categories.find(
+          (cat) => normalizeId(cat.id) === selectedCategoryId
+        );
+        const keyword = selectedCategory?.name?.toLowerCase()?.split(' ')[0];
+        if (keyword) {
+          result = getCatalogProducts().filter((product) =>
+            product.name?.toLowerCase().includes(keyword)
+          );
+        }
+      }
     }
 
     // Vendor filter
     if (filters.vendor) {
+      const selectedVendorId = normalizeId(filters.vendor);
       result = result.filter((product) => {
-        const productVendorId = typeof product.vendorId === 'string'
-          ? parseInt(product.vendorId.replace('vendor-', ''))
-          : product.vendorId;
-        return productVendorId === parseInt(filters.vendor) || product.vendorId === filters.vendor;
+        const productVendorId = normalizeId(product.vendorId);
+        return productVendorId === selectedVendorId;
       });
     }
 
@@ -157,7 +193,7 @@ const MobileSearch = () => {
     }
 
     return result;
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, categories]);
 
   const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } = useInfiniteScroll(
     filteredProducts,
@@ -168,10 +204,11 @@ const MobileSearch = () => {
   const filterButtonRef = useRef(null);
 
   const handleFilterChange = (name, value) => {
-    setFilters({ ...filters, [name]: value });
+    const normalizedValue = typeof value === 'string' ? value.trim() : value;
+    setFilters({ ...filters, [name]: normalizedValue });
     const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set(name, value);
+    if (normalizedValue) {
+      newParams.set(name, normalizedValue);
     } else {
       newParams.delete(name);
     }
@@ -207,9 +244,10 @@ const MobileSearch = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     const newParams = new URLSearchParams(searchParams);
-    if (searchQuery) {
-      newParams.set('q', searchQuery);
-      saveRecentSearch(searchQuery);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      newParams.set('q', trimmedQuery);
+      saveRecentSearch(trimmedQuery);
     } else {
       newParams.delete('q');
     }
@@ -218,11 +256,16 @@ const MobileSearch = () => {
   };
 
   const handleSuggestionSelect = (query) => {
-    setSearchQuery(query);
+    const normalizedQuery = String(query || '').trim();
+    setSearchQuery(normalizedQuery);
     setShowSuggestions(false);
-    saveRecentSearch(query);
+    saveRecentSearch(normalizedQuery);
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('q', query);
+    if (normalizedQuery) {
+      newParams.set('q', normalizedQuery);
+    } else {
+      newParams.delete('q');
+    }
     setSearchParams(newParams);
   };
 
@@ -301,6 +344,7 @@ const MobileSearch = () => {
                   onClose={() => setShowSuggestions(false)}
                   recentSearches={recentSearches}
                   onDeleteRecent={deleteRecentSearch}
+                  onClearRecent={clearRecentSearches}
                 />
               </div>
             </form>
@@ -400,7 +444,7 @@ const MobileSearch = () => {
                                     }}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm flex items-center justify-between text-gray-700"
                                   >
-                                    <span>{filters.category ? categories.find(c => c.id === filters.category)?.name : "All Categories"}</span>
+                                    <span>{filters.category ? categories.find(c => normalizeId(c.id) === normalizeId(filters.category))?.name : "All Categories"}</span>
                                     <motion.div
                                       animate={{ rotate: showCategoryDropdown ? 180 : 0 }}
                                       transition={{ duration: 0.2 }}
@@ -430,10 +474,10 @@ const MobileSearch = () => {
                                           <div
                                             key={cat.id}
                                             onClick={() => {
-                                              handleFilterChange("category", cat.id);
+                                              handleFilterChange("category", normalizeId(cat.id));
                                               setShowCategoryDropdown(false);
                                             }}
-                                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-white transition-colors ${filters.category === cat.id ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-white transition-colors ${normalizeId(filters.category) === normalizeId(cat.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                           >
                                             {cat.name}
                                           </div>
@@ -492,7 +536,7 @@ const MobileSearch = () => {
                                     className="w-full px-3 py-2.5 rounded-xl border-2 border-primary-100 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-bold flex items-center justify-between text-gray-800 shadow-sm"
                                   >
                                     <span className="truncate pr-2">
-                                      {filters.vendor ? approvedVendors.find(v => v.id === filters.vendor)?.storeName || approvedVendors.find(v => v.id === filters.vendor)?.name : "All Vendors"}
+                                      {filters.vendor ? approvedVendors.find(v => normalizeId(v.id) === normalizeId(filters.vendor))?.storeName || approvedVendors.find(v => normalizeId(v.id) === normalizeId(filters.vendor))?.name : "All Vendors"}
                                     </span>
                                     <motion.div
                                       animate={{ rotate: showVendorDropdown ? 180 : 0 }}
@@ -524,16 +568,16 @@ const MobileSearch = () => {
                                           <div
                                             key={vendor.id}
                                             onClick={() => {
-                                              handleFilterChange("vendor", vendor.id);
+                                              handleFilterChange("vendor", normalizeId(vendor.id));
                                               setShowVendorDropdown(false);
                                             }}
-                                            className={`p-3 text-sm cursor-pointer hover:bg-white transition-colors border-b last:border-0 border-gray-100 flex items-center justify-between ${filters.vendor === vendor.id ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                            className={`p-3 text-sm cursor-pointer hover:bg-white transition-colors border-b last:border-0 border-gray-100 flex items-center justify-between ${normalizeId(filters.vendor) === normalizeId(vendor.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                           >
                                             <div className="flex items-center gap-2">
                                               <span>{vendor.storeName || vendor.name}</span>
                                               {vendor.isVerified && <span className="text-blue-500 text-xs">✓</span>}
                                             </div>
-                                            {filters.vendor === vendor.id && <FiFilter className="text-primary-500" />}
+                                            {normalizeId(filters.vendor) === normalizeId(vendor.id) && <FiFilter className="text-primary-500" />}
                                           </div>
                                         ))}
                                       </motion.div>

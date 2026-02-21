@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -10,11 +10,15 @@ import { useAuthStore } from '../../../shared/store/authStore';
 const MobileVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOTP, resendOTP, isLoading } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const { verifyOTP, resendOTP, pendingEmail, isLoading } = useAuthStore();
   const [codes, setCodes] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
 
-  const email = location.state?.email;
+  const email =
+    String(location.state?.email || pendingEmail || searchParams.get('email') || '')
+      .trim()
+      .toLowerCase();
 
   // Focus first input on mount
   useEffect(() => {
@@ -29,7 +33,7 @@ const MobileVerification = () => {
 
   const handleChange = (index, value) => {
     // Only allow single digit
-    if (value.length > 1) return;
+    if (value.length > 1 || (value && !/^\d$/.test(value))) return;
 
     const newCodes = [...codes];
     newCodes[index] = value;
@@ -70,7 +74,7 @@ const MobileVerification = () => {
     try {
       await verifyOTP(email, verificationCode);
       toast.success('Verification successful!');
-      navigate('/');
+      navigate('/home');
     } catch (error) {
       toast.error('Invalid verification code. Please try again.');
     }

@@ -22,7 +22,7 @@ const MobileLogin = () => {
     formState: { errors },
   } = useForm();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/home';
 
   const onSubmit = async (data) => {
     try {
@@ -30,6 +30,24 @@ const MobileLogin = () => {
       toast.success('Login successful!');
       navigate(from, { replace: true });
     } catch (error) {
+      const backendMessage = String(
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        ''
+      );
+      const message = String(error?.message || '');
+      const normalized = `${backendMessage} ${message}`.toLowerCase();
+
+      if (
+        normalized.includes('email not verified') ||
+        normalized.includes('verify your email')
+      ) {
+        navigate('/verification', {
+          state: { email: String(data.email || '').trim().toLowerCase() },
+          replace: true,
+        });
+        return;
+      }
       toast.error(error.message || 'Login failed. Please try again.');
     }
   };

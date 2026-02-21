@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { getProductById } from "../../data/products";
+import { getProductById as getCatalogProductById } from "../../modules/UserApp/data/catalogData";
 import toast from "react-hot-toast";
 
 // Cart Store
@@ -9,7 +9,7 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       addItem: (item) => {
-        const product = getProductById(item.id);
+        const product = getCatalogProductById(item.id);
         if (!product) {
           toast.error("Product not found");
           return;
@@ -20,7 +20,9 @@ export const useCartStore = create(
           return;
         }
 
-        const existingItem = get().items.find((i) => i.id === item.id);
+        const existingItem = get().items.find(
+          (i) => String(i.id) === String(item.id)
+        );
         const quantityToAdd = item.quantity || 1;
         const newQuantity = existingItem
           ? existingItem.quantity + quantityToAdd
@@ -47,7 +49,7 @@ export const useCartStore = create(
           if (existingItem) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id
+                String(i.id) === String(item.id)
                   ? {
                     ...i,
                     ...itemWithVendor,
@@ -81,7 +83,7 @@ export const useCartStore = create(
       },
       removeItem: (id) =>
         set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+          items: state.items.filter((item) => String(item.id) !== String(id)),
         })),
       updateQuantity: (id, quantity) => {
         if (quantity <= 0) {
@@ -89,7 +91,7 @@ export const useCartStore = create(
           return;
         }
 
-        const product = getProductById(id);
+        const product = getCatalogProductById(id);
         if (product && quantity > product.stockQuantity) {
           toast.error(`Only ${product.stockQuantity} items available in stock`);
           quantity = product.stockQuantity;
@@ -97,7 +99,7 @@ export const useCartStore = create(
 
         set((state) => ({
           items: state.items.map((item) =>
-            item.id === id ? { ...item, quantity } : item
+            String(item.id) === String(id) ? { ...item, quantity } : item
           ),
         }));
       },
@@ -119,7 +121,7 @@ export const useCartStore = create(
         const vendorGroups = {};
 
         state.items.forEach((item) => {
-          const vendorId = item.vendorId || 1;
+          const vendorId = String(item.vendorId || 1);
           const vendorName = item.vendorName || "Unknown Vendor";
 
           if (!vendorGroups[vendorId]) {

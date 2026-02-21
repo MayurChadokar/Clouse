@@ -69,7 +69,7 @@ const DailyDealsSection = () => {
                   Daily Deals
                 </h2>
                 <p className="text-xs md:text-sm text-white/90 font-medium">
-                  Limited time offers • Up to 70% OFF
+                  Limited time offers - Up to 70% OFF
                 </p>
               </div>
             </div>

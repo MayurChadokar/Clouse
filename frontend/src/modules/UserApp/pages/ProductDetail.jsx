@@ -19,6 +19,7 @@ import {
   getProductById,
   getSimilarProducts,
   getVendorById,
+  getBrandById,
 } from "../data/catalogData";
 import { formatPrice } from "../../../shared/utils/helpers";
 import toast from "react-hot-toast";
@@ -35,6 +36,7 @@ const MobileProductDetail = () => {
   const navigate = useNavigate();
   const product = getProductById(id);
   const vendor = product ? getVendorById(product.vendorId) : null;
+  const brand = product ? getBrandById(product.brandId) : null;
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
 
@@ -75,7 +77,7 @@ const MobileProductDetail = () => {
                 Product Not Found
               </h2>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/home")}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                 Go Back Home
               </button>
@@ -206,7 +208,7 @@ const MobileProductDetail = () => {
               </div>
               {product.flashSale && (
                 <div className="mt-4 flex justify-center lg:justify-start">
-                  <Badge variant="flash" size="lg">⚡ Flash Sale - Limited Time Offer</Badge>
+                  <Badge variant="flash" size="lg">Flash Sale - Limited Time Offer</Badge>
                 </div>
               )}
             </div>
@@ -246,7 +248,29 @@ const MobileProductDetail = () => {
                             title="Verified Vendor"
                           />
                         )}
-                        <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                        <span className="text-gray-400 group-hover:translate-x-1 transition-transform">{"->"}</span>
+                      </Link>
+                    </div>
+                  )}
+                  {brand && (
+                    <div className="mb-4">
+                      <Link
+                        to={`/brand/${brand.id}`}
+                        className="inline-flex items-center gap-3 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-full transition-all duration-300 border border-gray-200 group">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white border border-gray-200 flex-shrink-0">
+                          <img
+                            src={brand.logo}
+                            alt={brand.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </div>
+                        <span className="font-medium text-sm group-hover:text-primary-600 transition-colors">
+                          {brand.name}
+                        </span>
+                        <span className="text-gray-400 group-hover:translate-x-1 transition-transform">{"->"}</span>
                       </Link>
                     </div>
                   )}
@@ -265,7 +289,7 @@ const MobileProductDetail = () => {
                       <span className="text-gray-500 text-sm font-medium hover:text-gray-700 cursor-pointer">
                         {product.reviewCount || 0} Reviews
                       </span>
-                      <span className="text-gray-300">•</span>
+                      <span className="text-gray-300">|</span>
                       <span className="text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded-lg">
                         {product.stock === "in_stock" ? "In Stock" : product.stock === "low_stock" ? "Low Stock" : "Out of Stock"}
                       </span>

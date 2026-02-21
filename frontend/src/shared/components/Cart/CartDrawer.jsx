@@ -11,14 +11,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore, useUIStore } from "../../store/useStore";
 import { formatPrice } from "../../utils/helpers";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import SwipeableCartItem from "./SwipeableCartItem";
 
 const CartDrawer = () => {
-  const location = useLocation();
-  // Check if we're in the mobile app section
-  const isMobileApp = location.pathname.startsWith("/app");
-  const checkoutLink = isMobileApp ? "/app/checkout" : "/checkout";
+  const checkoutLink = "/checkout";
   const { isCartOpen, toggleCart } = useUIStore();
   const {
     items,
@@ -75,13 +72,6 @@ const CartDrawer = () => {
             }}
             style={{ willChange: "transform", transform: "translateZ(0)" }}
             className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000] flex flex-col">
-            {/* Drag Handle (Mobile Only) */}
-            {isMobileApp && (
-              <div className="flex justify-center pt-3 pb-2 sm:hidden">
-                <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-              </div>
-            )}
-
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">Shopping Cart</h2>

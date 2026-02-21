@@ -65,8 +65,8 @@ const MobileCategoryIcons = () => {
 
   // Get current category from URL
   const getCurrentCategoryId = () => {
-    const match = location.pathname.match(/\/(?:app\/)?category\/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+    const match = location.pathname.match(/\/(?:app\/)?category\/([^/]+)/);
+    return match ? String(match[1]) : null;
   };
 
   const currentCategoryId = getCurrentCategoryId();
@@ -205,8 +205,8 @@ const MobileCategoryIcons = () => {
 
   const isActiveCategory = (categoryId) => {
     return (
-      location.pathname === `/app/category/${categoryId}` ||
-      location.pathname === `/category/${categoryId}`
+      location.pathname === `/app/category/${String(categoryId)}` ||
+      location.pathname === `/category/${String(categoryId)}`
     );
   };
 
@@ -234,7 +234,7 @@ const MobileCategoryIcons = () => {
           const IconComponent = categoryIcons[category.name] || IoShirtOutline;
           const isActive = isActiveCategory(category.id);
           const activeColors =
-            currentCategoryId && currentCategoryId === category.id
+            currentCategoryId && String(currentCategoryId) === String(category.id)
               ? getActiveColor(category.id)
               : null;
           return (

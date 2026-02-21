@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiFilter, FiX, FiSearch } from "react-icons/fi";
 import MobileLayout from "../components/Layout/MobileLayout";
 import { categories as fallbackCategories } from "../../../data/categories";
@@ -9,13 +9,20 @@ import { useCategoryStore } from "../../../shared/store/categoryStore";
 import PageTransition from "../../../shared/components/PageTransition";
 import LazyImage from "../../../shared/components/LazyImage";
 import ProductCard from "../../../shared/components/ProductCard";
-import useMobileHeaderHeight from "../hooks/useMobileHeaderHeight";
-import { getPlaceholderImage } from "../../../shared/utils/helpers";
+
+const normalizeId = (value) => String(value ?? "").trim();
+
+const getParentId = (category) => {
+  const parent = category?.parentId;
+  if (!parent) return null;
+  if (typeof parent === "object") {
+    return normalizeId(parent?._id ?? parent?.id ?? "");
+  }
+  return normalizeId(parent);
+};
 
 const MobileCategories = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const defaultHeaderHeight = useMobileHeaderHeight();
   const { categories, initialize, getCategoriesByParent, getRootCategories } =
     useCategoryStore();
 
@@ -26,14 +33,18 @@ const MobileCategories = () => {
 
   // Get root categories (categories without parent) and merge with fallback to preserve images
   const rootCategories = useMemo(() => {
-    const roots = getRootCategories();
+    const roots = getRootCategories().filter((cat) => cat.isActive !== false);
     if (roots.length === 0) {
       return fallbackCategories;
     }
     // Merge store categories with fallback categories to preserve image references
     // This ensures images from imported modules are used instead of serialized strings
     return roots.map((cat) => {
-      const fallbackCat = fallbackCategories.find((fc) => fc.id === cat.id);
+      const fallbackCat = fallbackCategories.find(
+        (fc) =>
+          normalizeId(fc.id) === normalizeId(cat.id) ||
+          fc.name?.toLowerCase() === cat.name?.toLowerCase()
+      );
       if (fallbackCat) {
         // Use fallback category data but preserve any custom fields from store
         return {
@@ -47,9 +58,6 @@ const MobileCategories = () => {
     });
   }, [categories, getRootCategories]);
 
-  // Header is hidden on categories page, so use 0
-  const headerHeight =
-    location.pathname === "/categories" ? 0 : defaultHeaderHeight;
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     rootCategories[0]?.id || null
   );
@@ -74,28 +82,19 @@ const MobileCategories = () => {
     return subcats.filter((cat) => cat.isActive !== false);
   }, [selectedCategoryId, categories, getCategoriesByParent]);
 
-  // Category to product keywords mapping (fallback for product filtering)
-  const categoryMap = {
-    1: [
-      "t-shirt",
-      "shirt",
-      "jeans",
-      "dress",
-      "gown",
-      "skirt",
-      "blazer",
-      "jacket",
-      "cardigan",
-      "sweater",
-      "flannel",
-      "maxi",
-    ],
-    2: ["sneakers", "pumps", "boots", "heels", "shoes"],
-    3: ["bag", "crossbody", "handbag"],
-    4: ["necklace", "watch", "wristwatch"],
-    5: ["sunglasses", "belt", "scarf"],
-    6: ["athletic", "running", "track", "sporty"],
-  };
+  useEffect(() => {
+    if (!rootCategories.length) return;
+    if (!selectedCategoryId) {
+      setSelectedCategoryId(rootCategories[0].id);
+      return;
+    }
+    const exists = rootCategories.some(
+      (cat) => normalizeId(cat.id) === normalizeId(selectedCategoryId)
+    );
+    if (!exists) {
+      setSelectedCategoryId(rootCategories[0].id);
+    }
+  }, [rootCategories, selectedCategoryId]);
 
   // Reset selected subcategory when category changes
   useEffect(() => {
@@ -110,27 +109,41 @@ const MobileCategories = () => {
   const filteredProducts = useMemo(() => {
     if (!selectedCategoryId) return [];
 
-    const categoryKeywords = categoryMap[selectedCategoryId] || [];
+    const selectedId = normalizeId(selectedCategoryId);
+    const selectedSubId = normalizeId(selectedSubcategory);
+    const selectedSubCategoryObj = subcategories.find(
+      (sub) => normalizeId(sub.id) === selectedSubId
+    );
+    const selectedSubCategoryName = selectedSubCategoryObj?.name?.toLowerCase();
+
     let filtered = getCatalogProducts().filter((product) => {
-      const productName = product.name.toLowerCase();
-      return categoryKeywords.some((keyword) => productName.includes(keyword));
+      const productCategoryId = normalizeId(product.categoryId);
+      const productCategory = categories.find(
+        (cat) => normalizeId(cat.id) === productCategoryId
+      );
+      const productParentId = getParentId(productCategory);
+
+      if (selectedSubId) {
+        if (productCategoryId === selectedSubId) return true;
+        if (selectedSubCategoryName) {
+          return product.name?.toLowerCase().includes(selectedSubCategoryName);
+        }
+        return false;
+      }
+
+      return productCategoryId === selectedId || productParentId === selectedId;
     });
 
-    // Further filter by subcategory if one is selected
-    if (selectedSubcategory) {
-      const subcategory = subcategories.find(
-        (sub) => sub.id === selectedSubcategory
+    // Fallback for static demo catalog where category links may be keyword-only.
+    if (!filtered.length) {
+      const selectedCategory = rootCategories.find(
+        (cat) => normalizeId(cat.id) === selectedId
       );
-      if (subcategory) {
-        // Use subcategory name for keyword matching (fallback approach)
-        const subcategoryName = subcategory.name.toLowerCase();
-        filtered = filtered.filter((product) => {
-          const productName = product.name.toLowerCase();
-          return (
-            productName.includes(subcategoryName.split(" ")[0]) ||
-            productName.includes(subcategoryName.split(" & ")[0])
-          );
-        });
+      if (selectedCategory?.name) {
+        const keyword = selectedCategory.name.toLowerCase().split(" ")[0];
+        filtered = getCatalogProducts().filter((product) =>
+          product.name?.toLowerCase().includes(keyword)
+        );
       }
     }
 
@@ -246,7 +259,7 @@ const MobileCategories = () => {
   }, [showFilters]);
 
   const selectedCategory = rootCategories.find(
-    (cat) => cat.id === selectedCategoryId
+    (cat) => normalizeId(cat.id) === normalizeId(selectedCategoryId)
   );
 
   // Check if any filter is active
@@ -493,7 +506,8 @@ const MobileCategories = () => {
               }}>
               <div className="pb-[190px]">
                 {rootCategories.map((category) => {
-                  const isActive = category.id === selectedCategoryId;
+                  const isActive =
+                    normalizeId(category.id) === normalizeId(selectedCategoryId);
                   return (
                     <div
                       key={category.id}
@@ -561,7 +575,8 @@ const MobileCategories = () => {
                       <div className="flex gap-1.5">
                         {subcategories.map((subcategory) => {
                           const isActive =
-                            selectedSubcategory === subcategory.id;
+                            normalizeId(selectedSubcategory) ===
+                            normalizeId(subcategory.id);
                           return (
                             <motion.button
                               key={subcategory.id}

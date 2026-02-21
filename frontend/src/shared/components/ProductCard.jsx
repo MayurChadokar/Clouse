@@ -1,6 +1,6 @@
 import { FiHeart, FiShoppingBag, FiStar, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCartStore, useUIStore } from "../store/useStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import { formatPrice, getPlaceholderImage } from "../utils/helpers";
@@ -13,12 +13,7 @@ import FlyingItem from "../../modules/UserApp/components/Mobile/FlyingItem";
 
 
 const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
-  const location = useLocation();
-  // Check if we're in the mobile app section
-  const isMobileApp = location.pathname.startsWith("/app");
-  const productLink = isMobileApp
-    ? `/app/product/${product.id}`
-    : `/product/${product.id}`;
+  const productLink = `/product/${product.id}`;
   const { items, addItem, removeItem } = useCartStore();
   const triggerCartAnimation = useUIStore(
     (state) => state.triggerCartAnimation

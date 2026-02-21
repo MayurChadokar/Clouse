@@ -33,14 +33,14 @@ const DesktopHeader = () => {
     const handleLogout = () => {
         logout();
         setShowUserMenu(false);
-        navigate("/");
+        navigate("/home");
     };
 
     return (
         <header className="hidden md:block sticky top-0 z-[999] bg-white shadow-sm border-b border-gray-100">
             <div className="container mx-auto px-4 md:px-12 lg:px-24 xl:px-40 h-20 flex items-center justify-between gap-8">
                 {/* Logo */}
-                <Link to="/" className="flex-shrink-0 flex items-center gap-2">
+                <Link to="/home" className="flex-shrink-0 flex items-center gap-2">
                     {appLogo.src ? (
                         <img
                             src={appLogo.src}
@@ -54,7 +54,7 @@ const DesktopHeader = () => {
 
                 {/* Navigation Links */}
                 <nav className="flex items-center gap-6">
-                    <Link to="/" className="text-gray-600 hover:text-primary-600 font-medium text-sm lg:text-base">Home</Link>
+                    <Link to="/home" className="text-gray-600 hover:text-primary-600 font-medium text-sm lg:text-base">Home</Link>
                     <Link to="/categories" className="text-gray-600 hover:text-primary-600 font-medium text-sm lg:text-base flex items-center gap-1">
                         <FiGrid /> Categories
                     </Link>

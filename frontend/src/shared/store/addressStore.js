@@ -6,6 +6,8 @@ const normalizeAddress = (address) => ({
   ...address,
   id: address?.id || address?._id,
 });
+const normalizePhone = (value) => String(value || '').replace(/\D/g, '').slice(-10);
+const normalizeText = (value) => String(value ?? '').trim();
 
 export const useAddressStore = create(
   persist(
@@ -36,8 +38,14 @@ export const useAddressStore = create(
         try {
           const state = get();
           const payload = {
-            ...address,
-            phone: String(address?.phone || '').replace(/\D/g, '').slice(-10),
+            name: normalizeText(address?.name),
+            fullName: normalizeText(address?.fullName),
+            phone: normalizePhone(address?.phone),
+            address: normalizeText(address?.address),
+            city: normalizeText(address?.city),
+            state: normalizeText(address?.state),
+            zipCode: normalizeText(address?.zipCode),
+            country: normalizeText(address?.country),
             isDefault: state.addresses.length === 0 || Boolean(address?.isDefault),
           };
           const response = await api.post('/user/addresses', payload);
@@ -63,7 +71,14 @@ export const useAddressStore = create(
         try {
           const payload = {
             ...updatedAddress,
-            phone: String(updatedAddress?.phone || '').replace(/\D/g, '').slice(-10),
+            ...(updatedAddress?.name !== undefined ? { name: normalizeText(updatedAddress?.name) } : {}),
+            ...(updatedAddress?.fullName !== undefined ? { fullName: normalizeText(updatedAddress?.fullName) } : {}),
+            ...(updatedAddress?.phone !== undefined ? { phone: normalizePhone(updatedAddress?.phone) } : {}),
+            ...(updatedAddress?.address !== undefined ? { address: normalizeText(updatedAddress?.address) } : {}),
+            ...(updatedAddress?.city !== undefined ? { city: normalizeText(updatedAddress?.city) } : {}),
+            ...(updatedAddress?.state !== undefined ? { state: normalizeText(updatedAddress?.state) } : {}),
+            ...(updatedAddress?.zipCode !== undefined ? { zipCode: normalizeText(updatedAddress?.zipCode) } : {}),
+            ...(updatedAddress?.country !== undefined ? { country: normalizeText(updatedAddress?.country) } : {}),
           };
           const response = await api.put(`/user/addresses/${id}`, payload);
           const updated = normalizeAddress(response?.data ?? response);
@@ -89,11 +104,26 @@ export const useAddressStore = create(
       deleteAddress: async (id) => {
         set({ isLoading: true });
         try {
+          const deletedId = String(id);
+          const prevAddresses = get().addresses;
+          const deletedAddress = prevAddresses.find((addr) => String(addr.id) === deletedId);
           await api.delete(`/user/addresses/${id}`);
-          set((state) => ({
-            addresses: state.addresses.filter((addr) => String(addr.id) !== String(id)),
-            isLoading: false,
-          }));
+          set((state) => {
+            const remaining = state.addresses.filter((addr) => String(addr.id) !== deletedId);
+            if (deletedAddress?.isDefault && remaining.length > 0) {
+              return {
+                addresses: remaining.map((addr, index) => ({
+                  ...addr,
+                  isDefault: index === 0,
+                })),
+                isLoading: false,
+              };
+            }
+            return {
+              addresses: remaining,
+              isLoading: false,
+            };
+          });
           return true;
         } catch (error) {
           set({ isLoading: false });

@@ -10,14 +10,43 @@ import PageTransition from "../../../shared/components/PageTransition";
 import useInfiniteScroll from "../../../shared/hooks/useInfiniteScroll";
 import LazyImage from "../../../shared/components/LazyImage";
 import { getPlaceholderImage } from "../../../shared/utils/helpers";
+import api from "../../../shared/utils/api";
+
+const normalizeBrand = (raw) => ({
+    ...raw,
+    id: String(raw?.id || raw?._id || ""),
+    _id: String(raw?.id || raw?._id || ""),
+    name: raw?.name || "",
+    logo: raw?.logo || "",
+});
+
+const normalizeProduct = (raw) => ({
+    ...raw,
+    id: String(raw?.id || raw?._id || ""),
+    _id: String(raw?.id || raw?._id || ""),
+    vendorId: String(raw?.vendorId?._id || raw?.vendorId || ""),
+    brandId: String(raw?.brandId?._id || raw?.brandId || ""),
+    image: raw?.image || raw?.images?.[0] || "",
+    images: Array.isArray(raw?.images) ? raw.images : raw?.image ? [raw.image] : [],
+    price: Number(raw?.price) || 0,
+    rating: Number(raw?.rating) || 0,
+    reviewCount: Number(raw?.reviewCount) || 0,
+});
 
 const Brand = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const brandId = String(id ?? "").trim();
+    const [catalogVersion, setCatalogVersion] = useState(0);
+    const [remoteBrand, setRemoteBrand] = useState(null);
+    const [remoteProducts, setRemoteProducts] = useState([]);
+    const [isResolvingBrand, setIsResolvingBrand] = useState(true);
 
     // Get brand information
-    const brand = useMemo(() => getBrandById(brandId), [brandId]);
+    const brand = useMemo(
+        () => getBrandById(brandId) || remoteBrand,
+        [brandId, catalogVersion, remoteBrand]
+    );
 
     const [showFilters, setShowFilters] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -29,10 +58,24 @@ const Brand = () => {
     });
 
     // Get products for this brand
-    const brandProducts = useMemo(() => {
-        if (!brand) return [];
+    const rawBrandProducts = useMemo(() => {
+        if (!brandId) return [];
 
-        let result = getProductsByBrand(brandId);
+        const local = getProductsByBrand(brandId);
+        if (!remoteProducts.length) return local;
+
+        const merged = [...remoteProducts];
+        local.forEach((item) => {
+            const exists = merged.some(
+                (p) => String(p.id) === String(item.id)
+            );
+            if (!exists) merged.push(item);
+        });
+        return merged;
+    }, [brandId, remoteProducts, catalogVersion]);
+
+    const brandProducts = useMemo(() => {
+        let result = rawBrandProducts;
 
         if (searchQuery) {
             result = result.filter((product) =>
@@ -57,7 +100,7 @@ const Brand = () => {
         }
 
         return result;
-    }, [brandId, brand, filters, searchQuery]);
+    }, [rawBrandProducts, filters, searchQuery]);
 
     const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } =
         useInfiniteScroll(brandProducts, 10, 10);
@@ -105,6 +148,75 @@ const Brand = () => {
         };
     }, [showFilters]);
 
+    useEffect(() => {
+        const handleCatalogUpdate = () => setCatalogVersion((prev) => prev + 1);
+        window.addEventListener("catalog-cache-updated", handleCatalogUpdate);
+        return () => {
+            window.removeEventListener("catalog-cache-updated", handleCatalogUpdate);
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+        const fetchBrandData = async () => {
+            if (!brandId) {
+                if (active) {
+                    setRemoteBrand(null);
+                    setRemoteProducts([]);
+                    setIsResolvingBrand(false);
+                }
+                return;
+            }
+
+            setIsResolvingBrand(true);
+            try {
+                const [brandsRes, productsRes] = await Promise.all([
+                    api.get("/brands/all"),
+                    api.get("/products", { params: { brand: brandId, page: 1, limit: 200 } }),
+                ]);
+
+                if (!active) return;
+
+                const brandsPayload = brandsRes?.data ?? brandsRes;
+                const productsPayload = productsRes?.data ?? productsRes;
+                const brandsList = Array.isArray(brandsPayload)
+                    ? brandsPayload.map(normalizeBrand)
+                    : [];
+                const matchedBrand =
+                    brandsList.find((item) => String(item.id) === String(brandId)) || null;
+                const productList = Array.isArray(productsPayload?.products)
+                    ? productsPayload.products.map(normalizeProduct)
+                    : [];
+
+                setRemoteBrand(matchedBrand);
+                setRemoteProducts(productList);
+            } catch {
+                if (!active) return;
+                setRemoteBrand(null);
+                setRemoteProducts([]);
+            } finally {
+                if (active) setIsResolvingBrand(false);
+            }
+        };
+
+        fetchBrandData();
+        return () => {
+            active = false;
+        };
+    }, [brandId]);
+
+    if (isResolvingBrand) {
+        return (
+            <PageTransition>
+                <MobileLayout showBottomNav={false} showCartBar={false}>
+                    <div className="flex items-center justify-center min-h-[60vh] px-4">
+                        <p className="text-gray-600">Loading brand...</p>
+                    </div>
+                </MobileLayout>
+            </PageTransition>
+        );
+    }
+
     if (!brand) {
         return (
             <PageTransition>
@@ -115,7 +227,7 @@ const Brand = () => {
                                 Brand Not Found
                             </h2>
                             <button
-                                onClick={() => navigate("/")}
+                                onClick={() => navigate("/home")}
                                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                                 Go Back Home
                             </button>

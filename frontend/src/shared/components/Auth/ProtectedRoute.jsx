@@ -34,8 +34,8 @@ const ProtectedRoute = ({ children }) => {
     }
     
     if (isAppRoute) {
-      // Redirect to mobile app login for /app/* routes on mobile
-      return <Navigate to="/app/login" state={{ from: location }} replace />;
+      // Legacy /app/* paths should also redirect to current login route
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
     
     // Default redirect to desktop login

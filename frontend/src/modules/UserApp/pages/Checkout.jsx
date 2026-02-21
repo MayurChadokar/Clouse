@@ -17,6 +17,7 @@ import { useAuthStore } from "../../../shared/store/authStore";
 import { useAddressStore } from "../../../shared/store/addressStore";
 import { useOrderStore } from "../../../shared/store/orderStore";
 import { formatPrice } from "../../../shared/utils/helpers";
+import api from "../../../shared/utils/api";
 import toast from "react-hot-toast";
 import MobileLayout from "../components/Layout/MobileLayout";
 import MobileCheckoutSteps from "../components/Mobile/MobileCheckoutSteps";
@@ -43,6 +44,8 @@ const MobileCheckout = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [shippingOption, setShippingOption] = useState("standard");
   const [formData, setFormData] = useState({
     name: "",
@@ -105,35 +108,48 @@ const MobileCheckout = () => {
 
   const total = getTotal();
   const shipping = calculateShipping();
-  const tax = total * 0.1;
-  const discount = appliedCoupon
-    ? appliedCoupon.type === "percentage"
-      ? total * (appliedCoupon.value / 100)
-      : appliedCoupon.value
-    : 0;
+  const discount = appliedCoupon ? appliedDiscount : 0;
+  const taxableAmount = Math.max(0, total - discount);
+  const tax = taxableAmount * 0.18;
   const finalTotal = Math.max(0, total + shipping + tax - discount);
 
-  const validateCoupon = (code) => {
-    const coupons = {
-      SAVE10: { type: "percentage", value: 10, name: "10% Off" },
-      FREESHIP: { type: "freeship", value: 0, name: "Free Shipping" },
-      WELCOME20: { type: "percentage", value: 20, name: "20% Off" },
-      SAVE50: { type: "fixed", value: 50, name: "$50 Off" },
-    };
-    return coupons[code.toUpperCase()] || null;
-  };
+  useEffect(() => {
+    if (appliedCoupon) {
+      setAppliedCoupon(null);
+      setAppliedDiscount(0);
+    }
+  }, [total, appliedCoupon]);
 
-  const handleApplyCoupon = () => {
-    if (!couponCode.trim()) {
+  const handleApplyCoupon = async () => {
+    const normalizedCode = couponCode.trim().toUpperCase();
+    if (!normalizedCode) {
       toast.error("Please enter a coupon code");
       return;
     }
-    const coupon = validateCoupon(couponCode);
-    if (coupon) {
+
+    setIsApplyingCoupon(true);
+    try {
+      const response = await api.post("/coupons/validate", {
+        code: normalizedCode,
+        cartTotal: total,
+      });
+      const payload = response?.data ?? response;
+      const coupon = payload?.coupon;
+      const discountAmount = Number(payload?.discount || 0);
+
+      if (!coupon) {
+        throw new Error("Invalid coupon response");
+      }
+
+      setCouponCode(coupon.code || normalizedCode);
       setAppliedCoupon(coupon);
-      toast.success(`Coupon "${coupon.name}" applied!`);
-    } else {
-      toast.error("Invalid coupon code");
+      setAppliedDiscount(discountAmount);
+      toast.success(`Coupon "${coupon.code}" applied!`);
+    } catch {
+      setAppliedCoupon(null);
+      setAppliedDiscount(0);
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -172,7 +188,7 @@ const MobileCheckout = () => {
                 Your cart is empty
               </h2>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/home")}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                 Continue Shopping
               </button>
@@ -189,6 +205,34 @@ const MobileCheckout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const normalizedShipping = {
+      name: String(formData.name || "").trim(),
+      email: String(formData.email || "").trim().toLowerCase(),
+      phone: String(formData.phone || "").replace(/\D/g, "").slice(-10),
+      address: String(formData.address || "").trim(),
+      city: String(formData.city || "").trim(),
+      zipCode: String(formData.zipCode || "").trim(),
+      state: String(formData.state || "").trim(),
+      country: String(formData.country || "").trim(),
+    };
+
+    const missingRequired = Object.values(normalizedShipping).some((v) => !v);
+    if (missingRequired) {
+      toast.error("Please fill all shipping details correctly.");
+      return;
+    }
+
+    if (normalizedShipping.phone.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    if (step === 2 && isApplyingCoupon) {
+      toast.error("Please wait for coupon validation to complete.");
+      return;
+    }
+
     if (step === 1) {
       setStep(2);
     } else if (step === 2) {
@@ -196,23 +240,14 @@ const MobileCheckout = () => {
         const order = await createOrder({
           userId: isAuthenticated ? user?.id : null,
           items: items,
-          shippingAddress: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-            zipCode: formData.zipCode,
-            state: formData.state,
-            country: formData.country,
-          },
+          shippingAddress: normalizedShipping,
           paymentMethod: formData.paymentMethod,
           subtotal: total,
           shipping: shipping,
           tax: tax,
           discount: discount,
           total: finalTotal,
-          couponCode: appliedCoupon ? couponCode : null,
+          couponCode: appliedCoupon ? (appliedCoupon.code || couponCode.trim().toUpperCase()) : null,
           shippingOption,
         });
 
@@ -569,15 +604,16 @@ const MobileCheckout = () => {
                           <button
                             type="button"
                             onClick={handleApplyCoupon}
+                            disabled={isApplyingCoupon}
                             className="px-4 py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all">
-                            Apply
+                            {isApplyingCoupon ? "Applying..." : "Apply"}
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
                           <div>
                             <p className="text-sm font-semibold text-green-800">
-                              {appliedCoupon.name} Applied
+                              {appliedCoupon.code || "Coupon"} Applied
                             </p>
                             <p className="text-xs text-green-600">
                               Code: {couponCode}
@@ -587,6 +623,7 @@ const MobileCheckout = () => {
                             type="button"
                             onClick={() => {
                               setAppliedCoupon(null);
+                              setAppliedDiscount(0);
                               setCouponCode("");
                             }}
                             className="text-red-600 hover:text-red-700">

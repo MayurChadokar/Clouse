@@ -1,40 +1,47 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiClock, FiPackage, FiTruck, FiMapPin, FiArrowLeft } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import MobileLayout from "../components/Layout/MobileLayout";
 import { useOrderStore } from '../../../shared/store/orderStore';
 import { formatPrice } from '../../../shared/utils/helpers';
 import PageTransition from '../../../shared/components/PageTransition';
-import ProtectedRoute from '../../../shared/components/Auth/ProtectedRoute';
 import Badge from '../../../shared/components/Badge';
 import LazyImage from '../../../shared/components/LazyImage';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 const MobileTrackOrder = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { getOrder, fetchOrderById } = useOrderStore();
+  const { getOrder, fetchOrderById, fetchPublicTrackingOrder } = useOrderStore();
+  const { user } = useAuthStore();
   const [isResolving, setIsResolving] = useState(true);
   const order = getOrder(orderId);
+  const shippingAddress = order?.shippingAddress || {};
+  const orderItems = Array.isArray(order?.items) ? order.items : [];
+  const normalizedStatus = String(order?.status || 'pending').toLowerCase();
+  const displayOrderId = order?.id || order?.orderId || orderId;
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       if (!order && orderId) {
-        await fetchOrderById(orderId);
+        const privateOrder = await fetchOrderById(orderId);
+        if (!privateOrder) {
+          await fetchPublicTrackingOrder(orderId);
+        }
       }
       if (mounted) setIsResolving(false);
     })();
     return () => {
       mounted = false;
     };
-  }, [order, orderId, fetchOrderById]);
+  }, [order, orderId, fetchOrderById, fetchPublicTrackingOrder]);
 
   useEffect(() => {
     if (!isResolving && !order) {
-      navigate('/orders');
+      navigate(user?.id ? '/orders' : '/home');
     }
-  }, [isResolving, order, navigate]);
+  }, [isResolving, order, navigate, user?.id]);
 
   if (isResolving) {
     return (
@@ -56,10 +63,10 @@ const MobileTrackOrder = () => {
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Order Not Found</h2>
               <button
-                onClick={() => navigate('/orders')}
+                onClick={() => navigate(user?.id ? '/orders' : '/home')}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
               >
-                Back to Orders
+                {user?.id ? 'Back to Orders' : 'Go Home'}
               </button>
             </div>
           </div>
@@ -71,6 +78,7 @@ const MobileTrackOrder = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'N/A';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -79,43 +87,59 @@ const MobileTrackOrder = () => {
   };
 
   const getTrackingSteps = () => {
+    const isCancelled = normalizedStatus === 'cancelled';
+    const isReturned = normalizedStatus === 'returned';
+    const isProcessingOrLater = ['processing', 'shipped', 'delivered', 'returned'].includes(normalizedStatus);
+    const isShippedOrLater = ['shipped', 'delivered', 'returned'].includes(normalizedStatus);
+    const isDelivered = normalizedStatus === 'delivered';
+
     const steps = [
       {
         label: 'Order Placed',
         completed: true,
-        date: order.date,
+        date: order?.date || order?.createdAt,
         icon: FiCheckCircle,
       },
       {
         label: 'Processing',
-        completed: ['processing', 'shipped', 'delivered'].includes(order.status),
-        date: order.status !== 'pending' ? new Date(new Date(order.date).getTime() + 24 * 60 * 60 * 1000).toISOString() : null,
+        completed: !isCancelled && isProcessingOrLater,
+        date: normalizedStatus !== 'pending' && !isCancelled
+          ? new Date(new Date(order?.date || order?.createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString()
+          : null,
         icon: FiPackage,
       },
       {
         label: 'Shipped',
-        completed: ['shipped', 'delivered'].includes(order.status),
-        date: order.status === 'shipped' || order.status === 'delivered'
-          ? new Date(new Date(order.date).getTime() + 2 * 24 * 60 * 60 * 1000).toISOString()
+        completed: !isCancelled && isShippedOrLater,
+        date: isShippedOrLater
+          ? new Date(new Date(order?.date || order?.createdAt).getTime() + 2 * 24 * 60 * 60 * 1000).toISOString()
           : null,
         icon: FiTruck,
       },
       {
         label: 'Delivered',
-        completed: order.status === 'delivered',
-        date: order.status === 'delivered' ? order.estimatedDelivery : null,
+        completed: isDelivered,
+        date: isDelivered ? (order?.deliveredAt || order?.estimatedDelivery) : null,
         icon: FiCheckCircle,
       },
     ];
+
+    if (isCancelled || isReturned) {
+      steps.push({
+        label: isCancelled ? 'Cancelled' : 'Returned',
+        completed: true,
+        date: order?.cancelledAt || order?.updatedAt || order?.deliveredAt || order?.estimatedDelivery || order?.date || order?.createdAt,
+        icon: FiClock,
+      });
+    }
     return steps;
   };
 
   const steps = getTrackingSteps();
 
   return (
-    <ProtectedRoute>
-      <PageTransition>
-        <MobileLayout showBottomNav={false} showCartBar={true}>
+    <PageTransition>
+      <MobileLayout showBottomNav={false} showCartBar={true}>
           <div className="w-full pb-24">
             {/* Header */}
             <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-1 z-30">
@@ -128,9 +152,9 @@ const MobileTrackOrder = () => {
                 </button>
                 <div className="flex-1">
                   <h1 className="text-xl font-bold text-gray-800">Track Order</h1>
-                  <p className="text-sm text-gray-600">Order #{order.id}</p>
+                  <p className="text-sm text-gray-600">Order #{displayOrderId}</p>
                 </div>
-                <Badge variant={order.status}>{order.status.toUpperCase()}</Badge>
+                <Badge variant={normalizedStatus}>{normalizedStatus.toUpperCase()}</Badge>
               </div>
             </div>
 
@@ -177,11 +201,11 @@ const MobileTrackOrder = () => {
                   Shipping Address
                 </h2>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p className="font-semibold text-gray-800">{order.shippingAddress.name}</p>
-                  <p>{order.shippingAddress.address}</p>
+                  <p className="font-semibold text-gray-800">{shippingAddress.name || 'N/A'}</p>
+                  <p>{shippingAddress.address || 'N/A'}</p>
                   <p>
-                    {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-                    {order.shippingAddress.zipCode}
+                    {shippingAddress.city || 'N/A'}, {shippingAddress.state || 'N/A'}{' '}
+                    {shippingAddress.zipCode || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -190,7 +214,7 @@ const MobileTrackOrder = () => {
               <div className="glass-card rounded-2xl p-4">
                 <h2 className="text-base font-bold text-gray-800 mb-3">Order Items</h2>
                 <div className="space-y-3">
-                  {order.items.map((item) => (
+                  {orderItems.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                         <LazyImage
@@ -202,7 +226,7 @@ const MobileTrackOrder = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-800 text-sm mb-1">{item.name}</h3>
                         <p className="text-xs text-gray-600">
-                          {formatPrice(item.price)} × {item.quantity}
+                          {formatPrice(item.price)} x {item.quantity}
                         </p>
                       </div>
                       <p className="font-bold text-gray-800 text-sm">
@@ -210,6 +234,9 @@ const MobileTrackOrder = () => {
                       </p>
                     </div>
                   ))}
+                  {orderItems.length === 0 && (
+                    <p className="text-sm text-gray-600">Item details are not available for this tracking view.</p>
+                  )}
                 </div>
               </div>
 
@@ -224,17 +251,25 @@ const MobileTrackOrder = () => {
               )}
 
               {/* Actions */}
-              <button
-                onClick={() => navigate(`/app/orders/${order.id}`)}
-                className="w-full py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all"
-              >
-                View Order Details
-              </button>
+              {user?.id ? (
+                <button
+                  onClick={() => navigate(`/orders/${displayOrderId}`)}
+                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all"
+                >
+                  View Order Details
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/home')}
+                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold hover:shadow-glow-green transition-all"
+                >
+                  Continue Shopping
+                </button>
+              )}
             </div>
           </div>
-        </MobileLayout>
-      </PageTransition>
-    </ProtectedRoute>
+      </MobileLayout>
+    </PageTransition>
   );
 };
 

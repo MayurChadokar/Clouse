@@ -134,11 +134,11 @@ const MobileProductCard = ({ product }) => {
       navigator.share({
         title: product.name,
         text: `Check out ${product.name}`,
-        url: window.location.origin + `/app/product/${product.id}`,
+        url: window.location.origin + `/product/${product.id}`,
       });
     } else {
       navigator.clipboard.writeText(
-        window.location.origin + `/app/product/${product.id}`
+        window.location.origin + `/product/${product.id}`
       );
       toast.success("Link copied to clipboard");
     }
@@ -154,7 +154,7 @@ const MobileProductCard = ({ product }) => {
         {...longPressHandlers}>
         <div className="flex gap-4 p-4">
           {/* Product Image */}
-          <Link to={`/app/product/${product.id}`} className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 block">
+          <Link to={`/product/${product.id}`} className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 block">
             <LazyImage
               src={product.image}
               alt={product.name}
@@ -168,7 +168,7 @@ const MobileProductCard = ({ product }) => {
           {/* Product Info */}
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="flex items-start justify-between gap-2 mb-1">
-              <Link to={`/app/product/${product.id}`} className="flex-1">
+              <Link to={`/product/${product.id}`} className="flex-1">
                 <h3 className="font-bold text-gray-800 text-sm line-clamp-2">
                   {product.name}
                 </h3>

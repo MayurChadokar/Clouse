@@ -19,6 +19,8 @@ const MobileOrderDetail = () => {
   const { addItem } = useCartStore();
   const [isResolving, setIsResolving] = useState(true);
   const order = getOrder(orderId);
+  const shippingAddress = order?.shippingAddress || {};
+  const orderItems = Array.isArray(order?.items) ? order.items : [];
 
   useEffect(() => {
     let mounted = true;
@@ -180,7 +182,7 @@ const MobileOrderDetail = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {order.items.map((item) => (
+                    {orderItems.map((item) => (
                       <div key={item.id} className="flex items-center gap-3">
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                           <LazyImage
@@ -211,14 +213,14 @@ const MobileOrderDetail = () => {
                   Shipping Address
                 </h2>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p className="font-semibold text-gray-800">{order.shippingAddress.name}</p>
-                  <p>{order.shippingAddress.address}</p>
+                  <p className="font-semibold text-gray-800">{shippingAddress.name || 'N/A'}</p>
+                  <p>{shippingAddress.address || 'N/A'}</p>
                   <p>
-                    {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-                    {order.shippingAddress.zipCode}
+                    {shippingAddress.city || 'N/A'}, {shippingAddress.state || 'N/A'}{' '}
+                    {shippingAddress.zipCode || 'N/A'}
                   </p>
-                  <p>{order.shippingAddress.country}</p>
-                  <p className="mt-2">Phone: {order.shippingAddress.phone}</p>
+                  <p>{shippingAddress.country || 'N/A'}</p>
+                  <p className="mt-2">Phone: {shippingAddress.phone || 'N/A'}</p>
                 </div>
               </div>
 
@@ -295,7 +297,7 @@ const MobileOrderDetail = () => {
                   Reorder
                 </button>
                 <button
-                  onClick={() => navigate(`/app/track-order/${order.id}`)}
+                  onClick={() => navigate(`/track-order/${order.id}`)}
                   className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
                 >
                   <FiTruck className="text-lg" />

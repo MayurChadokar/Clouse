@@ -11,7 +11,7 @@ const MobileBottomNav = () => {
   const { isAuthenticated } = useAuthStore();
 
   const navItems = [
-    { path: "/", icon: FiHome, label: "Home" },
+    { path: "/home", icon: FiHome, label: "Home" },
     { path: "/categories", icon: FiGrid, label: "Categories" },
     { path: "/search", icon: FiSearch, label: "Search" },
     {
@@ -28,8 +28,8 @@ const MobileBottomNav = () => {
   ];
 
   const isActive = (path) => {
-    if (path === "/") {
-      return location.pathname === "/";
+    if (path === "/home") {
+      return location.pathname === "/home";
     }
     return location.pathname.startsWith(path);
   };

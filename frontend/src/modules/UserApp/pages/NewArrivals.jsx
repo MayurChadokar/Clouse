@@ -11,8 +11,9 @@ import useInfiniteScroll from '../../../shared/hooks/useInfiniteScroll';
 
 const MobileNewArrivals = () => {
     const navigate = useNavigate();
+    const [catalogVersion, setCatalogVersion] = useState(0);
     // Memoize the items array to prevent infinite loops in useInfiniteScroll
-    const allNewArrivals = useMemo(() => getAllNewArrivals(), []);
+    const allNewArrivals = useMemo(() => getAllNewArrivals(), [catalogVersion]);
     const [showFilters, setShowFilters] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -94,6 +95,14 @@ const MobileNewArrivals = () => {
             document.removeEventListener("touchstart", handleClickOutside);
         };
     }, [showFilters]);
+
+    useEffect(() => {
+        const handleCatalogUpdate = () => setCatalogVersion((prev) => prev + 1);
+        window.addEventListener("catalog-cache-updated", handleCatalogUpdate);
+        return () => {
+            window.removeEventListener("catalog-cache-updated", handleCatalogUpdate);
+        };
+    }, []);
 
     return (
         <PageTransition>

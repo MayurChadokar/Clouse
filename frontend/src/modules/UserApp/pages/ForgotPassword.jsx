@@ -34,8 +34,23 @@ const MobileForgotPassword = () => {
       await forgotPassword(email.trim().toLowerCase());
       toast.success('If the email exists, reset OTP has been sent.');
       setStep('verify');
-    } catch {
-      // Global API interceptor shows toast
+    } catch (error) {
+      const message = String(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          ''
+      ).toLowerCase();
+
+      if (
+        message.includes('verify your email') ||
+        message.includes('verification otp has been sent')
+      ) {
+        navigate('/verification', {
+          state: { email: email.trim().toLowerCase() },
+          replace: true,
+        });
+      }
     }
   };
 

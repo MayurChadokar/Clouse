@@ -13,12 +13,22 @@ import useInfiniteScroll from "../../../shared/hooks/useInfiniteScroll";
 import LazyImage from "../../../shared/components/LazyImage";
 import { getPlaceholderImage } from "../../../shared/utils/helpers";
 
+const normalizeId = (value) => String(value ?? "").trim();
+
+const getParentId = (category) => {
+  const parent = category?.parentId;
+  if (!parent) return null;
+  if (typeof parent === "object") {
+    return normalizeId(parent?._id ?? parent?.id ?? "");
+  }
+  return normalizeId(parent);
+};
+
 const MobileCategory = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const categoryId = parseInt(id);
-  const { categories, initialize, getCategoryById, getCategoriesByParent } =
-    useCategoryStore();
+  const categoryId = normalizeId(id);
+  const { categories, initialize, getCategoryById } = useCategoryStore();
 
   // Initialize store on mount
   useEffect(() => {
@@ -28,16 +38,17 @@ const MobileCategory = () => {
   // Get category from store or fallback
   const category = useMemo(() => {
     const cat = getCategoryById(categoryId);
-    return cat || fallbackCategories.find((cat) => cat.id === categoryId);
-  }, [categoryId, categories, getCategoryById]);
-
-  // Get subcategories for this category
-  const subcategories = useMemo(() => {
-    if (!categoryId) return [];
-    return getCategoriesByParent(categoryId).filter(
-      (cat) => cat.isActive !== false
+    return (
+      cat ||
+      fallbackCategories.find((fallbackCat) => {
+        const fallbackId = normalizeId(fallbackCat.id);
+        return (
+          fallbackId === categoryId ||
+          fallbackCat.name?.toLowerCase() === categoryId.toLowerCase()
+        );
+      })
     );
-  }, [categoryId, categories, getCategoriesByParent]);
+  }, [categoryId, categories, getCategoryById]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,36 +60,36 @@ const MobileCategory = () => {
     minRating: "",
   });
 
-  const categoryMap = {
-    1: [
-      "t-shirt",
-      "shirt",
-      "jeans",
-      "dress",
-      "gown",
-      "skirt",
-      "blazer",
-      "jacket",
-      "cardigan",
-      "sweater",
-      "flannel",
-      "maxi",
-    ],
-    2: ["sneakers", "pumps", "boots", "heels", "shoes"],
-    3: ["bag", "crossbody", "handbag"],
-    4: ["necklace", "watch", "wristwatch"],
-    5: ["sunglasses", "belt", "scarf"],
-    6: ["athletic", "running", "track", "sporty"],
-  };
+  const rootCategories = useMemo(() => {
+    const roots = categories.filter(
+      (cat) => !getParentId(cat) && cat.isActive !== false
+    );
+    if (roots.length) return roots;
+    return fallbackCategories;
+  }, [categories]);
 
   const categoryProducts = useMemo(() => {
     if (!category) return [];
 
-    const keywords = categoryMap[categoryId] || [];
+    const selectedId = normalizeId(categoryId);
     let result = getCatalogProducts().filter((product) => {
-      const productName = product.name.toLowerCase();
-      return keywords.some((keyword) => productName.includes(keyword));
+      const productCategoryId = normalizeId(product.categoryId);
+      const productCategory = categories.find(
+        (cat) => normalizeId(cat.id) === productCategoryId
+      );
+      const productParentId = getParentId(productCategory);
+      return productCategoryId === selectedId || productParentId === selectedId;
     });
+
+    // Fallback for static demo catalog.
+    if (!result.length) {
+      const keyword = category.name?.toLowerCase()?.split(" ")[0];
+      if (keyword) {
+        result = getCatalogProducts().filter((product) =>
+          product.name?.toLowerCase().includes(keyword)
+        );
+      }
+    }
 
     if (searchQuery) {
       result = result.filter((product) =>
@@ -103,7 +114,7 @@ const MobileCategory = () => {
     }
 
     return result;
-  }, [categoryId, category, filters, searchQuery]);
+  }, [categoryId, category, categories, filters, searchQuery]);
 
   const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } =
     useInfiniteScroll(categoryProducts, 10, 10);
@@ -309,8 +320,8 @@ const MobileCategory = () => {
                                   }}
                                   className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
                                 >
-                                  {fallbackCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
+                                  {rootCategories.map((cat) => (
+                                    <option key={cat.id} value={normalizeId(cat.id)}>
                                       {cat.name}
                                     </option>
                                   ))}

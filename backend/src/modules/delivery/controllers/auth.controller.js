@@ -97,7 +97,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         });
     } catch (err) {
         console.warn(`[Delivery Forgot Password] Email send failed for ${deliveryBoy.email}: ${err.message}`);
-        console.log(`[Delivery Forgot Password] OTP for ${deliveryBoy.email}: ${otp}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Delivery Forgot Password] Reset OTP generated for ${deliveryBoy.email}`);
+        }
     }
 
     return res.status(200).json(

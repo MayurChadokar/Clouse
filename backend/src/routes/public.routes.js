@@ -28,17 +28,36 @@ const toPublicVendor = (vendorDoc) => {
 
 // GET /api/products — list with filters
 const listProducts = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 12, category, brand, vendor, search, sort = 'newest', flashSale, isNew, minPrice, maxPrice } = req.query;
+    const {
+        page = 1,
+        limit = 12,
+        category,
+        brand,
+        vendor,
+        search,
+        q,
+        sort = 'newest',
+        flashSale,
+        isNew,
+        minPrice,
+        maxPrice
+    } = req.query;
     const skip = (page - 1) * limit;
     const filter = { isActive: true };
 
-    if (category) filter.categoryId = category;
+    if (category) {
+        const categoryId = String(category);
+        const childCategories = await Category.find({ parentId: categoryId }).select('_id');
+        const categoryIds = [categoryId, ...childCategories.map((cat) => String(cat._id))];
+        filter.categoryId = { $in: categoryIds };
+    }
     if (brand) filter.brandId = brand;
     if (vendor) filter.vendorId = vendor;
     if (flashSale === 'true') filter.flashSale = true;
     if (isNew === 'true') filter.isNew = true;
     if (minPrice || maxPrice) filter.price = { ...(minPrice && { $gte: Number(minPrice) }), ...(maxPrice && { $lte: Number(maxPrice) }) };
-    if (search) filter.$text = { $search: search };
+    const searchQuery = String(search || q || '').trim();
+    if (searchQuery) filter.$text = { $search: searchQuery };
 
     const sortMap = { newest: { createdAt: -1 }, oldest: { createdAt: 1 }, 'price-asc': { price: 1 }, 'price-desc': { price: -1 }, popular: { reviewCount: -1 }, rating: { rating: -1 } };
 
@@ -178,7 +197,7 @@ router.post('/coupons/validate', asyncHandler(async (req, res) => {
     if (coupon.startsAt && coupon.startsAt > Date.now()) throw new ApiError(400, 'Coupon is not active yet.');
     if (coupon.expiresAt && coupon.expiresAt < Date.now()) throw new ApiError(400, 'Coupon has expired.');
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) throw new ApiError(400, 'Coupon usage limit reached.');
-    if (cartTotal < coupon.minOrderValue) throw new ApiError(400, `Minimum order value for this coupon is ₹${coupon.minOrderValue}.`);
+    if (cartTotal < coupon.minOrderValue) throw new ApiError(400, `Minimum order value for this coupon is Rs.${coupon.minOrderValue}.`);
 
     let discount = 0;
     if (coupon.type === 'percentage') {

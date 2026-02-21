@@ -1,21 +1,41 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiX, FiClock } from 'react-icons/fi';
 import { getCatalogProducts } from '../../data/catalogData';
 
-const SearchSuggestions = ({ 
-  query, 
-  isOpen, 
-  onSelect, 
+const SearchSuggestions = ({
+  query,
+  isOpen,
+  onSelect,
   onClose,
   recentSearches = [],
-  onDeleteRecent 
+  onDeleteRecent,
+  onClearRecent,
 }) => {
-  if (!isOpen || !query) return null;
+  const panelRef = useRef(null);
+  const trimmedQuery = String(query || '').trim();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleOutside = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target)) {
+        onClose?.();
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   // Filter products based on query
   const suggestions = getCatalogProducts()
     .filter((product) =>
-      product.name.toLowerCase().includes(query.toLowerCase())
+      product.name.toLowerCase().includes(trimmedQuery.toLowerCase())
     )
     .slice(0, 5);
 
@@ -23,19 +43,22 @@ const SearchSuggestions = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          ref={panelRef}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-80 overflow-y-auto"
         >
           {/* Recent Searches */}
-          {recentSearches.length > 0 && query.length === 0 && (
+          {recentSearches.length > 0 && trimmedQuery.length === 0 && (
             <div className="p-2">
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="text-xs font-semibold text-gray-600">Recent Searches</span>
                 <button
                   onClick={() => {
-                    recentSearches.forEach((_, index) => onDeleteRecent(index));
+                    if (onClearRecent) {
+                      onClearRecent();
+                    }
                   }}
                   className="text-xs text-primary-600 font-medium"
                 >
@@ -68,7 +91,7 @@ const SearchSuggestions = ({
           )}
 
           {/* Suggestions */}
-          {suggestions.length > 0 && (
+          {trimmedQuery.length > 0 && suggestions.length > 0 && (
             <div className="p-2">
               <div className="px-3 py-2">
                 <span className="text-xs font-semibold text-gray-600">Suggestions</span>
@@ -89,7 +112,7 @@ const SearchSuggestions = ({
             </div>
           )}
 
-          {suggestions.length === 0 && recentSearches.length === 0 && query.length > 0 && (
+          {suggestions.length === 0 && recentSearches.length === 0 && trimmedQuery.length > 0 && (
             <div className="p-4 text-center">
               <p className="text-sm text-gray-500">No suggestions found</p>
             </div>

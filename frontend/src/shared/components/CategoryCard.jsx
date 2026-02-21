@@ -1,13 +1,8 @@
 import { motion } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const CategoryCard = ({ category }) => {
-  const location = useLocation();
-  // Check if we're in the mobile app section
-  const isMobileApp = location.pathname.startsWith("/app");
-  const categoryLink = isMobileApp
-    ? `/app/category/${category.id}`
-    : `/category/${category.id}`;
+  const categoryLink = `/category/${category.id}`;
 
   return (
     <Link to={categoryLink} className="block h-full">

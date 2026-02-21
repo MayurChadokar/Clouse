@@ -7,6 +7,7 @@ import * as orderController from '../controllers/order.controller.js';
 import { authenticate, optionalAuth } from '../../../middlewares/authenticate.js';
 import { authLimiter, otpLimiter } from '../../../middlewares/rateLimiter.js';
 import { validate } from '../../../middlewares/validate.js';
+import { uploadSingle } from '../../../middlewares/upload.js';
 import {
     registerSchema,
     loginSchema,
@@ -15,7 +16,14 @@ import {
     forgotPasswordSchema,
     verifyResetOtpSchema,
     resetPasswordSchema,
+    updateProfileSchema,
+    changePasswordSchema,
 } from '../validators/auth.validator.js';
+import {
+    createAddressSchema,
+    updateAddressSchema,
+} from '../validators/address.validator.js';
+import { placeOrderSchema } from '../validators/order.validator.js';
 
 const router = Router();
 
@@ -28,13 +36,14 @@ router.post('/auth/verify-reset-otp', authLimiter, validate(verifyResetOtpSchema
 router.post('/auth/reset-password', authLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.post('/auth/login', authLimiter, validate(loginSchema), authController.login);
 router.get('/auth/profile', authenticate, authController.getProfile);
-router.put('/auth/profile', authenticate, authController.updateProfile);
-router.post('/auth/change-password', authenticate, authController.changePassword);
+router.put('/auth/profile', authenticate, validate(updateProfileSchema), authController.updateProfile);
+router.post('/auth/profile/avatar', authenticate, uploadSingle('avatar'), authController.uploadProfileAvatar);
+router.post('/auth/change-password', authenticate, validate(changePasswordSchema), authController.changePassword);
 
 // Address routes (protected)
 router.get('/addresses', authenticate, addressController.getAddresses);
-router.post('/addresses', authenticate, addressController.addAddress);
-router.put('/addresses/:id', authenticate, addressController.updateAddress);
+router.post('/addresses', authenticate, validate(createAddressSchema), addressController.addAddress);
+router.put('/addresses/:id', authenticate, validate(updateAddressSchema), addressController.updateAddress);
 router.delete('/addresses/:id', authenticate, addressController.deleteAddress);
 router.patch('/addresses/:id/default', authenticate, addressController.setDefaultAddress);
 
@@ -49,7 +58,7 @@ router.post('/reviews', authenticate, reviewController.addReview);
 router.post('/reviews/:id/helpful', reviewController.voteHelpful);
 
 // Order routes (optionalAuth for guest checkout)
-router.post('/orders', optionalAuth, orderController.placeOrder);
+router.post('/orders', optionalAuth, validate(placeOrderSchema), orderController.placeOrder);
 router.get('/orders', authenticate, orderController.getUserOrders);
 router.get('/orders/:id', authenticate, orderController.getOrderDetail);
 router.patch('/orders/:id/cancel', authenticate, orderController.cancelOrder);

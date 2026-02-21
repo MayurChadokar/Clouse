@@ -37,3 +37,13 @@ export const resetPasswordSchema = Joi.object({
         'any.only': 'Confirm password must match password.',
     }),
 });
+
+export const updateProfileSchema = Joi.object({
+    name: Joi.string().trim().min(2).max(50).required(),
+    phone: Joi.string().pattern(/^[0-9]{10}$/).allow('').optional(),
+});
+
+export const changePasswordSchema = Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required(),
+});

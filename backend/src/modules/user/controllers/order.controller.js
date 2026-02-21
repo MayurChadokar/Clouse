@@ -49,7 +49,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
         if (coupon.startsAt && coupon.startsAt > Date.now()) throw new ApiError(400, 'Coupon is not active yet.');
         if (coupon.expiresAt && coupon.expiresAt < Date.now()) throw new ApiError(400, 'Coupon has expired.');
         if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) throw new ApiError(400, 'Coupon usage limit reached.');
-        if (subtotal < coupon.minOrderValue) throw new ApiError(400, `Minimum order value for this coupon is ₹${coupon.minOrderValue}.`);
+        if (subtotal < coupon.minOrderValue) throw new ApiError(400, `Minimum order value for this coupon is Rs.${coupon.minOrderValue}.`);
 
         if (coupon.type === 'percentage') {
             couponDiscount = (subtotal * coupon.value) / 100;
@@ -162,9 +162,16 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     order.cancellationReason = req.body.reason || 'Cancelled by customer';
     await order.save();
 
-    // Restore stock
+    // Restore stock and status
     for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.productId, { $inc: { stockQuantity: item.quantity } });
+        const product = await Product.findById(item.productId);
+        if (!product) continue;
+
+        product.stockQuantity += Number(item.quantity || 0);
+        if (product.stockQuantity <= 0) product.stock = 'out_of_stock';
+        else if (product.stockQuantity <= product.lowStockThreshold) product.stock = 'low_stock';
+        else product.stock = 'in_stock';
+        await product.save();
     }
 
     res.status(200).json(new ApiResponse(200, null, 'Order cancelled successfully.'));

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FiCheckCircle, FiTruck, FiPackage, FiArrowLeft, FiEye } from 'react-icons/fi';
+import { FiCheckCircle, FiTruck, FiEye } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import MobileLayout from "../components/Layout/MobileLayout";
 import { useOrderStore } from '../../../shared/store/orderStore';
@@ -14,6 +14,8 @@ const MobileOrderConfirmation = () => {
   const { getOrder, fetchOrderById } = useOrderStore();
   const [isResolving, setIsResolving] = useState(true);
   const order = getOrder(orderId);
+  const orderItems = Array.isArray(order?.items) ? order.items : [];
+  const displayOrderId = order?.id || order?.orderId || orderId;
 
   useEffect(() => {
     let mounted = true;
@@ -30,7 +32,7 @@ const MobileOrderConfirmation = () => {
 
   useEffect(() => {
     if (!isResolving && !order) {
-      navigate('/');
+      navigate('/home');
     }
   }, [isResolving, order, navigate]);
 
@@ -54,7 +56,7 @@ const MobileOrderConfirmation = () => {
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Order Not Found</h2>
               <button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/home')}
                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
               >
                 Go Home
@@ -67,7 +69,9 @@ const MobileOrderConfirmation = () => {
   }
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'N/A';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -100,7 +104,7 @@ const MobileOrderConfirmation = () => {
             <div className="glass-card rounded-2xl p-6 mb-4">
               <div className="text-center mb-6">
                 <p className="text-sm text-gray-600 mb-1">Order Number</p>
-                <p className="text-xl font-bold text-gray-800">{order.id}</p>
+                <p className="text-xl font-bold text-gray-800">{displayOrderId}</p>
                 {order.trackingNumber && (
                   <>
                     <p className="text-sm text-gray-600 mt-3 mb-1">Tracking Number</p>
@@ -112,7 +116,7 @@ const MobileOrderConfirmation = () => {
               <div className="border-t border-gray-200 pt-4 space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Order Date</span>
-                  <span className="font-semibold text-gray-800">{formatDate(order.date)}</span>
+                  <span className="font-semibold text-gray-800">{formatDate(order.date || order.createdAt)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total Amount</span>
@@ -120,7 +124,7 @@ const MobileOrderConfirmation = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Payment Method</span>
-                  <span className="font-semibold text-gray-800 capitalize">{order.paymentMethod}</span>
+                  <span className="font-semibold text-gray-800 capitalize">{order.paymentMethod || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -129,7 +133,7 @@ const MobileOrderConfirmation = () => {
             <div className="glass-card rounded-2xl p-6 mb-4">
               <h2 className="text-base font-bold text-gray-800 mb-4">Order Items</h2>
               <div className="space-y-3">
-                {order.items.slice(0, 3).map((item) => (
+                {orderItems.slice(0, 3).map((item) => (
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                       <LazyImage
@@ -141,7 +145,7 @@ const MobileOrderConfirmation = () => {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-800 text-sm mb-1">{item.name}</h3>
                       <p className="text-xs text-gray-600">
-                        {formatPrice(item.price)} × {item.quantity}
+                        {formatPrice(item.price)} x {item.quantity}
                       </p>
                     </div>
                     <p className="font-bold text-gray-800 text-sm">
@@ -149,10 +153,13 @@ const MobileOrderConfirmation = () => {
                     </p>
                   </div>
                 ))}
-                {order.items.length > 3 && (
+                {orderItems.length > 3 && (
                   <p className="text-sm text-gray-600 text-center pt-2">
-                    +{order.items.length - 3} more item{order.items.length - 3 !== 1 ? 's' : ''}
+                    +{orderItems.length - 3} more item{orderItems.length - 3 !== 1 ? 's' : ''}
                   </p>
+                )}
+                {orderItems.length === 0 && (
+                  <p className="text-sm text-gray-600 text-center pt-2">No item details available for this order.</p>
                 )}
               </div>
             </div>
@@ -160,7 +167,7 @@ const MobileOrderConfirmation = () => {
             {/* Actions */}
             <div className="space-y-3">
               <Link
-                to={`/orders/${order.id}`}
+                to={`/orders/${displayOrderId}`}
                 className="block w-full py-3 gradient-green text-white rounded-xl font-semibold text-center hover:shadow-glow-green transition-all"
               >
                 <div className="flex items-center justify-center gap-2">
@@ -169,7 +176,7 @@ const MobileOrderConfirmation = () => {
                 </div>
               </Link>
               <Link
-                to={`/track-order/${order.id}`}
+                to={`/track-order/${displayOrderId}`}
                 className="block w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-center hover:bg-gray-200 transition-colors"
               >
                 <div className="flex items-center justify-center gap-2">
@@ -178,7 +185,7 @@ const MobileOrderConfirmation = () => {
                 </div>
               </Link>
               <button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/home')}
                 className="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
               >
                 Continue Shopping

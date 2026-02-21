@@ -16,7 +16,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDeleted, setIsDeleted] = useState(false);
   const deletedItemRef = useRef(null);
-  const { removeItem, addItem: addToWishlist } = useWishlistStore();
+  const { addItem: addToWishlist } = useWishlistStore();
   const { items: cartItems, removeItem: removeFromCart } = useCartStore();
   const isInCart = cartItems ? cartItems.some((i) => i.id === item.id) : false;
 
@@ -29,7 +29,6 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
   const handleSwipeRight = () => {
     setIsDeleted(true);
     deletedItemRef.current = { ...item };
-    removeItem(item.id);
     onRemove(item.id);
     toast.success("Removed from wishlist", {
       duration: 3000,
@@ -90,7 +89,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
 
       <div className="flex gap-4 relative z-10">
         {/* Product Image */}
-        <Link to={`/app/product/${item.id}`} className="flex-shrink-0">
+        <Link to={`/product/${item.id}`} className="flex-shrink-0">
           <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100">
             <LazyImage
               src={item.image}
@@ -105,7 +104,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <Link to={`/app/product/${item.id}`}>
+          <Link to={`/product/${item.id}`}>
             <h3 className="font-bold text-gray-800 text-sm mb-1 line-clamp-2">
               {item.name}
             </h3>

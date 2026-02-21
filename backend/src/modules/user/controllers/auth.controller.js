@@ -5,6 +5,7 @@ import User from '../../../models/User.model.js';
 import { generateTokens } from '../../../utils/generateToken.js';
 import { sendOTP } from '../../../services/otp.service.js';
 import { sendEmail } from '../../../services/email.service.js';
+import { uploadLocalFileToCloudinaryAndCleanup } from '../../../services/upload.service.js';
 
 // POST /api/user/auth/register
 export const register = asyncHandler(async (req, res) => {
@@ -53,7 +54,10 @@ export const login = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user) throw new ApiError(401, 'Invalid email or password.');
     if (!user.isActive) throw new ApiError(403, 'Your account has been deactivated.');
-    if (!user.isVerified) throw new ApiError(403, 'Please verify your email before logging in.');
+    if (!user.isVerified) {
+        await sendOTP(user, 'email_verification');
+        throw new ApiError(403, 'Email not verified. A new OTP has been sent to your email.');
+    }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) throw new ApiError(401, 'Invalid email or password.');
@@ -85,6 +89,10 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     if (!user) {
         return res.status(200).json(new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.'));
     }
+    if (!user.isVerified) {
+        await sendOTP(user, 'email_verification');
+        throw new ApiError(403, 'Please verify your email first. A new verification OTP has been sent.');
+    }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     user.resetOtp = otp;
@@ -101,7 +109,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         });
     } catch (err) {
         console.warn(`[User Forgot Password] Email send failed for ${user.email}: ${err.message}`);
-        console.log(`[User Forgot Password] OTP for ${user.email}: ${otp}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[User Forgot Password] Reset OTP generated for ${user.email}`);
+        }
     }
 
     return res.status(200).json(new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.'));
@@ -154,7 +164,20 @@ export const getProfile = asyncHandler(async (req, res) => {
 // PUT /api/user/auth/profile
 export const updateProfile = asyncHandler(async (req, res) => {
     const { name, phone } = req.body;
-    const user = await User.findByIdAndUpdate(req.user.id, { name, phone }, { new: true, runValidators: true });
+    const normalizedName = String(name || '').trim();
+    const normalizedPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+
+    const updatePayload = {
+        name: normalizedName,
+        phone: normalizedPhone || undefined,
+    };
+
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        updatePayload,
+        { new: true, runValidators: true }
+    );
+    if (!user) throw new ApiError(404, 'User not found.');
     res.status(200).json(new ApiResponse(200, user, 'Profile updated.'));
 });
 
@@ -171,9 +194,42 @@ export const changePassword = asyncHandler(async (req, res) => {
 
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) throw new ApiError(400, 'Current password is incorrect.');
+    if (String(currentPassword) === String(newPassword)) {
+        throw new ApiError(400, 'New password must be different from current password.');
+    }
+    if (String(newPassword).length < 6) {
+        throw new ApiError(400, 'New password must be at least 6 characters.');
+    }
 
     user.password = newPassword;
     await user.save();
 
     res.status(200).json(new ApiResponse(200, null, 'Password changed successfully.'));
+});
+
+// POST /api/user/auth/profile/avatar
+export const uploadProfileAvatar = asyncHandler(async (req, res) => {
+    if (!req.file?.path) {
+        throw new ApiError(400, 'Avatar image file is required.');
+    }
+
+    const uploaded = await uploadLocalFileToCloudinaryAndCleanup(
+        req.file.path,
+        'users/avatars'
+    );
+
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        { avatar: uploaded.url },
+        { new: true, runValidators: true }
+    );
+    if (!user) throw new ApiError(404, 'User not found.');
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { user, avatar: uploaded.url, publicId: uploaded.publicId },
+            'Profile picture updated successfully.'
+        )
+    );
 });

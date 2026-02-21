@@ -4,16 +4,26 @@ import api from '../utils/api';
 import { useAuthStore } from './authStore';
 
 const isMongoId = (value) => /^[a-fA-F0-9]{24}$/.test(String(value || ''));
+const normalizeId = (value) => String(value ?? '').trim();
 
 const normalizeWishlistItem = (item) => {
   const product = item?.productId || item;
+  const id = normalizeId(product?.id || product?._id || item?.id);
   return {
-    id: product?.id || product?._id || item?.id,
+    id,
     name: product?.name || item?.name || 'Product',
     price: Number(product?.price ?? item?.price ?? 0),
     image: product?.image || item?.image || '',
     stock: product?.stock || item?.stock,
-    productId: product?._id || item?.id,
+    unit: product?.unit || item?.unit,
+    rating: Number(product?.rating ?? item?.rating ?? 0),
+    originalPrice:
+      product?.originalPrice !== undefined
+        ? Number(product.originalPrice)
+        : item?.originalPrice !== undefined
+          ? Number(item.originalPrice)
+          : undefined,
+    productId: normalizeId(product?._id || item?.productId || item?.id),
   };
 };
 
@@ -34,7 +44,9 @@ export const useWishlistStore = create(
         try {
           const response = await api.get('/user/wishlist');
           const payload = response?.data ?? response;
-          const list = Array.isArray(payload) ? payload.map(normalizeWishlistItem) : [];
+          const list = Array.isArray(payload)
+            ? payload.map(normalizeWishlistItem).filter((item) => item.id)
+            : [];
           set({ items: list, isLoading: false, hasFetched: true });
           return list;
         } catch {
@@ -53,31 +65,38 @@ export const useWishlistStore = create(
 
       // Add item to wishlist
       addItem: (item) => {
+        const normalizedItem = normalizeWishlistItem(item);
+        if (!normalizedItem.id) {
+          return;
+        }
         set((state) => {
-          const existingItem = state.items.find((i) => i.id === item.id);
+          const existingItem = state.items.find(
+            (i) => normalizeId(i.id) === normalizeId(normalizedItem.id)
+          );
           if (existingItem) {
             return state; // Item already in wishlist
           }
           return {
-            items: [...state.items, { ...item }],
+            items: [...state.items, normalizedItem],
           };
         });
 
         const authState = useAuthStore.getState();
-        if (authState?.isAuthenticated && isMongoId(item?.id)) {
-          api.post('/user/wishlist', { productId: String(item.id) }).catch(() => null);
+        if (authState?.isAuthenticated && isMongoId(normalizedItem.id)) {
+          api.post('/user/wishlist', { productId: String(normalizedItem.id) }).catch(() => null);
         }
       },
 
       // Remove item from wishlist
       removeItem: (id) => {
+        const normalizedId = normalizeId(id);
         set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+          items: state.items.filter((item) => normalizeId(item.id) !== normalizedId),
         }));
 
         const authState = useAuthStore.getState();
-        if (authState?.isAuthenticated && isMongoId(id)) {
-          api.delete(`/user/wishlist/${id}`).catch(() => null);
+        if (authState?.isAuthenticated && isMongoId(normalizedId)) {
+          api.delete(`/user/wishlist/${normalizedId}`).catch(() => null);
         }
       },
 
@@ -85,7 +104,8 @@ export const useWishlistStore = create(
       isInWishlist: (id) => {
         get().ensureHydrated();
         const state = get();
-        return state.items.some((item) => item.id === id);
+        const normalizedId = normalizeId(id);
+        return state.items.some((item) => normalizeId(item.id) === normalizedId);
       },
 
       // Clear wishlist
@@ -112,16 +132,17 @@ export const useWishlistStore = create(
 
       // Move item from wishlist to cart (returns item for cart)
       moveToCart: (id) => {
+        const normalizedId = normalizeId(id);
         const state = get();
-        const item = state.items.find((i) => i.id === id);
+        const item = state.items.find((i) => normalizeId(i.id) === normalizedId);
         if (item) {
           set({
-            items: state.items.filter((i) => i.id !== id),
+            items: state.items.filter((i) => normalizeId(i.id) !== normalizedId),
           });
 
           const authState = useAuthStore.getState();
-          if (authState?.isAuthenticated && isMongoId(id)) {
-            api.delete(`/user/wishlist/${id}`).catch(() => null);
+          if (authState?.isAuthenticated && isMongoId(normalizedId)) {
+            api.delete(`/user/wishlist/${normalizedId}`).catch(() => null);
           }
 
           return item;

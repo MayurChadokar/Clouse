@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FiUser, FiMail, FiPhone, FiLock, FiEye, FiEyeOff, FiSave, FiCamera, FiArrowLeft, FiPackage, FiMapPin, FiLogOut, FiChevronRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
@@ -14,8 +14,12 @@ import PasswordStrengthMeter from '../components/Mobile/PasswordStrengthMeter';
 
 const MobileProfile = () => {
   const navigate = useNavigate();
-  const { user, updateProfile, changePassword, logout, isLoading } = useAuthStore();
+  const { user, updateProfile, uploadProfileAvatar, changePassword, logout, isLoading } = useAuthStore();
+  const avatarInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('menu'); // 'menu', 'personal', 'password'
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  );
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -23,6 +27,7 @@ const MobileProfile = () => {
   const {
     register: registerPersonal,
     handleSubmit: handleSubmitPersonal,
+    reset: resetPersonal,
     formState: { errors: personalErrors },
   } = useForm({
     defaultValues: {
@@ -42,9 +47,34 @@ const MobileProfile = () => {
 
   const newPassword = watch('newPassword');
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isDesktop && activeTab === 'menu') {
+      setActiveTab('personal');
+    }
+  }, [isDesktop, activeTab]);
+
+  useEffect(() => {
+    resetPersonal({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+    });
+  }, [user, resetPersonal]);
+
   const onPersonalSubmit = async (data) => {
     try {
-      await updateProfile(data);
+      await updateProfile({
+        name: data?.name,
+        phone: data?.phone,
+      });
       toast.success('Profile updated successfully!');
     } catch (error) {
       toast.error(error.message || 'Failed to update profile');
@@ -63,8 +93,38 @@ const MobileProfile = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/home');
     toast.success('Logged out successfully');
+  };
+
+  const handleAvatarPick = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isValidType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type);
+    if (!isValidType) {
+      toast.error('Only JPEG, PNG, WEBP and GIF images are allowed.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be 5MB or less.');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      await uploadProfileAvatar(file);
+      toast.success('Profile picture updated successfully!');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to upload profile picture');
+    } finally {
+      event.target.value = '';
+    }
   };
 
   const menuOptions = [
@@ -141,7 +201,7 @@ const MobileProfile = () => {
               {/* Content Area */}
               <div className="px-4 py-4 lg:p-0 lg:col-span-9">
                 {/* Dashboard Menu (Mobile Only) */}
-                {activeTab === 'menu' && (
+                {!isDesktop && activeTab === 'menu' && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -150,7 +210,15 @@ const MobileProfile = () => {
                     {/* User Profile Summary Card */}
                     <div className="glass-card rounded-2xl p-6 flex flex-col items-center text-center shadow-sm">
                       <div className="w-20 h-20 rounded-full gradient-green flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg">
-                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user?.name || 'User'}
+                            className="w-20 h-20 rounded-full object-cover"
+                          />
+                        ) : (
+                          user?.name?.charAt(0).toUpperCase() || 'U'
+                        )}
                       </div>
                       <h2 className="text-xl font-extrabold text-gray-800 mb-1">{user?.name}</h2>
                       <p className="text-gray-500 text-sm mb-4 font-medium">{user?.email}</p>
@@ -216,7 +284,7 @@ const MobileProfile = () => {
                 )}
 
                 {/* Personal Information Tab */}
-                {(activeTab === 'personal' || activeTab === 'menu' && !window.matchMedia("(max-width: 1023px)").matches) && (
+                {activeTab === 'personal' && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -225,10 +293,30 @@ const MobileProfile = () => {
                     {/* Avatar */}
                     <div className="flex items-center gap-4 mb-6">
                       <div className="relative">
-                        <div className="w-20 h-20 rounded-full gradient-green flex items-center justify-center text-white text-2xl font-bold">
-                          {user?.name?.charAt(0).toUpperCase() || 'U'}
+                        <div className="w-20 h-20 rounded-full gradient-green flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user?.name || 'User'}
+                              className="w-20 h-20 rounded-full object-cover"
+                            />
+                          ) : (
+                            user?.name?.charAt(0).toUpperCase() || 'U'
+                          )}
                         </div>
-                        <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white hover:bg-primary-700 transition-colors">
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAvatarPick}
+                          disabled={isLoading}
+                          className="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white hover:bg-primary-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
                           <FiCamera className="text-sm" />
                         </button>
                       </div>
@@ -288,13 +376,17 @@ const MobileProfile = () => {
                               validate: (value) =>
                                 isValidEmail(value) || 'Please enter a valid email',
                             })}
+                            readOnly
                             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${personalErrors.email
                               ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-200 focus:border-primary-500'
-                              } focus:outline-none transition-colors text-base`}
+                              } focus:outline-none transition-colors text-base bg-gray-50 text-gray-500 cursor-not-allowed`}
                             placeholder="your.email@example.com"
                           />
                         </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Email cannot be changed from profile settings.
+                        </p>
                         <AnimatePresence>
                           {personalErrors.email && (
                             <motion.p
@@ -355,7 +447,7 @@ const MobileProfile = () => {
                 )}
 
                 {/* Change Password Tab */}
-                {(activeTab === 'password' || activeTab === 'menu' && !window.matchMedia("(max-width: 1023px)").matches) && (
+                {activeTab === 'password' && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

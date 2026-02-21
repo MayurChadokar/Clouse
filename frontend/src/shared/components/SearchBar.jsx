@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSearch, FiClock, FiTrendingUp } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '../../data/products';
+import { getCatalogProducts } from '../../modules/UserApp/data/catalogData';
 
 const RECENT_SEARCHES_KEY = 'recent-searches';
 const MAX_RECENT_SEARCHES = 5;
@@ -52,7 +52,7 @@ const SearchBar = () => {
   const getProductSuggestions = (query) => {
     if (!query.trim()) return [];
     const lowerQuery = query.toLowerCase();
-    return products
+    return getCatalogProducts()
       .filter((product) => product.name.toLowerCase().includes(lowerQuery))
       .slice(0, MAX_SUGGESTIONS)
       .map((product) => ({

@@ -10,14 +10,44 @@ import PageTransition from "../../../shared/components/PageTransition";
 import useInfiniteScroll from "../../../shared/hooks/useInfiniteScroll";
 import LazyImage from "../../../shared/components/LazyImage";
 import { getPlaceholderImage } from "../../../shared/utils/helpers";
+import api from "../../../shared/utils/api";
+
+const normalizeVendor = (raw) => ({
+    ...raw,
+    id: String(raw?.id || raw?._id || ""),
+    _id: String(raw?.id || raw?._id || ""),
+    rating: Number(raw?.rating) || 0,
+    reviewCount: Number(raw?.reviewCount) || 0,
+    isVerified: !!raw?.isVerified,
+});
+
+const normalizeProduct = (raw) => ({
+    ...raw,
+    id: String(raw?.id || raw?._id || ""),
+    _id: String(raw?.id || raw?._id || ""),
+    vendorId: String(raw?.vendorId?._id || raw?.vendorId || ""),
+    brandId: String(raw?.brandId?._id || raw?.brandId || ""),
+    image: raw?.image || raw?.images?.[0] || "",
+    images: Array.isArray(raw?.images) ? raw.images : raw?.image ? [raw.image] : [],
+    price: Number(raw?.price) || 0,
+    rating: Number(raw?.rating) || 0,
+    reviewCount: Number(raw?.reviewCount) || 0,
+});
 
 const Seller = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const vendorId = String(id ?? "").trim();
+    const [catalogVersion, setCatalogVersion] = useState(0);
+    const [remoteVendor, setRemoteVendor] = useState(null);
+    const [remoteProducts, setRemoteProducts] = useState([]);
+    const [isResolvingVendor, setIsResolvingVendor] = useState(true);
 
     // Get vendor information
-    const vendor = useMemo(() => getVendorById(vendorId), [vendorId]);
+    const vendor = useMemo(
+        () => getVendorById(vendorId) || remoteVendor,
+        [vendorId, catalogVersion, remoteVendor]
+    );
 
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
@@ -28,10 +58,25 @@ const Seller = () => {
     });
 
     // Get products for this vendor
-    const vendorProducts = useMemo(() => {
-        if (!vendor) return [];
+    const rawVendorProducts = useMemo(() => {
+        if (!vendorId) return [];
 
-        let result = getProductsByVendor(vendorId);
+        const local = getProductsByVendor(vendorId);
+        if (!remoteProducts.length) return local;
+
+        const merged = [...remoteProducts];
+        local.forEach((item) => {
+            const exists = merged.some(
+                (p) => String(p.id) === String(item.id)
+            );
+            if (!exists) merged.push(item);
+        });
+
+        return merged;
+    }, [vendorId, remoteProducts, catalogVersion]);
+
+    const vendorProducts = useMemo(() => {
+        let result = rawVendorProducts;
 
         if (filters.minPrice) {
             result = result.filter(
@@ -50,7 +95,7 @@ const Seller = () => {
         }
 
         return result;
-    }, [vendorId, vendor, filters]);
+    }, [rawVendorProducts, filters]);
 
     const { displayedItems, hasMore, isLoading, loadMore, loadMoreRef } =
         useInfiniteScroll(vendorProducts, 10, 10);
@@ -97,6 +142,71 @@ const Seller = () => {
         };
     }, [showFilters]);
 
+    useEffect(() => {
+        const handleCatalogUpdate = () => setCatalogVersion((prev) => prev + 1);
+        window.addEventListener("catalog-cache-updated", handleCatalogUpdate);
+        return () => {
+            window.removeEventListener("catalog-cache-updated", handleCatalogUpdate);
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+        const fetchVendorData = async () => {
+            if (!vendorId) {
+                if (active) {
+                    setRemoteVendor(null);
+                    setRemoteProducts([]);
+                    setIsResolvingVendor(false);
+                }
+                return;
+            }
+
+            setIsResolvingVendor(true);
+            try {
+                const [vendorRes, productsRes] = await Promise.all([
+                    api.get(`/vendors/${vendorId}`),
+                    api.get(`/vendors/${vendorId}/products`, { params: { page: 1, limit: 200 } }),
+                ]);
+
+                if (!active) return;
+
+                const vendorPayload = vendorRes?.data ?? vendorRes;
+                const productsPayload = productsRes?.data ?? productsRes;
+                const vendorDoc = vendorPayload ? normalizeVendor(vendorPayload) : null;
+                const productList = Array.isArray(productsPayload?.products)
+                    ? productsPayload.products.map(normalizeProduct)
+                    : [];
+
+                setRemoteVendor(vendorDoc);
+                setRemoteProducts(productList);
+            } catch {
+                if (!active) return;
+                setRemoteVendor(null);
+                setRemoteProducts([]);
+            } finally {
+                if (active) setIsResolvingVendor(false);
+            }
+        };
+
+        fetchVendorData();
+        return () => {
+            active = false;
+        };
+    }, [vendorId]);
+
+    if (isResolvingVendor) {
+        return (
+            <PageTransition>
+                <MobileLayout showBottomNav={false} showCartBar={false}>
+                    <div className="flex items-center justify-center min-h-[60vh] px-4">
+                        <p className="text-gray-600">Loading seller...</p>
+                    </div>
+                </MobileLayout>
+            </PageTransition>
+        );
+    }
+
     if (!vendor) {
         return (
             <PageTransition>
@@ -107,7 +217,7 @@ const Seller = () => {
                                 Seller Not Found
                             </h2>
                             <button
-                                onClick={() => navigate("/")}
+                                onClick={() => navigate("/home")}
                                 className="gradient-green text-white px-6 py-3 rounded-xl font-semibold">
                                 Go Back Home
                             </button>

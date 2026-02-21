@@ -25,7 +25,7 @@ const MobileOrderCard = ({ order }) => {
       animate={{ opacity: 1, y: 0 }}
       className="glass-card rounded-2xl p-4 mb-4"
     >
-      <Link to={`/app/orders/${order.id}`}>
+      <Link to={`/orders/${order.id}`}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl gradient-green flex items-center justify-center flex-shrink-0">

@@ -109,7 +109,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         });
     } catch (err) {
         console.warn(`[Vendor Forgot Password] Email send failed for ${vendor.email}: ${err.message}`);
-        console.log(`[Vendor Forgot Password] OTP for ${vendor.email}: ${otp}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Vendor Forgot Password] Reset OTP generated for ${vendor.email}`);
+        }
     }
 
     return res.status(200).json(

@@ -50,10 +50,10 @@ const MobileHeader = () => {
   );
   const { user, isAuthenticated, logout } = useAuthStore();
 
-  // Get current category from URL (supports both /category/:id and /app/category/:id)
+  // Get current category from URL (supports both /category/:id and legacy /app/category/:id)
   const getCurrentCategoryId = () => {
-    const match = location.pathname.match(/\/(?:app\/)?category\/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+    const match = location.pathname.match(/\/(?:app\/)?category\/([^/]+)/);
+    return match ? String(match[1]) : null;
   };
 
   const currentCategoryId = getCurrentCategoryId();
@@ -61,7 +61,7 @@ const MobileHeader = () => {
   // Get current page from location
   const getCurrentPage = () => {
     const path = location.pathname;
-    if (path === "/" || path === "/") return "home";
+    if (path === "/" || path === "/home") return "home";
     if (path.startsWith("/product/")) return "product";
     if (path.startsWith("/category/")) return "category";
     if (path === "/search") return "search";
@@ -330,7 +330,7 @@ const MobileHeader = () => {
           {/* Logo and Marketplace Badge */}
           <div className="flex items-center gap-2 flex-shrink-0 overflow-visible relative z-[10001]">
             <Link
-              to="/"
+              to="/home"
               className="flex items-center overflow-visible relative z-[10002]">
               <div
                 ref={logoRef}

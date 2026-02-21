@@ -30,6 +30,15 @@ const normalizeOrder = (order) => {
   };
 };
 
+const normalizePublicTrackingOrder = (order) =>
+  normalizeOrder({
+    ...order,
+    id: order?.orderId || order?._id,
+    date: order?.createdAt || order?.date,
+    items: [],
+    vendorItems: [],
+  });
+
 const localCreateOrder = (orderData) => {
   const orderId = `ORD-${Date.now()}`;
   const trackingNumber = `TRK${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
@@ -191,6 +200,25 @@ export const useOrderStore = create(
           const response = await api.get(`/user/orders/${orderId}`);
           const payload = response?.data ?? response;
           const normalized = normalizeOrder(payload);
+
+          set((state) => ({
+            orders: [normalized, ...state.orders.filter((o) => String(o.id) !== String(normalized.id))],
+          }));
+
+          return normalized;
+        } catch (error) {
+          return null;
+        }
+      },
+
+      fetchPublicTrackingOrder: async (orderId) => {
+        const existing = get().orders.find((order) => String(order.id) === String(orderId));
+        if (existing) return existing;
+
+        try {
+          const response = await api.get(`/orders/track/${orderId}`);
+          const payload = response?.data ?? response;
+          const normalized = normalizePublicTrackingOrder(payload);
 
           set((state) => ({
             orders: [normalized, ...state.orders.filter((o) => String(o.id) !== String(normalized.id))],

@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { getProductById as getCatalogProductById } from "../../modules/UserApp/data/catalogData";
 import toast from "react-hot-toast";
 
 const normalizeVariantPart = (value) => String(value || "").trim().toLowerCase();
@@ -15,13 +14,8 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       addItem: (item) => {
-        const product = getCatalogProductById(item.id);
-        if (!product) {
-          toast.error("Product not found");
-          return;
-        }
-
-        if (product.stock === "out_of_stock") {
+        const availableStock = Number(item?.stockQuantity);
+        if (Number.isFinite(availableStock) && availableStock <= 0) {
           toast.error("Product is out of stock");
           return;
         }
@@ -35,9 +29,9 @@ export const useCartStore = create(
           ? existingItem.quantity + quantityToAdd
           : quantityToAdd;
 
-        // Check stock limit
-        if (newQuantity > product.stockQuantity) {
-          toast.error(`Only ${product.stockQuantity} items available in stock`);
+        // If stock quantity is known on the item payload, keep local guard.
+        if (Number.isFinite(availableStock) && newQuantity > availableStock) {
+          toast.error(`Only ${availableStock} items available in stock`);
           return;
         }
 
@@ -49,8 +43,8 @@ export const useCartStore = create(
         const itemWithVendor = {
           ...item,
           cartLineKey: lineKey,
-          vendorId: product.vendorId || item.vendorId || 1,
-          vendorName: product.vendorName || item.vendorName || "Unknown Vendor",
+          vendorId: item.vendorId || 1,
+          vendorName: item.vendorName || "Unknown Vendor",
         };
 
         set((state) => {
@@ -62,7 +56,10 @@ export const useCartStore = create(
                   ? {
                     ...i,
                     ...itemWithVendor,
-                    quantity: Math.min(newQuantity, product.stockQuantity),
+                    quantity:
+                      Number.isFinite(availableStock)
+                        ? Math.min(newQuantity, availableStock)
+                        : newQuantity,
                   }
                   : i
               ),
@@ -73,17 +70,17 @@ export const useCartStore = create(
               ...state.items,
               {
                 ...itemWithVendor,
-                quantity: Math.min(quantityToAdd, product.stockQuantity),
+                quantity:
+                  Number.isFinite(availableStock)
+                    ? Math.min(quantityToAdd, availableStock)
+                    : quantityToAdd,
               },
             ],
           };
         });
 
-        if (
-          product.stock === "low_stock" &&
-          newQuantity >= product.stockQuantity * 0.8
-        ) {
-          toast.warning(`Only ${product.stockQuantity} left in stock!`);
+        if (Number.isFinite(availableStock) && newQuantity >= availableStock * 0.8) {
+          toast.warning(`Only ${availableStock} left in stock!`);
         }
 
         // Trigger cart animation
@@ -105,10 +102,16 @@ export const useCartStore = create(
           return;
         }
 
-        const product = getCatalogProductById(id);
-        if (product && quantity > product.stockQuantity) {
-          toast.error(`Only ${product.stockQuantity} items available in stock`);
-          quantity = product.stockQuantity;
+        const targetItem = get().items.find((item) => {
+          if (String(item.id) !== String(id)) return false;
+          if (!variant) return true;
+          const candidate = String(item.cartLineKey || getCartLineKey(item.id, item.variant));
+          return candidate === getCartLineKey(id, variant);
+        });
+        const availableStock = Number(targetItem?.stockQuantity);
+        if (Number.isFinite(availableStock) && quantity > availableStock) {
+          toast.error(`Only ${availableStock} items available in stock`);
+          quantity = availableStock;
         }
 
         set((state) => ({

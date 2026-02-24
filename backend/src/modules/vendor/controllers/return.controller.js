@@ -3,6 +3,7 @@ import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import ReturnRequest from '../../../models/ReturnRequest.model.js';
 import Order from '../../../models/Order.model.js';
+import Product from '../../../models/Product.model.js';
 import User from '../../../models/User.model.js';
 import Admin from '../../../models/Admin.model.js';
 import { createNotification } from '../../../services/notification.service.js';
@@ -119,6 +120,18 @@ export const updateVendorReturnRequestStatus = asyncHandler(async (req, res) => 
     const { status, refundStatus } = req.body;
     const allowedStatuses = ['pending', 'approved', 'processing', 'rejected', 'completed'];
     const allowedRefundStatuses = ['pending', 'processed', 'failed'];
+    const statusTransitions = {
+        pending: ['approved', 'rejected'],
+        approved: ['processing', 'completed'],
+        processing: ['completed'],
+        rejected: [],
+        completed: [],
+    };
+    const refundTransitions = {
+        pending: ['processed', 'failed'],
+        failed: ['processed'],
+        processed: [],
+    };
 
     if (status && !allowedStatuses.includes(status)) {
         throw new ApiError(400, `Status must be one of: ${allowedStatuses.join(', ')}`);
@@ -138,9 +151,63 @@ export const updateVendorReturnRequestStatus = asyncHandler(async (req, res) => 
         .populate('orderId', 'orderId total');
     if (!request) throw new ApiError(404, 'Return request not found.');
 
-    if (status) request.status = status;
-    if (refundStatus) request.refundStatus = refundStatus;
+    const nextStatus = status || request.status;
+    const nextRefundStatus = refundStatus || request.refundStatus;
+    const statusUnchanged = !status || status === request.status;
+    const refundUnchanged = !refundStatus || refundStatus === request.refundStatus;
+
+    if (statusUnchanged && refundUnchanged) {
+        return res.status(200).json(
+            new ApiResponse(200, normalizeReturnRequest(request), 'No changes applied.')
+        );
+    }
+
+    if (status && status !== request.status) {
+        const allowedNext = statusTransitions[request.status] || [];
+        if (!allowedNext.includes(status)) {
+            throw new ApiError(409, `Cannot move return request from ${request.status} to ${status}.`);
+        }
+    }
+
+    const currentRefundStatus = request.refundStatus || 'pending';
+    if (refundStatus && refundStatus !== request.refundStatus) {
+        const allowedRefundNext = refundTransitions[currentRefundStatus] || [];
+        if (!allowedRefundNext.includes(refundStatus)) {
+            throw new ApiError(409, `Cannot move refund status from ${currentRefundStatus} to ${refundStatus}.`);
+        }
+    }
+
+    request.status = nextStatus;
+    if (refundStatus) request.refundStatus = nextRefundStatus;
     await request.save();
+
+    // Keep lifecycle effects consistent when vendor processes returns.
+    if (status === 'approved' || status === 'completed') {
+        const linkedOrderId = request.orderId?._id || request.orderId;
+        if (linkedOrderId) {
+            const order = await Order.findById(linkedOrderId);
+            if (order && order.isDeleted !== true) {
+                if (status === 'approved' && !['cancelled', 'returned'].includes(order.status)) {
+                    order.status = 'returned';
+                    await order.save();
+                }
+                if (status === 'completed') {
+                    const stockRestores = (request.items || []).map(async (item) => {
+                        const qty = Number(item?.quantity || 0);
+                        if (!item?.productId || qty <= 0) return;
+                        const product = await Product.findById(item.productId);
+                        if (!product) return;
+                        product.stockQuantity += qty;
+                        if (product.stockQuantity <= 0) product.stock = 'out_of_stock';
+                        else if (product.stockQuantity <= product.lowStockThreshold) product.stock = 'low_stock';
+                        else product.stock = 'in_stock';
+                        await product.save();
+                    });
+                    await Promise.all(stockRestores);
+                }
+            }
+        }
+    }
 
     const notificationTasks = [
         createNotification({

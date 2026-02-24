@@ -11,7 +11,6 @@ import * as documentController from '../controllers/document.controller.js';
 import * as notificationController from '../controllers/notification.controller.js';
 import * as returnController from '../controllers/return.controller.js';
 import * as reviewController from '../controllers/review.controller.js';
-import * as promotionController from '../controllers/promotion.controller.js';
 import * as shippingController from '../controllers/shipping.controller.js';
 import * as uploadController from '../controllers/upload.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
@@ -105,11 +104,7 @@ router.get('/reviews', ...vendorAuth, reviewController.getVendorReviews);
 router.patch('/reviews/:id/status', ...vendorAuth, reviewController.updateVendorReviewStatus);
 router.patch('/reviews/:id/response', ...vendorAuth, reviewController.addVendorReviewResponse);
 
-// Promotions
-router.get('/promotions', ...vendorAuth, promotionController.getVendorPromotions);
-router.post('/promotions', ...vendorAuth, promotionController.createVendorPromotion);
-router.put('/promotions/:id', ...vendorAuth, promotionController.updateVendorPromotion);
-router.delete('/promotions/:id', ...vendorAuth, promotionController.deleteVendorPromotion);
+
 
 // Shipping management
 router.get('/shipping/zones', ...vendorAuth, shippingController.getShippingZones);

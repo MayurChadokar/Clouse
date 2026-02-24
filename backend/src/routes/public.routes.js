@@ -194,8 +194,17 @@ router.get('/vendors/:id/products', asyncHandler(async (req, res) => {
 
 // POST /api/coupons/validate
 router.post('/coupons/validate', asyncHandler(async (req, res) => {
-    const { code, cartTotal } = req.body;
-    const coupon = await Coupon.findOne({ code: code?.toUpperCase(), isActive: true });
+    const rawCode = String(req.body?.code || '').trim();
+    const cartTotal = Number(req.body?.cartTotal);
+
+    if (!rawCode) {
+        throw new ApiError(400, 'Coupon code is required.');
+    }
+    if (!Number.isFinite(cartTotal) || cartTotal < 0) {
+        throw new ApiError(400, 'Cart total must be a valid non-negative number.');
+    }
+
+    const coupon = await Coupon.findOne({ code: rawCode.toUpperCase(), isActive: true });
     if (!coupon) throw new ApiError(400, 'Invalid coupon code.');
     if (coupon.startsAt && coupon.startsAt > Date.now()) throw new ApiError(400, 'Coupon is not active yet.');
     if (coupon.expiresAt && coupon.expiresAt < Date.now()) throw new ApiError(400, 'Coupon has expired.');
@@ -216,10 +225,40 @@ router.post('/coupons/validate', asyncHandler(async (req, res) => {
 // GET /api/banners
 router.get('/banners', asyncHandler(async (req, res) => {
     const { type } = req.query;
-    const filter = { isActive: true };
+    const now = new Date();
+    const filter = {
+        isActive: true,
+        $and: [
+            { $or: [{ startDate: null }, { startDate: { $exists: false } }, { startDate: { $lte: now } }] },
+            { $or: [{ endDate: null }, { endDate: { $exists: false } }, { endDate: { $gte: now } }] }
+        ]
+    };
     if (type) filter.type = type;
     const banners = await Banner.find(filter).sort({ order: 1 });
     res.status(200).json(new ApiResponse(200, banners, 'Banners fetched.'));
+}));
+
+// GET /api/campaigns
+router.get('/campaigns', asyncHandler(async (req, res) => {
+    const { type, limit = 20 } = req.query;
+    const parsedLimit = Math.max(parseInt(limit, 10) || 20, 1);
+    const now = new Date();
+
+    const query = {
+        isActive: true,
+        $and: [
+            { $or: [{ startDate: null }, { startDate: { $exists: false } }, { startDate: { $lte: now } }] },
+            { $or: [{ endDate: null }, { endDate: { $exists: false } }, { endDate: { $gte: now } }] }
+        ]
+    };
+    if (type) query.type = type;
+
+    const campaigns = await Campaign.find(query)
+        .select('name slug type route discountType discountValue startDate endDate bannerConfig')
+        .sort({ createdAt: -1 })
+        .limit(parsedLimit);
+
+    res.status(200).json(new ApiResponse(200, campaigns, 'Campaigns fetched.'));
 }));
 
 // GET /api/campaigns/:slug

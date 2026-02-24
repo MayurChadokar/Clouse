@@ -10,18 +10,50 @@ import { asyncHandler } from '../../../utils/asyncHandler.js';
  */
 export const getAllReviews = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, search = '', status } = req.query;
+    const numericPage = Number(page) || 1;
+    const numericLimit = Number(limit) || 10;
 
     const filter = {};
 
     if (status === 'approved') filter.isApproved = true;
     if (status === 'pending') filter.isApproved = false;
 
+    if (search) {
+        const regex = new RegExp(search, 'i');
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(search || ''));
+
+        const [matchedUsers, matchedProducts] = await Promise.all([
+            Review.db.model('User').find({
+                $or: [{ name: regex }, { email: regex }],
+            }).select('_id').limit(200).lean(),
+            Review.db.model('Product').find({
+                $or: [{ name: regex }, { description: regex }],
+            }).select('_id').limit(200).lean(),
+        ]);
+
+        const matchedUserIds = matchedUsers.map((u) => u._id);
+        const matchedProductIds = matchedProducts.map((p) => p._id);
+        const orFilters = [
+            { comment: regex },
+            ...(matchedUserIds.length > 0 ? [{ userId: { $in: matchedUserIds } }] : []),
+            ...(matchedProductIds.length > 0 ? [{ productId: { $in: matchedProductIds } }] : []),
+        ];
+
+        if (isObjectId) {
+            orFilters.push({ _id: search }, { productId: search }, { userId: search });
+        }
+
+        if (orFilters.length > 0) {
+            filter.$or = orFilters;
+        }
+    }
+
     const reviews = await Review.find(filter)
         .populate('userId', 'name email')
         .populate('productId', 'name')
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
+        .skip((numericPage - 1) * numericLimit)
+        .limit(numericLimit);
 
     const total = await Review.countDocuments(filter);
 
@@ -32,6 +64,8 @@ export const getAllReviews = asyncHandler(async (req, res) => {
         customerName: review.userId ? review.userId.name : 'Unknown',
         customerEmail: review.userId ? review.userId.email : 'N/A',
         productName: review.productId ? review.productId.name : 'Unknown Product',
+        productId: review.productId?._id ? String(review.productId._id) : '',
+        review: review.comment || '',
         status: review.isApproved ? 'approved' : 'pending'
     }));
 
@@ -40,9 +74,9 @@ export const getAllReviews = asyncHandler(async (req, res) => {
             reviews: normalizedReviews,
             pagination: {
                 total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(total / limit)
+                page: numericPage,
+                limit: numericLimit,
+                pages: Math.ceil(total / numericLimit)
             }
         }, 'Reviews fetched successfully')
     );

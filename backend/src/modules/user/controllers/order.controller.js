@@ -248,7 +248,25 @@ export const placeOrder = asyncHandler(async (req, res) => {
 
             // 9. Increment coupon usage
             if (appliedCoupon) {
-                await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usedCount: 1 } }, { session });
+                if (appliedCoupon.usageLimit) {
+                    const usageResult = await Coupon.updateOne(
+                        {
+                            _id: appliedCoupon._id,
+                            usedCount: { $lt: appliedCoupon.usageLimit },
+                        },
+                        { $inc: { usedCount: 1 } },
+                        { session }
+                    );
+                    if (!usageResult?.modifiedCount) {
+                        throw new ApiError(409, 'Coupon usage limit reached.');
+                    }
+                } else {
+                    await Coupon.updateOne(
+                        { _id: appliedCoupon._id },
+                        { $inc: { usedCount: 1 } },
+                        { session }
+                    );
+                }
             }
         });
     } catch (err) {

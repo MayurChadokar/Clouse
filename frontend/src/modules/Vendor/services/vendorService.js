@@ -307,34 +307,6 @@ export const updateVendorReviewStatus = (id, status) =>
 export const addVendorReviewResponse = (id, response) =>
     api.patch(`/vendor/reviews/${id}/response`, { response });
 
-/**
- * Get vendor promotions
- * @param {{ search?: string, status?: 'all'|'active'|'inactive'|'expired' }} params
- */
-export const getVendorPromotions = (params = {}) =>
-    api.get('/vendor/promotions', { params });
-
-/**
- * Create a vendor promotion
- * @param {object} payload
- */
-export const createVendorPromotion = (payload) =>
-    api.post('/vendor/promotions', payload);
-
-/**
- * Update a vendor promotion
- * @param {string} id
- * @param {object} payload
- */
-export const updateVendorPromotion = (id, payload) =>
-    api.put(`/vendor/promotions/${id}`, payload);
-
-/**
- * Delete a vendor promotion
- * @param {string} id
- */
-export const deleteVendorPromotion = (id) =>
-    api.delete(`/vendor/promotions/${id}`);
 
 /**
  * Get all shipping zones for authenticated vendor

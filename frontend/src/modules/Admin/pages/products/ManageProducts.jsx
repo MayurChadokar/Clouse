@@ -11,8 +11,9 @@ import { formatPrice } from "../../../../shared/utils/helpers";
 
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
-import { getAllProducts, deleteProduct } from "../../services/adminService";
+import { getAllProducts, deleteProduct, getAllVendors, updateProductStatus } from "../../services/adminService";
 import toast from "react-hot-toast";
+import { FiUser, FiCheckCircle, FiClock, FiXCircle, FiGrid } from "react-icons/fi";
 
 const ManageProducts = () => {
   const [products, setProducts] = useState([]);
@@ -30,12 +31,35 @@ const ManageProducts = () => {
     isOpen: false,
     productId: null,
   });
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState("all");
+  const [selectedTab, setSelectedTab] = useState("all"); // all, pending, approved, rejected, by_vendor
+  const [explorerVendorId, setExplorerVendorId] = useState(null);
+  const [explorerStatus, setExplorerStatus] = useState("all");
+  const [vendorSearchQuery, setVendorSearchQuery] = useState("");
 
   useEffect(() => {
     initCategories();
     initBrands();
+    loadVendors();
     loadProducts();
-  }, []);
+  }, [initCategories, initBrands]);
+
+  // Set initial vendor for explorer
+  useEffect(() => {
+    if (selectedTab === "by_vendor" && !explorerVendorId && vendors.length > 0) {
+      setExplorerVendorId(vendors[0]._id || vendors[0].id);
+    }
+  }, [selectedTab, vendors, explorerVendorId]);
+
+  const loadVendors = async () => {
+    try {
+      const response = await getAllVendors({ limit: 500 });
+      setVendors(response.data?.vendors || []);
+    } catch (error) {
+      setVendors([]);
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -56,9 +80,12 @@ const ManageProducts = () => {
 
       const normalizedProducts = products.map(p => ({
         ...p,
-        id: p._id, // Map backend _id to frontend id
+        id: p._id,
         image: p.image || p.images?.[0] || "https://placehold.co/50x50?text=Product",
-        stock: p.stock || (p.stockQuantity > 5 ? "in_stock" : p.stockQuantity > 0 ? "low_stock" : "out_of_stock"),
+        stockStatus: p.stock || (p.stockQuantity > 5 ? "in_stock" : p.stockQuantity > 0 ? "low_stock" : "out_of_stock"),
+        vendorName: p.vendorId?.storeName || p.vendorId?.name || "Global",
+        vendorIdStr: String(p.vendorId?._id || p.vendorId || ""),
+        approvalStatus: p.approvalStatus || "pending"
       }));
       setProducts(normalizedProducts);
     } catch (error) {
@@ -71,12 +98,17 @@ const ManageProducts = () => {
 
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.vendorName.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
+    if (selectedTab !== "all") {
+      filtered = filtered.filter((product) => product.approvalStatus === selectedTab);
+    }
+
     if (selectedStatus !== "all") {
-      filtered = filtered.filter((product) => product.stock === selectedStatus);
+      filtered = filtered.filter((product) => product.stockStatus === selectedStatus);
     }
 
     if (selectedCategory !== "all") {
@@ -91,8 +123,14 @@ const ManageProducts = () => {
       );
     }
 
+    if (selectedVendor !== "all") {
+      filtered = filtered.filter(
+        (product) => product.vendorIdStr === String(selectedVendor)
+      );
+    }
+
     return filtered;
-  }, [products, searchQuery, selectedStatus, selectedCategory, selectedBrand]);
+  }, [products, searchQuery, selectedStatus, selectedCategory, selectedBrand, selectedTab, selectedVendor]);
 
   const columns = [
     {
@@ -131,8 +169,37 @@ const ManageProducts = () => {
       render: (value) => Number(value || 0).toLocaleString(),
     },
     {
-      key: "stock",
-      label: "Status",
+      key: "vendorName",
+      label: "Vendor",
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <FiUser className="text-gray-400" size={14} />
+          <span className="text-xs font-semibold text-gray-700">{value}</span>
+        </div>
+      )
+    },
+    {
+      key: "approvalStatus",
+      label: "Approval",
+      sortable: true,
+      render: (value) => {
+        let variant = "warning";
+        let icon = <FiClock size={12} />;
+        if (value === "approved") { variant = "success"; icon = <FiCheckCircle size={12} />; }
+        if (value === "rejected") { variant = "error"; icon = <FiXCircle size={12} />; }
+
+        return (
+          <Badge variant={variant} className="flex items-center gap-1">
+            {icon}
+            {String(value || "pending").toUpperCase()}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: "stockStatus",
+      label: "Inventory",
       sortable: true,
       render: (value) => (
         <Badge
@@ -153,12 +220,38 @@ const ManageProducts = () => {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-2">
+          {row.approvalStatus === "pending" && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickStatusUpdate(row.id, "approved");
+                }}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Approve"
+              >
+                <FiCheckCircle />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickStatusUpdate(row.id, "rejected");
+                }}
+                className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                title="Reject"
+              >
+                <FiXCircle />
+              </button>
+            </>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setProductFormModal({ isOpen: true, productId: row.id });
             }}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit"
+          >
             <FiEdit />
           </button>
           <button
@@ -166,13 +259,27 @@ const ManageProducts = () => {
               e.stopPropagation();
               setDeleteModal({ isOpen: true, productId: row.id });
             }}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete"
+          >
             <FiTrash2 />
           </button>
         </div>
       ),
     },
   ];
+
+  const handleQuickStatusUpdate = async (productId, status) => {
+    try {
+      const response = await updateProductStatus(productId, status);
+      if (response.success || response.data) {
+        toast.success(`Product ${status} successfully`);
+        loadProducts(); // Refresh the list
+      }
+    } catch (error) {
+      toast.error(`Failed to ${status} product`);
+    }
+  };
 
   const confirmDelete = async () => {
     try {
@@ -189,107 +296,258 @@ const ManageProducts = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="lg:hidden">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-            Manage Products
+      className="space-y-6"
+    >
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
+            Product Management
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            View, edit, and manage your product catalog
+          <p className="text-sm text-gray-500 font-medium">
+            Manage your global catalog and vendor submissions.
           </p>
         </div>
         <button
           onClick={() => setProductFormModal({ isOpen: true, productId: "new" })}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-semibold"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-md hover:shadow-lg active:scale-95 text-sm font-bold"
         >
           <FiPlus />
-          Add Product
+          Add Global Product
         </button>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        {/* Filters Section */}
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
-            <div className="relative flex-1 w-full sm:min-w-[200px]">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
-              />
-            </div>
-
-            <AnimatedSelect
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              options={[
-                { value: "all", label: "All Status" },
-                { value: "in_stock", label: "In Stock" },
-                { value: "low_stock", label: "Low Stock" },
-                { value: "out_of_stock", label: "Out of Stock" },
-              ]}
-              className="w-full sm:w-auto min-w-[140px]"
-            />
-
-            <AnimatedSelect
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              options={[
-                { value: "all", label: "All Categories" },
-                ...categories
-                  .filter((cat) => cat.isActive !== false)
-                  .map((cat) => ({ value: String(cat.id), label: cat.name })),
-              ]}
-              className="w-full sm:w-auto min-w-[160px]"
-            />
-
-            <AnimatedSelect
-              value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-              options={[
-                { value: "all", label: "All Brands" },
-                ...brands
-                  .filter((brand) => brand.isActive !== false)
-                  .map((brand) => ({ value: String(brand.id), label: brand.name })),
-              ]}
-              className="w-full sm:w-auto min-w-[160px]"
-            />
-
-
-
-            <div className="w-full sm:w-auto">
-              <ExportButton
-                data={filteredProducts}
-                headers={[
-                  { label: "ID", accessor: (row) => row.id },
-                  { label: "Name", accessor: (row) => row.name },
-                  {
-                    label: "Price",
-                    accessor: (row) => formatPrice(row.price),
-                  },
-                  { label: "Stock", accessor: (row) => row.stockQuantity },
-                  { label: "Status", accessor: (row) => row.stock },
-                ]}
-                filename="products"
-              />
-            </div>
-          </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Status Tabs */}
+        <div className="flex border-b border-gray-200 bg-gray-50/50 overflow-x-auto no-scrollbar">
+          {[
+            { id: "all", label: "All Products", icon: FiGrid },
+            { id: "pending", label: "Pending Approval", icon: FiClock },
+            { id: "approved", label: "Approved", icon: FiCheckCircle },
+            { id: "rejected", label: "Rejected", icon: FiXCircle },
+            { id: "by_vendor", label: "By Vendor", icon: FiUser },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${selectedTab === tab.id
+                ? "border-primary-600 text-primary-600 bg-white shadow-[0_-2px_0_inset_#7c3aed]"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+              {tab.id !== "by_vendor" && (
+                <span
+                  className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${selectedTab === tab.id
+                    ? "bg-primary-100 text-primary-700"
+                    : "bg-gray-200 text-gray-600"
+                    }`}
+                >
+                  {tab.id === "all"
+                    ? products.length
+                    : products.filter((p) => p.approvalStatus === tab.id).length}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* DataTable */}
-        <DataTable
-          data={filteredProducts}
-          columns={columns}
-          pagination={true}
-          itemsPerPage={10}
-          onRowClick={(row) =>
-            setProductFormModal({ isOpen: true, productId: row.id })
-          }
-        />
+        <div className="p-6">
+          {selectedTab !== "by_vendor" ? (
+            <>
+              {/* Filters Section */}
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+                  <div className="relative flex-1 w-full sm:min-w-[200px]">
+                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
+                    />
+                  </div>
+
+                  <AnimatedSelect
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    options={[
+                      { value: "all", label: "All Status" },
+                      { value: "in_stock", label: "In Stock" },
+                      { value: "low_stock", label: "Low Stock" },
+                      { value: "out_of_stock", label: "Out of Stock" },
+                    ]}
+                    className="w-full sm:w-auto min-w-[140px]"
+                  />
+
+                  <AnimatedSelect
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    options={[
+                      { value: "all", label: "All Categories" },
+                      ...categories
+                        .filter((cat) => cat.isActive !== false)
+                        .map((cat) => ({ value: String(cat.id || cat._id), label: cat.name })),
+                    ]}
+                    className="w-full sm:w-auto min-w-[160px]"
+                  />
+
+                  <AnimatedSelect
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    options={[
+                      { value: "all", label: "All Brands" },
+                      ...brands
+                        .filter((brand) => brand.isActive !== false)
+                        .map((brand) => ({
+                          value: String(brand.id || brand._id),
+                          label: brand.name,
+                        })),
+                    ]}
+                    className="w-full sm:w-auto min-w-[160px]"
+                  />
+
+                  <AnimatedSelect
+                    value={selectedVendor}
+                    onChange={(e) => setSelectedVendor(e.target.value)}
+                    options={[
+                      { value: "all", label: "All Vendors" },
+                      ...vendors.map((v) => ({
+                        value: String(v._id || v.id),
+                        label: v.storeName || v.name,
+                      })),
+                    ]}
+                    className="w-full sm:w-auto min-w-[160px]"
+                  />
+
+                  <div className="w-full sm:w-auto">
+                    <ExportButton
+                      data={filteredProducts}
+                      headers={[
+                        { label: "ID", accessor: (row) => row.id },
+                        { label: "Name", accessor: (row) => row.name },
+                        {
+                          label: "Price",
+                          accessor: (row) => formatPrice(row.price),
+                        },
+                        { label: "Stock", accessor: (row) => row.stockQuantity },
+                        { label: "Status", accessor: (row) => row.stock },
+                      ]}
+                      filename="products"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* DataTable */}
+              <DataTable
+                data={filteredProducts}
+                columns={columns}
+                pagination={true}
+                itemsPerPage={10}
+                onRowClick={(row) =>
+                  setProductFormModal({ isOpen: true, productId: row.id })
+                }
+              />
+            </>
+          ) : (
+            /* Vendor Wise Explorer View */
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px]">
+              {/* Vendor Sidebar */}
+              <div className="lg:border-r border-gray-100 pr-4 space-y-4">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                  <input
+                    type="text"
+                    value={vendorSearchQuery}
+                    onChange={(e) => setVendorSearchQuery(e.target.value)}
+                    placeholder="Filter vendors..."
+                    className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  />
+                </div>
+                <div className="max-h-[500px] overflow-y-auto no-scrollbar space-y-1">
+                  {vendors
+                    .filter(v => (v.storeName || v.name || "").toLowerCase().includes(vendorSearchQuery.toLowerCase()))
+                    .map((vendor) => (
+                      <button
+                        key={vendor._id || vendor.id}
+                        onClick={() => setExplorerVendorId(vendor._id || vendor.id)}
+                        className={`w-full text-left px-3 py-3 rounded-xl transition-all flex items-center gap-3 ${explorerVendorId === (vendor._id || vendor.id)
+                          ? "bg-primary-50 text-primary-700 shadow-sm border-l-4 border-primary-600"
+                          : "hover:bg-gray-50 text-gray-600"
+                          }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${explorerVendorId === (vendor._id || vendor.id) ? "bg-primary-600 text-white" : "bg-gray-100"}`}>
+                          {(vendor.storeName || vendor.name)?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs truncate">{vendor.storeName || vendor.name}</p>
+                          <p className="text-[10px] opacity-70">
+                            {products.filter(p => String(p.vendorId?._id || p.vendorId) === String(vendor._id || vendor.id)).length} Products
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              {/* Vendor Products Details */}
+              <div className="lg:col-span-3 space-y-4">
+                {explorerVendorId ? (
+                  <>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div>
+                        <h3 className="font-black text-lg text-gray-800">
+                          {vendors.find(v => (v._id || v.id) === explorerVendorId)?.storeName || "Vendor Products"}
+                        </h3>
+                        <p className="text-xs text-gray-500">Managing products for this vendor</p>
+                      </div>
+                      <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
+                        {[
+                          { id: "all", label: "All" },
+                          { id: "approved", label: "Approved" },
+                          { id: "pending", label: "Pending" },
+                          { id: "rejected", label: "Rejected" },
+                        ].map(st => (
+                          <button
+                            key={st.id}
+                            onClick={() => setExplorerStatus(st.id)}
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${explorerStatus === st.id
+                              ? "bg-white text-primary-600 shadow-sm"
+                              : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                              }`}
+                          >
+                            {st.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <DataTable
+                      data={products.filter(p =>
+                        String(p.vendorId?._id || p.vendorId || "") === String(explorerVendorId) &&
+                        (explorerStatus === "all" || p.approvalStatus === explorerStatus)
+                      )}
+                      columns={columns}
+                      pagination={true}
+                      itemsPerPage={8}
+                      onRowClick={(row) =>
+                        setProductFormModal({ isOpen: true, productId: row.id })
+                      }
+                    />
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
+                    <FiUser size={48} className="opacity-20 mb-4" />
+                    <p className="font-black uppercase tracking-widest opacity-40">Select a vendor from list</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <ConfirmModal
@@ -314,5 +572,6 @@ const ManageProducts = () => {
     </motion.div>
   );
 };
+
 
 export default ManageProducts;

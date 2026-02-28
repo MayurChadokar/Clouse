@@ -4,6 +4,8 @@ const attributeSetSchema = new mongoose.Schema(
     {
         name: { type: String, required: true, trim: true },
         attributes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Attribute' }],
+        values: [{ type: String }],
+        isActive: { type: Boolean, default: true }
     },
     { timestamps: true }
 );

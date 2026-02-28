@@ -58,10 +58,20 @@ const Vendors = () => {
       label: "Vendor Analytics",
       icon: FiBarChart2,
       gradient: "from-purple-500 via-purple-600 to-purple-700",
-      lightGradient: "from-purple-50 via-purple-100/80 to-purple-50",
+      lightGradient: "from-purple-50 via-purple-100/80 to-indigo-50",
       shadowColor: "shadow-purple-500/20",
       hoverShadow: "hover:shadow-purple-500/30",
       description: "View vendor performance analytics",
+    },
+    {
+      path: "/admin/vendors/explorer",
+      label: "Vendor Explorer",
+      icon: FiUsers,
+      gradient: "from-pink-500 via-rose-600 to-red-700",
+      lightGradient: "from-rose-50 via-rose-100/80 to-rose-50",
+      shadowColor: "shadow-rose-500/20",
+      hoverShadow: "hover:shadow-rose-500/30",
+      description: "Explore vendors with tabs",
     },
   ];
 

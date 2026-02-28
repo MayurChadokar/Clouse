@@ -80,9 +80,10 @@ const redirectTo = (path) => {
 };
 
 const getScopeFromUrl = (url = '') => {
-  if (url.startsWith('/admin')) return 'admin';
-  if (url.startsWith('/vendor')) return 'vendor';
-  if (url.startsWith('/delivery')) return 'delivery';
+  const normalizedUrl = url.toLowerCase();
+  if (normalizedUrl.includes('/admin')) return 'admin';
+  if (normalizedUrl.includes('/vendor')) return 'vendor';
+  if (normalizedUrl.includes('/delivery')) return 'delivery';
   return 'user';
 };
 
@@ -96,6 +97,11 @@ const getScopeFromPath = (path = window.location.pathname) => {
 const isExcludedAuthRequest = (scope, url = '') => {
   const { prefix } = AUTH_SCOPES[scope];
   return EXCLUDED_AUTH_SUFFIXES.some((suffix) => url.startsWith(`${prefix}${suffix}`));
+};
+
+const dispatchAuthFailure = (scope) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('global-auth-failure', { detail: { scope } }));
 };
 
 const clearScopeAuth = (scope) => {
@@ -197,6 +203,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const activeScope = pathScope;
       clearScopeAuth(scope);
+      dispatchAuthFailure(scope);
+
       if (scope !== activeScope) {
         return Promise.reject(error);
       }

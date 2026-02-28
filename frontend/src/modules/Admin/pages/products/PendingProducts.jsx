@@ -85,10 +85,15 @@ const PendingProducts = () => {
             ),
         },
         {
-            key: "price",
-            label: "Price",
+            key: "vendorPrice",
+            label: "Requested Price",
             sortable: true,
-            render: (value) => formatPrice(value),
+            render: (value, row) => (
+                <div className="flex flex-col">
+                    <span className="font-bold text-blue-600">{formatPrice(value || row.originalPrice)}</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold">To Vendor</span>
+                </div>
+            ),
         },
         {
             key: "stockQuantity",

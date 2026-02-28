@@ -15,12 +15,26 @@ const ALLOWED_DOCUMENT_MIME_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DOCUMENT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TMP_UPLOAD_DIR = path.resolve(__dirname, '../../uploads/tmp');
-const DELIVERY_DOCS_DIR = path.resolve(__dirname, '../../uploads/delivery-docs');
+const TMP_UPLOAD_DIR = 'uploads/tmp';
+const DELIVERY_DOCS_DIR = 'uploads/delivery-docs';
+const STAFF_DOCS_DIR = 'uploads/staff-docs';
 fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(DELIVERY_DOCS_DIR, { recursive: true });
+fs.mkdirSync(STAFF_DOCS_DIR, { recursive: true });
+
+const staffDocStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, STAFF_DOCS_DIR);
+    },
+    filename: (req, file, cb) => {
+        const safeBaseName = (file.originalname || 'staff-doc')
+            .replace(/\.[^/.]+$/, '')
+            .replace(/[^a-zA-Z0-9-_]/g, '_')
+            .slice(0, 60);
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        cb(null, `staff-${Date.now()}-${safeBaseName}${ext}`);
+    }
+});
 
 const imageDiskStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -71,7 +85,7 @@ export const uploadMultiple = (fieldName, maxCount = 5) =>
 // Single document upload (pdf or image)
 export const uploadDocumentSingle = (fieldName) =>
     multer({
-        storage: imageDiskStorage,
+        storage: staffDocStorage,
         fileFilter: (req, file, cb) => {
             if (ALLOWED_DOCUMENT_MIME_TYPES.includes(file.mimetype)) {
                 cb(null, true);
@@ -87,6 +101,25 @@ export const uploadDocumentSingle = (fieldName) =>
         },
         limits: { fileSize: MAX_DOCUMENT_FILE_SIZE },
     }).single(fieldName);
+
+export const uploadDocumentMultiple = (fieldName, maxCount = 5) =>
+    multer({
+        storage: staffDocStorage,
+        fileFilter: (req, file, cb) => {
+            if (ALLOWED_DOCUMENT_MIME_TYPES.includes(file.mimetype)) {
+                cb(null, true);
+            } else {
+                cb(
+                    new ApiError(
+                        400,
+                        'Invalid file type. Only PDF, JPEG, PNG, WEBP, and GIF are allowed.'
+                    ),
+                    false
+                );
+            }
+        },
+        limits: { fileSize: MAX_DOCUMENT_FILE_SIZE },
+    }).array(fieldName, maxCount);
 
 // Multiple named document uploads (used for delivery registration docs)
 export const uploadDeliveryDocuments = (fields) =>

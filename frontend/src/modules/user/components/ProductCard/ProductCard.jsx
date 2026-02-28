@@ -86,9 +86,13 @@ const ProductCard = ({ product }) => {
                         <div className="mt-auto">
                             <div className="flex items-baseline gap-1.5">
                                 <span className="text-[13px] font-black text-black">₹{product.discountedPrice}</span>
-                                <span className="text-[10px] text-gray-400 line-through font-bold">₹{product.originalPrice}</span>
+                                {product.originalPrice && (
+                                    <span className="text-[10px] text-gray-400 line-through font-bold">₹{product.originalPrice}</span>
+                                )}
                             </div>
-                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter block mt-0.5">{product.discount}</span>
+                            {product.discount && (
+                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter block mt-0.5">{product.discount}</span>
+                            )}
                         </div>
                     </div>
                 </Link>

@@ -6,7 +6,8 @@ const productSchema = new mongoose.Schema(
         slug: { type: String, required: true, unique: true },
         description: { type: String },
         price: { type: Number, required: true, min: 0 },
-        originalPrice: { type: Number },
+        originalPrice: { type: Number }, // This will be used as MRP (strikethrough price)
+        vendorPrice: { type: Number, default: 0 }, // This is the amount the vendor wants
         unit: { type: String, default: 'Piece' },
         images: [{ type: String }],
         image: { type: String }, // primary image

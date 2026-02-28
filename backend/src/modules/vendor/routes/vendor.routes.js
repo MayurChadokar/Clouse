@@ -14,6 +14,7 @@ import * as reviewController from '../controllers/review.controller.js';
 import * as shippingController from '../controllers/shipping.controller.js';
 import * as uploadController from '../controllers/upload.controller.js';
 import * as supportController from '../controllers/support.controller.js';
+import * as attributeController from '../../admin/controllers/attribute.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus } from '../../../middlewares/authorize.js';
 import { authLimiter } from '../../../middlewares/rateLimiter.js';
@@ -132,5 +133,9 @@ router.delete('/shipping/rates/:id', ...vendorAuth, shippingController.deleteShi
 // Uploads (Cloudinary via temp local multer upload)
 router.post('/uploads/image', ...vendorAuth, uploadSingle('image'), uploadController.uploadImage);
 router.post('/uploads/images', ...vendorAuth, uploadMultiple('images', 8), uploadController.uploadImages);
+
+// Attributes
+router.get('/attributes', ...vendorAuth, attributeController.getAllAttributes);
+router.get('/attribute-sets', ...vendorAuth, attributeController.getAllAttributeSets);
 
 export default router;

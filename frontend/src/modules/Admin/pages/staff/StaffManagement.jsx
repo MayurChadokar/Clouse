@@ -18,6 +18,7 @@ import {
     FiX
 } from "react-icons/fi";
 import api from "../../../../shared/utils/api";
+import { API_BASE_URL } from "../../../../shared/utils/constants";
 import toast from "react-hot-toast";
 
 const PERMISSIONS = [
@@ -40,10 +41,19 @@ const PERMISSIONS = [
 
 const StaffManagement = () => {
     const [employees, setEmployees] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showRoleModal, setShowRoleModal] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
+    const [editingRole, setEditingRole] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+
+    const [roleFormData, setRoleFormData] = useState({
+        name: "",
+        permissions: [],
+        description: ""
+    });
 
     const [formData, setFormData] = useState({
         name: "",
@@ -51,7 +61,8 @@ const StaffManagement = () => {
         password: "",
         role: "employee",
         permissions: [],
-        isActive: true
+        isActive: true,
+        documents: []
     });
 
     const fetchEmployees = async () => {
@@ -68,8 +79,20 @@ const StaffManagement = () => {
         }
     };
 
+    const fetchRoles = async () => {
+        try {
+            const res = await api.get("/admin/roles");
+            if (res.success) {
+                setRoles(res.data);
+            }
+        } catch (err) {
+            // Error handled by interceptor
+        }
+    };
+
     useEffect(() => {
         fetchEmployees();
+        fetchRoles();
     }, []);
 
     const handleOpenModal = (employee = null) => {
@@ -91,7 +114,8 @@ const StaffManagement = () => {
                 password: "",
                 role: "employee",
                 permissions: [],
-                isActive: true
+                isActive: true,
+                documents: []
             });
         }
         setShowModal(true);
@@ -100,9 +124,26 @@ const StaffManagement = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const data = new FormData();
+            Object.keys(formData).forEach(key => {
+                if (key === 'permissions') {
+                    data.append(key, JSON.stringify(formData[key]));
+                } else if (key === 'documents') {
+                    if (formData[key] && formData[key].length > 0) {
+                        Array.from(formData[key]).forEach(file => {
+                            data.append('documents', file);
+                        });
+                    }
+                } else {
+                    data.append(key, formData[key]);
+                }
+            });
+
             if (editingEmployee) {
                 // Update
-                const res = await api.put(`/admin/employees/${editingEmployee._id}`, formData);
+                const res = await api.put(`/admin/employees/${editingEmployee._id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 if (res.success) {
                     toast.success("Employee updated successfully");
                     fetchEmployees();
@@ -110,7 +151,9 @@ const StaffManagement = () => {
                 }
             } else {
                 // Create
-                const res = await api.post("/admin/employees", formData);
+                const res = await api.post("/admin/employees", data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 if (res.success) {
                     toast.success("Employee created successfully");
                     fetchEmployees();
@@ -161,6 +204,83 @@ const StaffManagement = () => {
         }
     };
 
+    const handleRoleChange = (roleName) => {
+        const selectedRole = roles.find(r => r.name === roleName);
+        if (selectedRole) {
+            setFormData(prev => ({
+                ...prev,
+                role: roleName,
+                permissions: selectedRole.permissions
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, role: roleName }));
+        }
+    };
+
+    const handleOpenRoleModal = (role = null) => {
+        if (role) {
+            setEditingRole(role);
+            setRoleFormData({
+                name: role.name,
+                permissions: role.permissions || [],
+                description: role.description || ""
+            });
+        } else {
+            setEditingRole(null);
+            setRoleFormData({
+                name: "",
+                permissions: [],
+                description: ""
+            });
+        }
+        setShowRoleModal(true);
+    };
+
+    const handleRoleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (editingRole) {
+                const res = await api.put(`/admin/roles/${editingRole._id}`, roleFormData);
+                if (res.success) {
+                    toast.success("Role updated successfully");
+                    fetchRoles();
+                    setShowRoleModal(false);
+                }
+            } else {
+                const res = await api.post("/admin/roles", roleFormData);
+                if (res.success) {
+                    toast.success("Role created successfully");
+                    fetchRoles();
+                    setShowRoleModal(false);
+                }
+            }
+        } catch (err) {
+            // Error handled by interceptor
+        }
+    };
+
+    const handleDeleteRole = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this role?")) return;
+        try {
+            const res = await api.delete(`/admin/roles/${id}`);
+            if (res.success) {
+                toast.success("Role deleted successfully");
+                fetchRoles();
+            }
+        } catch (err) {
+            // Error handled by interceptor
+        }
+    };
+
+    const toggleRolePermission = (permId) => {
+        setRoleFormData(prev => ({
+            ...prev,
+            permissions: prev.permissions.includes(permId)
+                ? prev.permissions.filter(p => p !== permId)
+                : [...prev.permissions, permId]
+        }));
+    };
+
     const filteredEmployees = employees.filter(emp =>
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -174,13 +294,22 @@ const StaffManagement = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Staff Management</h1>
                     <p className="text-sm text-gray-500 mt-1">Manage employee access levels and platform security protocols.</p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary-700 transition-colors shadow-sm"
-                >
-                    <FiUserPlus size={18} />
-                    <span>Add New Staff</span>
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => handleOpenRoleModal()}
+                        className="bg-white text-gray-700 px-5 py-2.5 rounded-lg font-semibold border border-gray-200 flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <FiShield size={18} />
+                        <span>Manage Roles</span>
+                    </button>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                        <FiUserPlus size={18} />
+                        <span>Add New Staff</span>
+                    </button>
+                </div>
             </div>
 
             {/* Stats & Search */}
@@ -224,6 +353,7 @@ const StaffManagement = () => {
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Permissions</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Document</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -256,7 +386,7 @@ const StaffManagement = () => {
                                                 emp.role === 'admin' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                                                     'bg-gray-100 text-gray-700 border-gray-200'
                                                 }`}>
-                                                {emp.role.charAt(0).toUpperCase() + emp.role.slice(1)}
+                                                {emp.role ? (emp.role.charAt(0).toUpperCase() + emp.role.slice(1)) : 'Staff'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -277,6 +407,25 @@ const StaffManagement = () => {
                                                             <span className="text-xs text-gray-400 italic">No permissions</span>
                                                         )}
                                                     </>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                {emp.documents && emp.documents.length > 0 ? (
+                                                    emp.documents.map((doc, idx) => (
+                                                        <a
+                                                            key={idx}
+                                                            href={`${(API_BASE_URL || '').replace('/api', '')}/${String(doc || '').replace(/\\/g, '/')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-[10px] font-medium text-primary-600 hover:underline flex items-center gap-1"
+                                                        >
+                                                            <FiPackage size={12} /> Doc {idx + 1}
+                                                        </a>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-xs text-gray-400 italic">No document</span>
                                                 )}
                                             </div>
                                         </td>
@@ -344,9 +493,16 @@ const StaffManagement = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
-                                        <select className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })}>
+                                        <select
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800"
+                                            value={formData.role}
+                                            onChange={(e) => handleRoleChange(e.target.value)}
+                                        >
                                             <option value="employee">Staff / Employee</option>
                                             <option value="admin">Administrator</option>
+                                            {roles.map(role => (
+                                                <option key={role._id} value={role.name}>{role.name}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div className="flex flex-col justify-end pb-1.5">
@@ -358,6 +514,16 @@ const StaffManagement = () => {
                                             </div>
                                             <span className="text-sm font-medium text-gray-700">Active Account</span>
                                         </label>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Employee Documents (PDF/Image)</label>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                                            onChange={(e) => setFormData({ ...formData, documents: e.target.files })}
+                                        />
+                                        <p className="text-[10px] text-gray-400 mt-1">You can select multiple files.</p>
                                     </div>
                                 </div>
                             </div>
@@ -410,6 +576,127 @@ const StaffManagement = () => {
                             <button type="submit" onClick={handleSubmit} className="px-5 py-2.5 text-sm font-bold text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
                                 {editingEmployee ? "Save Changes" : "Create Staff"}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Role Management Modal */}
+            {showRoleModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowRoleModal(false)} />
+                    <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">Role Management</h2>
+                                <p className="text-xs text-gray-500 mt-1">Create and manage custom roles and their permissions.</p>
+                            </div>
+                            <button onClick={() => setShowRoleModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                                <FiX size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+                            {/* Role List Side */}
+                            <div className="w-full md:w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/30">
+                                <div className="p-4 border-b border-gray-100 bg-white">
+                                    <button
+                                        onClick={() => handleOpenRoleModal()}
+                                        className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <FiUserPlus size={16} />
+                                        Create New Role
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                                    {roles.length === 0 ? (
+                                        <p className="text-center py-8 text-gray-400 text-sm italic">No custom roles yet.</p>
+                                    ) : (
+                                        roles.map(role => (
+                                            <div
+                                                key={role._id}
+                                                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${editingRole?._id === role._id ? 'bg-primary-50 border-primary-100 text-primary-700 shadow-sm' : 'hover:bg-white hover:shadow-sm text-gray-700'}`}
+                                                onClick={() => handleOpenRoleModal(role)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${editingRole?._id === role._id ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
+                                                        <FiShield size={16} />
+                                                    </div>
+                                                    <span className="text-sm font-semibold uppercase tracking-tight">{role.name}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteRole(role._id); }}
+                                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                >
+                                                    <FiTrash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Role Editor Side */}
+                            <div className="flex-1 flex flex-col bg-white">
+                                <form onSubmit={handleRoleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5 tracking-tight uppercase">Role Name</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-all font-medium"
+                                                    placeholder="e.g. Content Manager"
+                                                    value={roleFormData.name}
+                                                    onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5 tracking-tight uppercase">Description</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-all"
+                                                    placeholder="Briefly describe what this role does..."
+                                                    value={roleFormData.description}
+                                                    onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-gray-100 pt-6">
+                                            <label className="block text-sm font-bold text-gray-800 mb-4 tracking-tight uppercase flex items-center gap-2">
+                                                <FiLock className="text-primary-500" />
+                                                Permissions & Access
+                                            </label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+                                                {PERMISSIONS.map(cap => (
+                                                    <label key={cap.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${roleFormData.permissions.includes(cap.id) ? 'bg-primary-50/50 border-primary-200 ring-1 ring-primary-100' : 'bg-white border-gray-100 hover:border-gray-300'}`}>
+                                                        <div className="relative flex-shrink-0">
+                                                            <input type="checkbox" className="peer sr-only" checked={roleFormData.permissions.includes(cap.id)} onChange={() => toggleRolePermission(cap.id)} />
+                                                            <div className="w-5 h-5 rounded-md border-2 border-gray-200 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-all bg-white">
+                                                                {roleFormData.permissions.includes(cap.id) && <FiCheckCircle className="text-white w-3.5 h-3.5" />}
+                                                            </div>
+                                                        </div>
+                                                        <span className={`text-sm font-semibold ${roleFormData.permissions.includes(cap.id) ? 'text-primary-800' : 'text-gray-600'}`}>
+                                                            {cap.label}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 mt-auto">
+                                        <button type="submit" className="w-full bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-primary-700 shadow-md shadow-primary-500/20 transition-all flex items-center justify-center gap-2">
+                                            {editingRole ? "Update Role" : "Create New Role"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

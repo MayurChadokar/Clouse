@@ -5,7 +5,7 @@ import api from '../../../shared/utils/api';
 
 export const useAdminAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       admin: null,
       token: null,
       refreshToken: null,
@@ -38,6 +38,16 @@ export const useAdminAuthStore = create(
         }
       },
 
+      setUnauthenticated: () => {
+        set({
+          admin: null,
+          token: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          isLoading: false
+        });
+      },
+
       // Admin logout
       logout: () => {
         const refreshToken = localStorage.getItem('adminRefreshToken');
@@ -51,13 +61,7 @@ export const useAdminAuthStore = create(
         localStorage.removeItem('admin-auth-storage');
 
         // Reset store state
-        set({
-          admin: null,
-          token: null,
-          refreshToken: null,
-          isAuthenticated: false,
-          isLoading: false
-        });
+        get().setUnauthenticated();
 
         // Force a page reload to clear any lingering React memory/state
         window.location.href = '/admin/login';
@@ -69,3 +73,12 @@ export const useAdminAuthStore = create(
     }
   )
 );
+
+// Listen for global auth failure (401 from interceptor)
+if (typeof window !== 'undefined') {
+  window.addEventListener('global-auth-failure', (e) => {
+    if (e.detail?.scope === 'admin') {
+      useAdminAuthStore.getState().setUnauthenticated();
+    }
+  });
+}

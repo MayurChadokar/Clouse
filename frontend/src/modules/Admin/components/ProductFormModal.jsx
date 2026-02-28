@@ -77,6 +77,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     relatedProducts: [],
     faqs: [],
     approvalStatus: "pending",
+    vendorPrice: "",
   });
 
   const extractId = (value) => {
@@ -174,6 +175,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
             relatedProducts: product.relatedProducts || [],
             faqs: Array.isArray(product.faqs) ? product.faqs : [],
             approvalStatus: product.approvalStatus || "pending",
+            vendorPrice: product.vendorPrice || product.originalPrice || "",
           });
         }
       } catch (error) {
@@ -240,6 +242,28 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const [marginPercent, setMarginPercent] = useState(0);
+
+  useEffect(() => {
+    if (formData.price && formData.vendorPrice) {
+      const price = parseFloat(formData.price) || 0;
+      const cost = parseFloat(formData.vendorPrice) || 0;
+      if (cost > 0) {
+        setMarginPercent(((price - cost) / cost) * 100);
+      }
+    }
+  }, [formData.vendorPrice, formData.price]);
+
+  const handleMarginChange = (e) => {
+    const margin = parseFloat(e.target.value) || 0;
+    setMarginPercent(margin);
+    const cost = parseFloat(formData.vendorPrice) || 0;
+    if (cost > 0) {
+      const newPrice = cost + (cost * margin) / 100;
+      setFormData((prev) => ({ ...prev, price: newPrice.toFixed(2) }));
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -612,6 +636,9 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
       originalPrice: formData.originalPrice
         ? parseFloat(formData.originalPrice)
         : null,
+      vendorPrice: formData.vendorPrice
+        ? parseFloat(formData.vendorPrice)
+        : 0,
       stockQuantity: parseInt(formData.stockQuantity),
       totalAllowedQuantity: formData.totalAllowedQuantity
         ? parseInt(formData.totalAllowedQuantity)
@@ -664,6 +691,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
         ...formData,
         price: parseFloat(formData.price),
         originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
+        vendorPrice: formData.vendorPrice ? parseFloat(formData.vendorPrice) : 0,
         stockQuantity: parseInt(formData.stockQuantity),
         isActive: true,
         isVisible: true,
@@ -673,6 +701,17 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
       await updateProduct(productId, submissionData);
       toast.success("Product approved and saved successfully");
 
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (error) {
+      // Error handled by interceptor
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await updateProductStatus(productId, "rejected");
+      toast.success("Product rejected");
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
@@ -868,10 +907,11 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                     <h3 className="text-lg font-bold text-gray-800 mb-4">
                       Pricing & Margin
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <label className="block text-sm font-bold text-blue-700 mb-2">
-                          Cost Price (Vendor)
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {/* Tier 1: MRP */}
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          Original Price (MRP)
                         </label>
                         <input
                           type="number"
@@ -880,15 +920,53 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           onChange={handleChange}
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                          placeholder="Vendor's quoted price"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white font-bold"
+                          placeholder="MRP for strikethrough"
                         />
-                        <p className="mt-1 text-xs text-blue-600">This is the original price from vendor.</p>
+                        <p className="mt-1 text-xs text-gray-500">Maximum Retail Price</p>
                       </div>
 
+                      {/* Tier 2: Vendor Pricing */}
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <label className="block text-sm font-bold text-blue-700 mb-2">
+                          Vendor Price (Cost)
+                        </label>
+                        <input
+                          type="number"
+                          name="vendorPrice"
+                          value={formData.vendorPrice}
+                          onChange={handleChange}
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-bold text-blue-900"
+                          placeholder="Vendor's payment"
+                        />
+                        <p className="mt-1 text-xs text-blue-600">Base cost from vendor</p>
+                      </div>
+
+                      {/* Tier 3: Margin */}
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                        <label className="block text-sm font-bold text-purple-700 mb-2">
+                          Margin (%)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={marginPercent.toFixed(2)}
+                            onChange={handleMarginChange}
+                            step="0.1"
+                            className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white font-bold text-purple-900"
+                            placeholder="Profit %"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 font-bold">%</span>
+                        </div>
+                        <p className="mt-1 text-xs text-purple-600">Calculates selling price</p>
+                      </div>
+
+                      {/* Tier 4: Selling Price */}
                       <div className="bg-green-50 p-4 rounded-lg border border-green-100">
                         <label className="block text-sm font-bold text-green-700 mb-2">
-                          Selling Price (Admin/Customer) <span className="text-red-500">*</span>
+                          Selling Price <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="number"
@@ -898,21 +976,44 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           required
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-                          placeholder="Final price for customers"
+                          className="w-full px-3 py-2 text-sm border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white font-bold text-green-900"
+                          placeholder="Final price"
                         />
-                        <p className="mt-1 text-xs text-green-600">Include your margin in this price.</p>
+                        <p className="mt-1 text-xs text-green-600 font-medium">Customer-facing price</p>
                       </div>
 
-                      {formData.price && formData.originalPrice && parseFloat(formData.originalPrice) > 0 && (
-                        <div className="md:col-span-2 text-right">
-                          <span className="text-sm font-bold text-gray-700">
-                            Calculated Margin:
-                            <span className={parseFloat(formData.price) - parseFloat(formData.originalPrice) >= 0 ? "text-green-600 ml-2" : "text-red-600 ml-2"}>
-                              {formatPrice(parseFloat(formData.price) - parseFloat(formData.originalPrice))}
-                              ({(((parseFloat(formData.price) - parseFloat(formData.originalPrice)) / parseFloat(formData.originalPrice)) * 100).toFixed(2)}%)
-                            </span>
-                          </span>
+                      {formData.price && formData.vendorPrice && parseFloat(formData.vendorPrice) > 0 && (
+                        <div className="md:col-span-4 bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between items-center">
+                          <div className="flex gap-4">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Net Profit</span>
+                              <span className={`text-sm font-black ${parseFloat(formData.price) - parseFloat(formData.vendorPrice) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                {formatPrice(parseFloat(formData.price) - parseFloat(formData.vendorPrice))}
+                              </span>
+                            </div>
+                            <div className="flex flex-col border-l pl-4 border-gray-300">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Markup %</span>
+                              <span className={`text-sm font-black ${marginPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                {marginPercent.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div className="flex flex-col border-l pl-4 border-gray-300">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Total Customer Discount</span>
+                              <span className="text-sm font-black text-orange-600">
+                                {formData.originalPrice && parseFloat(formData.originalPrice) > parseFloat(formData.price)
+                                  ? formatPrice(parseFloat(formData.originalPrice) - parseFloat(formData.price))
+                                  : "No Discount"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Listing Price</span>
+                              <span className="text-xl font-black text-gray-900 leading-tight">
+                                {formatPrice(parseFloat(formData.price))}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1614,13 +1715,22 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                     </Button>
 
                     {isEdit && formData.approvalStatus === 'pending' && (
-                      <Button
-                        type="button"
-                        onClick={handleApprove}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        size="sm">
-                        Approve & Save
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          onClick={handleReject}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          size="sm">
+                          Reject Product
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleApprove}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          size="sm">
+                          Approve & Save
+                        </Button>
+                      </>
                     )}
 
                     <Button
@@ -1637,7 +1747,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence >
   );
 };
 

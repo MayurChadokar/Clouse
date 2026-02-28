@@ -243,11 +243,11 @@ export const createProduct = asyncHandler(async (req, res) => {
     if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
         throw new ApiError(400, 'Invalid low stock threshold.');
     }
-    const price = Number(rest.price);
-    if (!Number.isFinite(price) || price < 0) {
+    const vendorPrice = Number(rest.price);
+    if (!Number.isFinite(vendorPrice) || vendorPrice < 0) {
         throw new ApiError(400, 'Invalid product price.');
     }
-    const normalizedVariants = normalizeVariantsPayload(rest.variants, price);
+    const normalizedVariants = normalizeVariantsPayload(rest.variants, vendorPrice);
     const variantAggregateStock = calculateVariantAggregateStock(normalizedVariants);
     const finalStockQuantity = Number.isFinite(variantAggregateStock)
         ? variantAggregateStock
@@ -259,7 +259,8 @@ export const createProduct = asyncHandler(async (req, res) => {
         slug,
         vendorId: req.user.id,
         ...rest,
-        originalPrice: price, // This is what the vendor wants to be paid
+        vendorPrice: vendorPrice, // This is what the vendor wants to be paid
+        originalPrice: Number(rest.originalPrice ?? 0), // MRP
         price: 0, // Admin will set the final customer price including margin
         variants: normalizedVariants,
         faqs: sanitizeFaqs(rest.faqs),
@@ -320,14 +321,21 @@ export const updateProduct = asyncHandler(async (req, res) => {
         product.stock = deriveStockStatus(stockQuantity, lowStockThreshold);
     }
     if (typeof req.body.price !== 'undefined') {
-        const price = Number(req.body.price);
-        if (!Number.isFinite(price) || price < 0) {
+        const vendorRequestedPrice = Number(req.body.price);
+        if (!Number.isFinite(vendorRequestedPrice) || vendorRequestedPrice < 0) {
             throw new ApiError(400, 'Invalid product price.');
         }
-        product.price = price;
+        product.vendorPrice = vendorRequestedPrice;
+        product.price = 0; // Admin must set the final price
+        product.approvalStatus = 'pending';
+        product.isActive = false;
+        product.isVisible = false;
+    }
+    if (typeof req.body.originalPrice !== 'undefined') {
+        product.originalPrice = Number(req.body.originalPrice) || 0;
     }
     if (Object.prototype.hasOwnProperty.call(req.body, 'variants')) {
-        product.variants = normalizeVariantsPayload(req.body.variants, product.price);
+        product.variants = normalizeVariantsPayload(req.body.variants, product.vendorPrice);
         const variantAggregateStock = calculateVariantAggregateStock(product.variants);
         if (Number.isFinite(variantAggregateStock)) {
             product.stockQuantity = variantAggregateStock;
@@ -339,7 +347,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         Number(product.lowStockThreshold ?? 10)
     );
     await product.save();
-    res.status(200).json(new ApiResponse(200, product, 'Product updated.'));
+    res.status(200).json(new ApiResponse(200, product, 'Product updated and sent for re-approval.'));
 });
 
 // DELETE /api/vendor/products/:id

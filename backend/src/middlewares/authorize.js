@@ -20,6 +20,21 @@ export const authorize = (...roles) =>
     };
 
 /**
+ * Middleware for generic admin access (any role that is in Admin collection)
+ */
+export const authorizeAdmin = (req, res, next) => {
+    if (!req.user) return next(new ApiError(401, 'Authentication required.'));
+    // We assume any role that isn't customer, vendor, or delivery is an admin-type role 
+    // This is safe because enforceAccountStatus will double check the Admin table.
+    const forbidden = ['customer', 'vendor', 'delivery'];
+    if (forbidden.includes(req.user.role)) {
+        return next(new ApiError(403, 'Access denied. Generic admin role required.'));
+    }
+    next();
+};
+
+
+/**
  * Middleware to check if admin has specific permission
  * Superadmins bypass all permission checks
  */
@@ -85,14 +100,14 @@ export const enforceAccountStatus = async (req, res, next) => {
             return next();
         }
 
-        if (role === 'admin' || role === 'superadmin' || role === 'employee') {
-            const admin = await Admin.findById(req.user.id).select('isActive').lean();
-            if (!admin) return next(new ApiError(401, 'Account not found.'));
+        // Fallback or Admin-like roles
+        const admin = await Admin.findById(req.user.id).select('isActive').lean();
+        if (admin) {
             if (!admin.isActive) return next(new ApiError(403, 'Admin account is deactivated.'));
             return next();
         }
 
-        return next(new ApiError(403, 'Access denied.'));
+        return next(new ApiError(403, 'Access denied. Invalid account type.'));
     } catch (err) {
         return next(err);
     }

@@ -142,6 +142,38 @@ export const updateCommissionRate = (id, commissionRate) =>
 export const getVendorCommissions = (id, params = {}) =>
     api.get(`/admin/vendors/${id}/commissions`, { params });
 
+// ─── Attributes ──────────────────────────────────────────────────────────────
+export const getAllAttributes = (params = {}) =>
+    api.get('/admin/attributes', { params });
+
+export const createAttribute = (data) =>
+    api.post('/admin/attributes', data);
+
+export const updateAttribute = (id, data) =>
+    api.put(`/admin/attributes/${id}`, data);
+
+export const deleteAttribute = (id) =>
+    api.delete(`/admin/attributes/${id}`);
+
+export const addAttributeValue = (attributeId, data) =>
+    api.post(`/admin/attributes/${attributeId}/values`, data);
+
+export const deleteAttributeValue = (attributeId, valueId) =>
+    api.delete(`/admin/attributes/${attributeId}/values/${valueId}`);
+
+export const getAllAttributeSets = () =>
+    api.get('/admin/attribute-sets');
+
+export const createAttributeSet = (data) =>
+    api.post('/admin/attribute-sets', data);
+
+export const updateAttributeSet = (id, data) =>
+    api.put(`/admin/attribute-sets/${id}`, data);
+
+export const deleteAttributeSet = (id) =>
+    api.delete(`/admin/attribute-sets/${id}`);
+
+
 // ─── Customers ────────────────────────────────────────────────────────────────
 export const getAllCustomers = (params = {}) =>
     api.get('/admin/customers', { params });

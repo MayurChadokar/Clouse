@@ -29,8 +29,9 @@ export const createEmployee = asyncHandler(async (req, res) => {
         email,
         password,
         role: role || 'employee',
-        permissions: permissions || [],
-        addedBy: req.user.id
+        permissions: permissions ? (typeof permissions === 'string' ? JSON.parse(permissions) : permissions) : [],
+        addedBy: req.user.id,
+        documents: req.files ? req.files.map(f => f.path || f.url) : []
     });
 
     const employeeObj = employee.toObject();
@@ -54,8 +55,14 @@ export const updateEmployee = asyncHandler(async (req, res) => {
 
     if (name) employee.name = name;
     if (role) employee.role = role;
-    if (permissions) employee.permissions = permissions;
+    if (permissions) {
+        employee.permissions = typeof permissions === 'string' ? JSON.parse(permissions) : permissions;
+    }
     if (isActive !== undefined) employee.isActive = isActive;
+    if (req.files && req.files.length > 0) {
+        const newDocs = req.files.map(f => f.path || f.url);
+        employee.documents = [...(employee.documents || []), ...newDocs];
+    }
 
     await employee.save();
 

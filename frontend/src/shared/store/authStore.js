@@ -178,20 +178,25 @@ export const useAuthStore = create(
         }
       },
 
-      // Logout action
-      logout: () => {
-        const refreshToken = localStorage.getItem('refresh-token');
-        if (refreshToken) {
-          api.post('/user/auth/logout', { refreshToken }).catch(() => {});
-        }
-
+      setUnauthenticated: () => {
         set({
           user: null,
           token: null,
           refreshToken: null,
           isAuthenticated: false,
           pendingEmail: null,
+          isLoading: false,
         });
+      },
+
+      // Logout action
+      logout: () => {
+        const refreshToken = localStorage.getItem('refresh-token');
+        if (refreshToken) {
+          api.post('/user/auth/logout', { refreshToken }).catch(() => { });
+        }
+
+        get().setUnauthenticated();
         localStorage.removeItem('token');
         localStorage.removeItem('refresh-token');
         localStorage.removeItem('cart-storage');
@@ -219,7 +224,7 @@ export const useAuthStore = create(
             user: updatedUser,
             isLoading: false,
           });
-          
+
           return { success: true, user: updatedUser };
         } catch (error) {
           set({ isLoading: false });
@@ -301,4 +306,13 @@ export const useAuthStore = create(
     }
   )
 );
+
+// Listen for global auth failure (401 from interceptor)
+if (typeof window !== 'undefined') {
+  window.addEventListener('global-auth-failure', (e) => {
+    if (e.detail?.scope === 'user') {
+      useAuthStore.getState().setUnauthenticated();
+    }
+  });
+}
 

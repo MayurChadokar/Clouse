@@ -98,6 +98,11 @@ export const getVendorProductById = (id) =>
 export const createVendorProduct = (data) => api.post('/vendor/products', data);
 
 /**
+ * Get all attribute sets
+ */
+export const getAllAttributeSets = () => api.get('/vendor/attribute-sets');
+
+/**
  * Update an existing product
  * @param {string} id  — MongoDB _id
  * @param {object} data

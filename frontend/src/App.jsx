@@ -12,6 +12,7 @@ import ErrorBoundary from "./shared/components/ErrorBoundary/ErrorBoundary";
 import AdminLogin from "./modules/Admin/pages/Login";
 import AdminProtectedRoute from "./modules/Admin/components/AdminProtectedRoute";
 import AdminLayout from "./modules/Admin/components/Layout/AdminLayout";
+import Attributes from "./modules/Admin/pages/Attributes";
 import Dashboard from "./modules/Admin/pages/Dashboard";
 import Products from "./modules/Admin/pages/Products";
 import ProductForm from "./modules/Admin/pages/ProductForm";
@@ -65,6 +66,7 @@ import RegisterVendor from "./modules/Admin/pages/vendors/RegisterVendor";
 import VendorDetail from "./modules/Admin/pages/vendors/VendorDetail";
 import CommissionRates from "./modules/Admin/pages/vendors/CommissionRates";
 import AdminVendorAnalytics from "./modules/Admin/pages/vendors/VendorAnalytics";
+import VendorExplorer from "./modules/Admin/pages/vendors/VendorExplorer";
 
 // Offers & Sliders child pages
 import HomeSliders from "./modules/Admin/pages/offers/HomeSliders";
@@ -431,8 +433,14 @@ const AppRoutes = () => {
           path="vendors/vendor-analytics"
           element={<AdminVendorAnalytics />}
         />
+        <Route path="vendors/explorer" element={<VendorExplorer />} />
         <Route path="vendors/register" element={<RegisterVendor />} />
         <Route path="vendors/:id" element={<VendorDetail />} />
+
+        <Route path="attributes" element={<Attributes />} />
+        <Route path="attributes/list" element={<Attributes />} />
+        <Route path="attributes/sets" element={<Attributes />} />
+        <Route path="attributes/values" element={<Attributes />} />
 
         <Route path="offers" element={<HomeSliders />} />
         <Route path="offers/home-sliders" element={<HomeSliders />} />

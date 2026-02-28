@@ -14,11 +14,14 @@ import * as marketingController from '../controllers/marketing.controller.js';
 import * as reportController from '../controllers/report.controller.js';
 import * as notificationController from '../controllers/notification.controller.js';
 import * as employeeController from '../controllers/employee.controller.js';
+import * as roleController from '../controllers/role.controller.js';
+import * as attributeController from '../controllers/attribute.controller.js';
+
 import { authenticate } from '../../../middlewares/authenticate.js';
-import { authorize, enforceAccountStatus, checkPermission } from '../../../middlewares/authorize.js';
+import { authorize, enforceAccountStatus, checkPermission, authorizeAdmin } from '../../../middlewares/authorize.js';
 import { authLimiter } from '../../../middlewares/rateLimiter.js';
 import { validate } from '../../../middlewares/validate.js';
-import { uploadSingle } from '../../../middlewares/upload.js';
+import { uploadSingle, uploadDocumentSingle, uploadDocumentMultiple } from '../../../middlewares/upload.js';
 import { refreshTokenSchema, logoutSchema } from '../validators/auth.validator.js';
 import {
     createProductSchema,
@@ -65,9 +68,9 @@ import {
 } from '../validators/marketing.validator.js';
 
 const router = Router();
-const adminAuth = [authenticate, authorize('admin', 'superadmin', 'employee'), enforceAccountStatus];
+const adminAuth = [authenticate, authorizeAdmin, enforceAccountStatus];
 const superAdminOnly = [authenticate, authorize('superadmin'), enforceAccountStatus];
-const adminManager = [authenticate, authorize('admin', 'superadmin'), enforceAccountStatus];
+const adminManager = [authenticate, authorizeAdmin, enforceAccountStatus]; // Allowing any admin-like role for management, further restricted by permissions
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 router.post('/auth/login', authLimiter, authController.login);
@@ -77,9 +80,16 @@ router.get('/auth/profile', ...adminAuth, authController.getProfile);
 
 // ─── Employee Management ──────────────────────────────────────────────────────
 router.get('/employees', ...adminManager, employeeController.getAllEmployees);
-router.post('/employees', ...adminManager, employeeController.createEmployee);
-router.put('/employees/:id', ...adminManager, employeeController.updateEmployee);
+router.post('/employees', ...adminManager, uploadDocumentMultiple('documents', 5), employeeController.createEmployee);
+router.put('/employees/:id', ...adminManager, uploadDocumentMultiple('documents', 5), employeeController.updateEmployee);
 router.delete('/employees/:id', ...adminManager, employeeController.deleteEmployee);
+
+// ─── Role Management ──────────────────────────────────────────────────────────
+router.get('/roles', ...adminManager, roleController.getAllRoles);
+router.post('/roles', ...adminManager, roleController.createRole);
+router.put('/roles/:id', ...adminManager, roleController.updateRole);
+router.delete('/roles/:id', ...adminManager, roleController.deleteRole);
+
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
 router.get('/analytics/dashboard', ...adminAuth, checkPermission('dashboard_view'), analyticsController.getDashboardStats);
@@ -172,6 +182,22 @@ router.get('/reviews', ...adminAuth, checkPermission('products_manage'), reviewC
 router.patch('/reviews/:id/status', ...adminAuth, checkPermission('products_manage'), reviewController.updateReviewStatus);
 router.delete('/reviews/:id', ...adminAuth, checkPermission('products_manage'), reviewController.deleteReview);
 router.post('/uploads/image', ...adminAuth, uploadController.uploadImage);
+
+// ─── Attribute Management ─────────────────────────────────────────────────────
+router.get('/attributes', ...adminAuth, checkPermission('attributes_manage'), attributeController.getAllAttributes);
+router.post('/attributes', ...adminAuth, checkPermission('attributes_manage'), attributeController.createAttribute);
+router.put('/attributes/:id', ...adminAuth, checkPermission('attributes_manage'), attributeController.updateAttribute);
+router.delete('/attributes/:id', ...adminAuth, checkPermission('attributes_manage'), attributeController.deleteAttribute);
+
+// Values
+router.post('/attributes/:attributeId/values', ...adminAuth, checkPermission('attributes_manage'), attributeController.addAttributeValue);
+router.delete('/attributes/:attributeId/values/:valueId', ...adminAuth, checkPermission('attributes_manage'), attributeController.deleteAttributeValue);
+
+// Sets
+router.get('/attribute-sets', ...adminAuth, checkPermission('attributes_manage'), attributeController.getAllAttributeSets);
+router.post('/attribute-sets', ...adminAuth, checkPermission('attributes_manage'), attributeController.createAttributeSet);
+router.put('/attribute-sets/:id', ...adminAuth, checkPermission('attributes_manage'), attributeController.updateAttributeSet);
+router.delete('/attribute-sets/:id', ...adminAuth, checkPermission('attributes_manage'), attributeController.deleteAttributeSet);
 
 // ─── Marketing & Promotions ──────────────────────────────────────────────────
 // Coupons

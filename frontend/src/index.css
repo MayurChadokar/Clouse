@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,25 +8,38 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.outfit,
+.font-premium {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 html {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #F8FAFC;
+  color: #1E293B;
+  line-height: 1.5;
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-  /* Hide scrollbar */
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -272,12 +287,10 @@ body::-webkit-scrollbar {
   }
 
   .shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.4) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
@@ -286,6 +299,7 @@ body::-webkit-scrollbar {
     0% {
       background-position: -200% 0;
     }
+
     100% {
       background-position: 200% 0;
     }
@@ -294,6 +308,7 @@ body::-webkit-scrollbar {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

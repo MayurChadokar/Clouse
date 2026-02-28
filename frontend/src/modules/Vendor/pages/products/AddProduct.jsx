@@ -6,7 +6,7 @@ import { useVendorAuthStore } from "../../store/vendorAuthStore";
 import { useVendorProductStore } from "../../store/vendorProductStore";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
-import { uploadVendorImage, uploadVendorImages } from "../../services/vendorService";
+import { uploadVendorImage, uploadVendorImages, getAllAttributeSets } from "../../services/vendorService";
 import CategorySelector from "../../../Admin/components/CategorySelector";
 import AnimatedSelect from "../../../Admin/components/AnimatedSelect";
 import toast from "react-hot-toast";
@@ -23,6 +23,8 @@ const AddProduct = () => {
   const { addProduct, isSaving } = useVendorProductStore();
   const { initialize: initCategories } = useCategoryStore();
   const { brands, initialize: initBrands } = useBrandStore();
+
+  const [availableSets, setAvailableSets] = useState([]);
 
   const vendorId = vendor?.id;
 
@@ -87,7 +89,19 @@ const AddProduct = () => {
   useEffect(() => {
     initCategories();
     initBrands();
+    fetchAttributeSets();
   }, [initCategories, initBrands]);
+
+  const fetchAttributeSets = async () => {
+    try {
+      const res = await getAllAttributeSets();
+      if (res?.data) {
+        setAvailableSets(res.data);
+      }
+    } catch (e) {
+      console.error("Failed to load attribute sets", e);
+    }
+  };
 
   useEffect(() => {
     if (!vendorId) {
@@ -711,10 +725,30 @@ const AddProduct = () => {
             Product Variants
           </h2>
           <div className="space-y-3">
+            {/* Attribute Sets Dropdowns Refactored Inline */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Sizes
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Sizes
+                </label>
+                {availableSets.length > 0 && (
+                  <select
+                    className="px-2 py-1 bg-white border border-gray-300 rounded-md focus:ring-primary-500 text-[10px] font-semibold text-gray-600 outline-none"
+                    onChange={e => {
+                      const set = availableSets.find(s => s._id === e.target.value);
+                      if (set && set.values?.length) {
+                        addVariantAxisValues('sizes', set.values.join(', '));
+                      }
+                      e.target.value = "";
+                    }}
+                  >
+                    <option value="">+ Copy from Set...</option>
+                    {availableSets.map(s => (
+                      <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   {(formData.variants?.sizes || []).map((size) => (
@@ -756,9 +790,28 @@ const AddProduct = () => {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Colors
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Colors
+                </label>
+                {availableSets.length > 0 && (
+                  <select
+                    className="px-2 py-1 bg-white border border-gray-300 rounded-md focus:ring-primary-500 text-[10px] font-semibold text-gray-600 outline-none"
+                    onChange={e => {
+                      const set = availableSets.find(s => s._id === e.target.value);
+                      if (set && set.values?.length) {
+                        addVariantAxisValues('colors', set.values.join(', '));
+                      }
+                      e.target.value = "";
+                    }}
+                  >
+                    <option value="">+ Copy from Set...</option>
+                    {availableSets.map(s => (
+                      <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   {(formData.variants?.colors || []).map((color) => (
@@ -804,13 +857,33 @@ const AddProduct = () => {
                 <label className="block text-xs font-semibold text-gray-700">
                   Dynamic Attributes (optional)
                 </label>
-                <button
-                  type="button"
-                  onClick={addAttributeRow}
-                  className="px-2 py-1 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Add Attribute
-                </button>
+                <div className="flex items-center gap-2">
+                  {availableSets.length > 0 && (
+                    <select
+                      className="px-2 py-1 bg-white border border-gray-300 rounded-md focus:ring-primary-500 text-[10px] font-semibold text-gray-600 outline-none"
+                      onChange={e => {
+                        const set = availableSets.find(s => s._id === e.target.value);
+                        if (set && set.values?.length) {
+                          const current = Array.isArray(formData.variants?.attributes) ? formData.variants.attributes : [];
+                          updateVariantAttributes([...current, { name: set.name, values: set.values }]);
+                        }
+                        e.target.value = "";
+                      }}
+                    >
+                      <option value="">+ Add from Set...</option>
+                      {availableSets.map(s => (
+                        <option key={s._id} value={s._id}>{s.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    onClick={addAttributeRow}
+                    className="px-2 py-1 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Add Attribute
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-gray-500 mb-2">
                 Example: RAM {"->"} 8GB, 16GB | Storage {"->"} 128GB, 256GB

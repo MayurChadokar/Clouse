@@ -143,8 +143,8 @@ const ProductForm = () => {
     setFormData({
       name: product.name || "",
       unit: product.unit || "",
-      price: product.price || "",
-      originalPrice: product.originalPrice || product.price || "",
+      price: product.vendorPrice || product.price || "",
+      originalPrice: product.originalPrice || "",
       image: product.image || "",
       images: product.images || [],
       categoryId: isSubcategory
@@ -600,7 +600,7 @@ const ProductForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Price <span className="text-red-500">*</span>
+                Your Price (Requested Payment) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -617,7 +617,7 @@ const ProductForm = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Original Price (for discount)
+                Original Price (MRP)
               </label>
               <input
                 type="number"
@@ -629,6 +629,7 @@ const ProductForm = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 placeholder="0.00"
               />
+              <p className="text-[10px] text-gray-400 mt-1 italic">This will be shown as a strikethrough price.</p>
             </div>
           </div>
         </div>

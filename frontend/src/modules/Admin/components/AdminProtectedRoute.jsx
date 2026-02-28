@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAdminAuthStore } from '../store/adminStore';
 
@@ -14,7 +15,7 @@ const decodeJwtPayload = (token) => {
 };
 
 const AdminProtectedRoute = ({ children }) => {
-  const { isAuthenticated, token } = useAdminAuthStore();
+  const { isAuthenticated, token, logout } = useAdminAuthStore();
   const location = useLocation();
   const accessToken = token || localStorage.getItem('adminToken');
   const payload = decodeJwtPayload(accessToken);
@@ -23,21 +24,15 @@ const AdminProtectedRoute = ({ children }) => {
     typeof payload?.exp === 'number' ? payload.exp * 1000 : null;
   const isExpired = tokenExpiryMs ? Date.now() >= tokenExpiryMs : false;
 
-  if (!isAuthenticated || !accessToken) {
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
-  }
+  const shouldLogout = (isAuthenticated && accessToken) && (isExpired || (role && !['admin', 'superadmin', 'employee'].includes(role)));
 
-  if (isExpired) {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminRefreshToken');
-    localStorage.removeItem('admin-auth-storage');
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
-  }
+  useEffect(() => {
+    if (shouldLogout) {
+      logout();
+    }
+  }, [shouldLogout, logout]);
 
-  if (role && role !== 'admin' && role !== 'superadmin' && role !== 'employee') {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminRefreshToken');
-    localStorage.removeItem('admin-auth-storage');
+  if (!isAuthenticated || !accessToken || shouldLogout) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 

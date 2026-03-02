@@ -42,31 +42,31 @@ const ProfileSidebar = () => {
 
     return (
         <aside className="w-full lg:w-[320px] shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-[#1a1a1a] rounded-2xl shadow-xl border border-white/10 overflow-hidden">
                 <nav className="flex flex-col">
                     {sidebarLinks.map((link) => (
                         <button
                             key={link.id}
                             onClick={() => link.path && navigate(link.path)}
-                            className={`flex items-center justify-between px-6 py-4 transition-all border-b border-gray-50 last:border-0 ${isActive(link.path)
-                                ? 'bg-black text-white'
-                                : 'text-gray-700 hover:bg-gray-50'
+                            className={`flex items-center justify-between px-6 py-4 transition-all border-b border-white/5 last:border-0 ${isActive(link.path)
+                                ? 'bg-[#D4AF37] text-black shadow-[0_4px_20px_rgba(212,175,55,0.2)]'
+                                : 'text-white/70 hover:bg-white/5 hover:text-[#FAFAFA]'
                                 }`}
                         >
                             <div className="flex items-center gap-4">
                                 {link.icon && (
-                                    <span className={`p-2 rounded-lg ${isActive(link.path) ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                    <span className={`p-2 rounded-lg ${isActive(link.path) ? 'bg-black/10' : 'bg-white/5 text-[#D4AF37]'}`}>
                                         {link.icon}
                                     </span>
                                 )}
                                 <span className="font-semibold text-[15px]">{link.label}</span>
                             </div>
-                            {!isActive(link.path) && <ChevronRight size={16} className="text-gray-300" />}
+                            {!isActive(link.path) && <ChevronRight size={16} className="text-white/30" />}
                         </button>
                     ))}
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-4 px-6 py-6 text-gray-400 font-bold hover:text-red-500 transition-colors"
+                        className="flex items-center gap-4 px-6 py-6 text-white/40 font-bold hover:text-red-500 transition-colors hover:bg-white/5"
                     >
                         <LogOut size={18} />
                         <span>Logout</span>

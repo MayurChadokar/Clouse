@@ -6,6 +6,7 @@ import Commission from '../../../models/Commission.model.js';
 import Settlement from '../../../models/Settlement.model.js';
 import mongoose from 'mongoose';
 import { createNotification } from '../../../services/notification.service.js';
+import { notifyNearbyDeliveryBoys } from '../../delivery/controllers/assignment.controller.js';
 
 const deriveTopLevelOrderStatus = (vendorItems = [], fallback = 'pending') => {
     const statuses = (vendorItems || [])
@@ -17,6 +18,7 @@ const deriveTopLevelOrderStatus = (vendorItems = [], fallback = 'pending') => {
     if (statuses.every((s) => s === 'cancelled')) return 'cancelled';
     if (statuses.every((s) => s === 'delivered')) return 'delivered';
     if (statuses.includes('shipped')) return 'shipped';
+    if (statuses.includes('ready_for_delivery')) return 'ready_for_delivery';
     if (statuses.includes('processing')) return 'processing';
     if (statuses.includes('pending')) return 'pending';
 
@@ -58,18 +60,15 @@ export const getVendorOrderById = asyncHandler(async (req, res) => {
 
 // PATCH /api/vendor/orders/:id/status
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-    const { status } = req.body;
-    const allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (!allowed.includes(status)) throw new ApiError(400, `Status must be one of: ${allowed.join(', ')}`);
-    const transitionMap = {
-        pending: ['pending', 'processing', 'cancelled'],
-        processing: ['processing', 'shipped', 'cancelled'],
-        shipped: ['shipped', 'delivered'],
-        delivered: ['delivered'],
-        cancelled: ['cancelled'],
-    };
+    // Status is already validated and normalized by the middleware
+    const status = req.body.status;
 
     const { id } = req.params;
+    
+    if (!id) {
+        throw new ApiError(400, 'Order ID is required in URL params.');
+    }
+
     const idFilter = [{ orderId: id }];
     if (mongoose.Types.ObjectId.isValid(id)) {
         idFilter.push({ _id: id });
@@ -80,13 +79,25 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         'vendorItems.vendorId': req.user.id,
     });
     if (!order) throw new ApiError(404, 'Order not found.');
+    
     const vendorItem = order.vendorItems.find((vi) => String(vi.vendorId) === String(req.user.id));
     if (!vendorItem) throw new ApiError(404, 'Vendor order item not found.');
 
-    const currentStatus = String(vendorItem.status || 'pending');
+    // Normalize current status defensively (trim + lowercase)
+    const currentStatus = String(vendorItem.status || 'pending').trim().toLowerCase();
+
+    const transitionMap = {
+        pending: ['pending', 'processing', 'ready_for_delivery', 'cancelled'],
+        processing: ['processing', 'ready_for_delivery', 'shipped', 'cancelled'],
+        ready_for_delivery: ['ready_for_delivery', 'shipped', 'cancelled'],
+        shipped: ['shipped', 'delivered'],
+        delivered: ['delivered'],
+        cancelled: ['cancelled'],
+    };
+
     const allowedNextStatuses = transitionMap[currentStatus] || [];
     if (!allowedNextStatuses.includes(status)) {
-        throw new ApiError(409, `Cannot move order from ${currentStatus} to ${status}.`);
+        throw new ApiError(409, `Cannot move order from "${currentStatus}" to "${status}". Allowed: ${allowedNextStatuses.join(', ')}`);
     }
 
     // Update only this vendor's items status
@@ -95,6 +106,17 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     );
     order.status = deriveTopLevelOrderStatus(order.vendorItems, order.status);
     await order.save();
+
+    if (status === 'ready_for_delivery') {
+        const vendor = await mongoose.model('Vendor').findById(req.user.id);
+        if (vendor && vendor.shopLocation) {
+            order.pickupLocation = vendor.shopLocation;
+            await order.save();
+        }
+        await notifyNearbyDeliveryBoys(order).catch(err =>
+            console.error(`[Assignment] Failed to notify delivery boys for order ${order.orderId}:`, err)
+        );
+    }
 
     const notificationTasks = [];
     if (order.userId) {

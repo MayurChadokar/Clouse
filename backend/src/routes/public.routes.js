@@ -538,6 +538,31 @@ router.get('/campaigns/:slug', asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, payload, 'Campaign fetched.'));
 }));
 
+// GET /api/geocode (Proxy for OpenStreetMap Nominatim)
+router.get('/geocode', asyncHandler(async (req, res) => {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) throw new ApiError(400, 'Latitude and Longitude are required.');
+
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lon}`, {
+            headers: {
+                'User-Agent': 'Clothify/1.0',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Nominatim responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        res.status(200).json(new ApiResponse(200, data, 'Geocoding success.'));
+    } catch (error) {
+        console.error("Proxy Geocoding error:", error);
+        throw new ApiError(500, 'Failed to fetch address from geocoding service.');
+    }
+}));
+
 // GET /api/orders/track/:id (public order tracking)
 router.get('/orders/track/:id', asyncHandler(async (req, res) => {
     const { default: Order } = await import('../models/Order.model.js');

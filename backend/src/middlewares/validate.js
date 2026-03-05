@@ -1,9 +1,5 @@
 import ApiError from '../utils/ApiError.js';
 
-/**
- * Validates request body/params/query using a Joi schema
- * Usage: validate(schema, 'body' | 'params' | 'query')
- */
 export const validate = (schema, source = 'body') =>
     (req, res, next) => {
         const { error, value } = schema.validate(req[source], { abortEarly: false, stripUnknown: true });
@@ -12,8 +8,13 @@ export const validate = (schema, source = 'body') =>
                 field: d.path.join('.'),
                 message: d.message,
             }));
+            console.error('\n--- JOI VALIDATION FAILED ---');
+            console.error(`Route: ${req.method} ${req.originalUrl}`);
+            console.error(`Source: ${source}`);
+            console.error(`Received value:`, JSON.stringify(req[source], null, 2));
+            console.error(`Errors:`, JSON.stringify(errors, null, 2));
             return next(new ApiError(400, 'Validation failed', errors));
         }
-        req[source] = value; // replace with sanitized value
+        req[source] = value;
         next();
     };

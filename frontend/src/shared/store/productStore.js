@@ -59,6 +59,11 @@ export const useProductStore = create((set, get) => ({
     },
 
     fetchProductById: async (id) => {
+        // Validation: skip if not a valid Mongo ObjectId to avoid 400 CastError
+        if (!id || !/^[0-9a-fA-F]{24}$/.test(String(id))) {
+            return null;
+        }
+
         // First check locally
         const existing = get().products.find(p => String(p.id) === String(id));
         if (existing) return existing;

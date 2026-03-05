@@ -20,9 +20,11 @@ const normalizeDeliveryBoy = (raw) => {
 };
 
 const mapBackendStatusToUI = (status) => {
-  if (status === 'shipped') return 'in-transit';
+  if (status === 'ready_for_delivery') return 'pending';
+  if (status === 'assigned') return 'assigned';
+  if (status === 'shipped') return 'picked-up';
+  if (status === 'out_for_delivery') return 'out-for-delivery';
   if (status === 'delivered') return 'completed';
-  if (status === 'pending' || status === 'processing') return 'pending';
   return status || 'pending';
 };
 
@@ -103,8 +105,14 @@ export const useDeliveryAuthStore = create(
           if (registrationData.drivingLicense) {
             formData.append('drivingLicense', registrationData.drivingLicense);
           }
+          if (registrationData.drivingLicenseBack) {
+            formData.append('drivingLicenseBack', registrationData.drivingLicenseBack);
+          }
           if (registrationData.aadharCard) {
             formData.append('aadharCard', registrationData.aadharCard);
+          }
+          if (registrationData.aadharCardBack) {
+            formData.append('aadharCardBack', registrationData.aadharCardBack);
           }
 
           const response = await api.post('/delivery/auth/register', formData, {
@@ -203,7 +211,7 @@ export const useDeliveryAuthStore = create(
       logout: () => {
         const refreshToken = localStorage.getItem('delivery-refresh-token');
         if (refreshToken) {
-          api.post('/delivery/auth/logout', { refreshToken }).catch(() => {});
+          api.post('/delivery/auth/logout', { refreshToken }).catch(() => { });
         }
 
         set({
@@ -300,17 +308,58 @@ export const useDeliveryAuthStore = create(
 
           const pagination = hasPaginatedPayload
             ? {
-                total: Number(payload?.pagination?.total || 0),
-                page: Number(payload?.pagination?.page || 1),
-                limit: Number(payload?.pagination?.limit || 20),
-                pages: Number(payload?.pagination?.pages || 1),
-              }
+              total: Number(payload?.pagination?.total || 0),
+              page: Number(payload?.pagination?.page || 1),
+              limit: Number(payload?.pagination?.limit || 20),
+              pages: Number(payload?.pagination?.pages || 1),
+            }
             : {
-                total: list.length,
-                page: 1,
-                limit: list.length || 20,
-                pages: 1,
-              };
+              total: list.length,
+              page: 1,
+              limit: list.length || 20,
+              pages: 1,
+            };
+
+          set({ orders: list, ordersPagination: pagination, isLoadingOrders: false });
+          return list;
+        } catch (error) {
+          set({ isLoadingOrders: false });
+          throw error;
+        }
+      },
+
+      fetchAvailableOrders: async (options = {}) => {
+        set({ isLoadingOrders: true });
+        try {
+          const { page, limit } = options || {};
+          const params = {};
+          if (page !== undefined) params.page = page;
+          if (limit !== undefined) params.limit = limit;
+
+          const response = await api.get('/delivery/orders/available', { params });
+          const payload = response?.data ?? response;
+
+          const hasPaginatedPayload =
+            payload &&
+            !Array.isArray(payload) &&
+            Array.isArray(payload.orders);
+
+          const rawOrders = hasPaginatedPayload ? payload.orders : (Array.isArray(payload) ? payload : []);
+          const list = rawOrders.map(normalizeOrder);
+
+          const pagination = hasPaginatedPayload
+            ? {
+              total: Number(payload?.pagination?.total || 0),
+              page: Number(payload?.pagination?.page || 1),
+              limit: Number(payload?.pagination?.limit || 20),
+              pages: Number(payload?.pagination?.pages || 1),
+            }
+            : {
+              total: list.length,
+              page: 1,
+              limit: list.length || 20,
+              pages: 1,
+            };
 
           set({ orders: list, ordersPagination: pagination, isLoadingOrders: false });
           return list;
@@ -384,16 +433,24 @@ export const useDeliveryAuthStore = create(
       },
 
       acceptOrder: async (id) => {
-        const state = get();
-        const current =
-          state.orders.find((order) => String(order.id) === String(id)) ||
-          (state.selectedOrder && String(state.selectedOrder.id) === String(id)
-            ? state.selectedOrder
-            : null);
-        if (current && current.status !== 'pending') {
-          return current;
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.post(`/delivery/orders/${id}/accept`);
+          const payload = response?.data ?? response;
+          const normalized = normalizeOrder(payload);
+          set((state) => ({
+            orders: state.orders.map((order) => (String(order.id) === String(id) ? normalized : order)),
+            selectedOrder:
+              state.selectedOrder && String(state.selectedOrder.id) === String(id)
+                ? normalized
+                : state.selectedOrder,
+            isUpdatingOrderStatus: false,
+          }));
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
         }
-        return get().updateOrderStatus(id, 'shipped');
       },
 
       completeOrder: async (id, otp) => {
@@ -403,7 +460,8 @@ export const useDeliveryAuthStore = create(
           (state.selectedOrder && String(state.selectedOrder.id) === String(id)
             ? state.selectedOrder
             : null);
-        if (current && current.status !== 'in-transit') {
+        // Allow completion when rider has already picked up the order (backend status: 'shipped' → UI: 'picked-up')
+        if (current && current.status !== 'picked-up') {
           return current;
         }
         return get().updateOrderStatus(id, 'delivered', { otp });

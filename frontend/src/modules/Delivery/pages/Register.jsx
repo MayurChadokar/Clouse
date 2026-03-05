@@ -19,14 +19,16 @@ const DeliveryRegister = () => {
     password: '',
     confirmPassword: '',
     drivingLicense: null,
+    drivingLicenseBack: null,
     aadharCard: null,
+    aadharCardBack: null,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'drivingLicense' || name === 'aadharCard') {
+    if (['drivingLicense', 'drivingLicenseBack', 'aadharCard', 'aadharCardBack'].includes(name)) {
       setFormData((prev) => ({ ...prev, [name]: files?.[0] || null }));
       return;
     }
@@ -40,8 +42,8 @@ const DeliveryRegister = () => {
       toast.error('Please fill in all required fields');
       return;
     }
-    if (!formData.drivingLicense || !formData.aadharCard) {
-      toast.error('Driving License and Aadhar Card are required');
+    if (!formData.drivingLicense || !formData.drivingLicenseBack || !formData.aadharCard || !formData.aadharCardBack) {
+      toast.error('All document images (Front & Back) are required');
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -63,7 +65,9 @@ const DeliveryRegister = () => {
         vehicleNumber: formData.vehicleNumber.trim(),
         password: formData.password,
         drivingLicense: formData.drivingLicense,
+        drivingLicenseBack: formData.drivingLicenseBack,
         aadharCard: formData.aadharCard,
+        aadharCardBack: formData.aadharCardBack,
       });
       toast.success(result.message || 'Registration submitted');
       navigate('/delivery/login', { replace: true });
@@ -141,20 +145,39 @@ const DeliveryRegister = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Document Upload</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Driving License <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input type="file" name="drivingLicense" onChange={handleChange} accept=".pdf,image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Document Upload (Front & Back Required)</h3>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Driving License (Front) <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input type="file" name="drivingLicense" onChange={handleChange} accept="image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Driving License (Back) <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input type="file" name="drivingLicenseBack" onChange={handleChange} accept="image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Aadhar Card <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input type="file" name="aadharCard" onChange={handleChange} accept=".pdf,image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Aadhar Card (Front) <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input type="file" name="aadharCard" onChange={handleChange} accept="image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Aadhar Card (Back) <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <FiFileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input type="file" name="aadharCardBack" onChange={handleChange} accept="image/*" required className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-sm file:text-primary-700" />
+                  </div>
                 </div>
               </div>
             </div>

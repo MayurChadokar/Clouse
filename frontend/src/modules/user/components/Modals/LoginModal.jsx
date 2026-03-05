@@ -5,7 +5,7 @@ import { X, Phone, ArrowRight, ShieldCheck, Timer, ChevronLeft } from 'lucide-re
 import { useAuth } from '../../context/AuthContext';
 
 const LoginModal = ({ isOpen, onClose, onSuccess }) => {
-    const { loginWithOTP } = useAuth();
+    const { loginWithOTP, resendOTP } = useAuth();
     const navigate = useNavigate();
 
     // State
@@ -56,12 +56,21 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
         setError('');
         setLoading(true);
 
-        // Mock OTP sending delay
-        setTimeout(() => {
+        try {
+            const result = await resendOTP(mobileNumber);
+            if (result.success) {
+                setStep(2);
+                setResendTimer(30);
+            } else {
+                setError(result.message || 'Failed to send OTP. Please check your number.');
+            }
+        } catch (err) {
+            console.error('[LoginModal] Send OTP Error:', err);
+            const backendMsg = err.response?.data?.message || err.message || 'Failed to send OTP. Account may not exist.';
+            setError(backendMsg);
+        } finally {
             setLoading(false);
-            setStep(2);
-            setResendTimer(30);
-        }, 1500);
+        }
     };
 
     const handleVerifyOTP = async (e) => {
@@ -76,9 +85,6 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
         setLoading(true);
 
         try {
-            // Mock delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             const result = await loginWithOTP(mobileNumber, otp);
 
             if (result.success) {
@@ -88,7 +94,9 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                 setError('Invalid OTP. Please try again.');
             }
         } catch (err) {
-            setError('Something went wrong. Please try again.');
+            console.error('[LoginModal] Verify OTP Error:', err);
+            const backendMsg = err.response?.data?.message || err.message || 'Verification failed. Please try again.';
+            setError(backendMsg);
         } finally {
             setLoading(false);
         }
@@ -198,9 +206,20 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => setResendTimer(30)}
-                                        disabled={resendTimer > 0}
-                                        className={`text-[12px] font-bold text-[#111111] hover:text-[#D4AF37] transition-colors ${resendTimer > 0 ? 'opacity-40 cursor-not-allowed hover:text-[#111111]' : ''}`}
+                                        onClick={async () => {
+                                            setError('');
+                                            setLoading(true);
+                                            try {
+                                                await resendOTP(mobileNumber);
+                                                setResendTimer(30);
+                                            } catch (err) {
+                                                setError(err.response?.data?.message || err.message || 'Failed to resend OTP');
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }}
+                                        disabled={resendTimer > 0 || loading}
+                                        className={`text-[12px] font-bold text-[#111111] hover:text-[#D4AF37] transition-colors ${resendTimer > 0 || loading ? 'opacity-40 cursor-not-allowed hover:text-[#111111]' : ''}`}
                                     >
                                         Send new code
                                     </button>

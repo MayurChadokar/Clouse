@@ -1,4 +1,5 @@
 import { useOrderStore } from '../../../../shared/store/orderStore';
+import toast from 'react-hot-toast';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -27,16 +28,18 @@ import {
     LocateFixed,
     Search,
     MapPinned,
-    Tag
+    Tag,
+    Heart
 } from 'lucide-react';
 
+// Force HMR: v3.1 (Fixing toast import and addOrder cache)
 const PaymentPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { cart, getCartTotal, clearCart } = useCart();
     const { user } = useAuth();
     const { addresses, activeAddress, updateActiveAddress, refreshAddresses } = useLocationContext();
-    const { addOrder } = useOrderStore();
+    const { createOrder } = useOrderStore();
 
     // Get address from checkout navigation OR from context
     const passedAddress = location.state?.selectedAddress || null;
@@ -170,58 +173,66 @@ const PaymentPage = () => {
         // The LocationModal updates activeAddress via context, which will sync via useEffect above
     };
 
-    const handlePlaceOrder = () => {
+    const handlePlaceOrder = async () => {
         if (!paymentMethod) {
-            alert('Please select a payment method');
+            toast.error('Please select a payment method');
+            return;
+        }
+
+        if (!currentAddress) {
+            toast.error('Please select a shipping address');
             return;
         }
 
         setIsProcessing(true);
-        setTimeout(() => {
-            const itemsByVendor = {};
-            cart.forEach(item => {
-                const vId = item.vendorId || 1;
-                if (!itemsByVendor[vId]) {
-                    itemsByVendor[vId] = { vendorId: vId, subtotal: 0, vendorEarnings: 0, items: [] };
-                }
-                const itemTotal = item.discountedPrice * item.quantity;
-                itemsByVendor[vId].subtotal += itemTotal;
-                itemsByVendor[vId].vendorEarnings += itemTotal * 0.9;
-                itemsByVendor[vId].items.push(item);
-            });
-            const vendorItems = Object.values(itemsByVendor);
+        try {
+            // Normalize payment method to backend-allowed values: 'card', 'cash', 'cod', 'bank', 'wallet', 'upi'
+            let normalizedPaymentMethod = 'cod';
+            const lowerPm = paymentMethod.toLowerCase();
+            if (lowerPm.includes('cod')) normalizedPaymentMethod = 'cod';
+            else if (lowerPm.includes('upi')) normalizedPaymentMethod = 'upi';
+            else if (lowerPm.includes('card')) normalizedPaymentMethod = 'card';
+            else if (lowerPm.includes('wallet')) normalizedPaymentMethod = 'wallet';
+            else if (lowerPm.includes('bank')) normalizedPaymentMethod = 'bank';
+            else if (lowerPm.includes('amazon_pay')) normalizedPaymentMethod = 'upi';
+            else normalizedPaymentMethod = 'cod';
 
-            const orderData = {
-                id: `ORD-${Date.now()}`,
-                date: new Date().toISOString(),
-                items: [...cart],
-                vendorItems: vendorItems,
-                total: finalTotal,
-                address: currentAddress,
-                status: 'Processing',
-                paymentMethod,
-                deliveryType,
-                customer: {
-                    name: currentAddress?.name || user?.name || 'Guest User',
-                    email: user?.email || 'guest@example.com',
-                    phone: currentAddress?.mobile
+            const orderPayload = {
+                items: cart.map(item => ({
+                    id: item.id || item._id,
+                    quantity: item.quantity,
+                    price: item.discountedPrice || item.price,
+                    variant: item.selectedSize ? { size: item.selectedSize } : item.variant
+                })),
+                shippingAddress: {
+                    name: currentAddress.fullName || currentAddress.name || user?.name || "Customer",
+                    email: user?.email || "user@test.com",
+                    phone: currentAddress.mobile || currentAddress.phone || user?.mobile || user?.phone || "0000000000",
+                    address: currentAddress.address || "Street Address",
+                    city: currentAddress.city || "City",
+                    state: currentAddress.state || "State",
+                    zipCode: currentAddress.zipCode || currentAddress.pincode || "000000",
+                    country: 'India'
                 },
-                shippingAddress: currentAddress,
-                paymentStatus: paymentMethod.startsWith('cod') ? 'pending' : 'paid',
+                paymentMethod: normalizedPaymentMethod,
+                couponCode: appliedPromo?.code || "",
+                shippingOption: ['standard', 'express', 'try_and_buy', 'check_and_buy'].includes(deliveryType) ? deliveryType : 'standard'
             };
 
-            const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-            localStorage.setItem('userOrders', JSON.stringify([orderData, ...existingOrders]));
-            addOrder(orderData);
+            const response = await createOrder(orderPayload);
 
-            const adminOrders = JSON.parse(localStorage.getItem('admin-orders') || '[]');
-            localStorage.setItem('admin-orders', JSON.stringify([orderData, ...adminOrders]));
-
-            isNavigatingToSuccess.current = true;
-            clearCart();
+            if (response && response.id) {
+                toast.success('Order placed successfully!');
+                isNavigatingToSuccess.current = true;
+                clearCart();
+                navigate(`/order-success/${response.id}`);
+            }
+        } catch (error) {
+            console.error("Order placement failed:", error);
+            toast.error(error.message || 'Failed to place order. Please try again.');
+        } finally {
             setIsProcessing(false);
-            navigate(`/order-success/${orderData.id}`);
-        }, 2000);
+        }
     };
 
     const toggleOption = (option) => {

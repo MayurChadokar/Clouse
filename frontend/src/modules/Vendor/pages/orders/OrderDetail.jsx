@@ -59,9 +59,27 @@ const OrderDetail = () => {
 
     const handleStatusChange = async (newStatus) => {
         if (!order) return;
+        
+        // Verify the order ID exists
+        const orderId = order.orderId ?? order._id;
+        if (!orderId) {
+            toast.error('Order ID is missing. Cannot update status.');
+            return;
+        }
+
+        // Verify the status is valid
+        if (!newStatus || typeof newStatus !== 'string') {
+            toast.error('Invalid status selected.');
+            return;
+        }
+
+        console.log('🔵 Sending status update request:', { orderId, newStatus });
+
         setUpdatingStatus(true);
         try {
-            await updateVendorOrderStatus(order.orderId ?? order._id, newStatus);
+            const response = await updateVendorOrderStatus(orderId, newStatus);
+            console.log('✅ Status update response:', response);
+            
             // Optimistically update local state
             setOrder((prev) => ({
                 ...prev,
@@ -73,8 +91,17 @@ const OrderDetail = () => {
                 status: newStatus,
             }));
             toast.success(`Order status updated to ${newStatus}`);
-        } catch {
-            // api.js shows toast
+        } catch (error) {
+            // Show specific error message from API
+            const errorDetails = {
+                message: error?.response?.data?.message || error?.message || 'Failed to update order status',
+                status: error?.response?.status,
+                data: error?.response?.data,
+                fullError: error
+            };
+            
+            console.error('❌ Status update error:', errorDetails);
+            toast.error(errorDetails.message);
         } finally {
             setUpdatingStatus(false);
         }
@@ -83,14 +110,16 @@ const OrderDetail = () => {
     const statusOptions = [
         { value: 'pending', label: 'Pending', color: 'yellow' },
         { value: 'processing', label: 'Processing', color: 'blue' },
+        { value: 'ready_for_delivery', label: 'Ready for Delivery', color: 'indigo' },
         { value: 'shipped', label: 'Shipped', color: 'purple' },
         { value: 'delivered', label: 'Delivered', color: 'green' },
         { value: 'cancelled', label: 'Cancelled', color: 'red' },
     ];
 
     const transitionMap = {
-        pending: ['pending', 'processing', 'cancelled'],
-        processing: ['processing', 'shipped', 'cancelled'],
+        pending: ['pending', 'processing', 'ready_for_delivery', 'cancelled'],
+        processing: ['processing', 'ready_for_delivery', 'shipped', 'cancelled'],
+        ready_for_delivery: ['ready_for_delivery', 'shipped', 'cancelled'],
         shipped: ['shipped', 'delivered'],
         delivered: ['delivered'],
         cancelled: ['cancelled'],

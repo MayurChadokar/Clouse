@@ -21,7 +21,7 @@ const vendorItemGroupSchema = new mongoose.Schema({
     discount: Number,
     status: {
         type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+        enum: ['pending', 'processing', 'ready_for_delivery', 'shipped', 'delivered', 'cancelled'],
         default: 'pending',
     },
 });
@@ -51,9 +51,17 @@ const orderSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
+            enum: ['pending', 'processing', 'ready_for_delivery', 'assigned', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
             default: 'pending',
             index: true,
+        },
+        pickupLocation: {
+            type: { type: String, enum: ['Point'], default: 'Point' },
+            coordinates: { type: [Number], default: [0, 0] },
+        },
+        dropoffLocation: {
+            type: { type: String, enum: ['Point'], default: 'Point' },
+            coordinates: { type: [Number], default: [0, 0] },
         },
         subtotal: { type: Number, default: 0 },
         shipping: { type: Number, default: 0 },

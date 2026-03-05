@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AccountLayout from '../../components/Profile/AccountLayout';
 import { ArrowLeft, Package, Clock, MapPin, Phone, CreditCard, ChevronRight, Printer, AlertTriangle, RefreshCcw, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrderStore } from '../../../../shared/store/orderStore';
 
 const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { fetchOrderById, getOrder } = useOrderStore();
     const [order, setOrder] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [showReturnModal, setShowReturnModal] = useState(false);
     const [returnReason, setReturnReason] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,18 +26,23 @@ const OrderDetailsPage = () => {
     ];
 
     useEffect(() => {
-        // Check admin-orders first for latest status updates
-        const adminOrders = JSON.parse(localStorage.getItem('admin-orders') || '[]');
-        let foundOrder = adminOrders.find(o => String(o.id) === String(orderId));
-
-        // Fallback to local user orders if not found in admin list (edge case)
-        if (!foundOrder) {
-            const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-            foundOrder = userOrders.find(o => String(o.id) === String(orderId));
-        }
-
-        setOrder(foundOrder);
-    }, [orderId]);
+        const loadOrder = async () => {
+            if (!orderId) return;
+            setIsLoading(true);
+            try {
+                // Try cache first
+                let foundOrder = getOrder(orderId);
+                // Always refresh from API to get latest status
+                foundOrder = await fetchOrderById(orderId);
+                if (foundOrder) setOrder(foundOrder);
+            } catch (error) {
+                console.error("Failed to load order details:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadOrder();
+    }, [orderId, fetchOrderById, getOrder]);
 
     const handleViewInvoice = () => {
         if (!order) return;
@@ -216,6 +224,17 @@ const OrderDetailsPage = () => {
         setShowReturnModal(false);
         alert("Return request submitted successfully. Our team will review it shortly.");
     };
+
+    if (isLoading) {
+        return (
+            <AccountLayout hideHeader={true}>
+                <div className="flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Fetching Details...</p>
+                </div>
+            </AccountLayout>
+        );
+    }
 
     if (!order) {
         return (

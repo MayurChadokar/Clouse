@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller.js';
 import * as orderController from '../controllers/order.controller.js';
+import * as assignmentController from '../controllers/assignment.controller.js';
 import * as notificationController from '../controllers/notification.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus } from '../../../middlewares/authorize.js';
@@ -27,7 +28,9 @@ router.post(
     authLimiter,
     uploadDeliveryDocuments([
         { name: 'drivingLicense', maxCount: 1 },
+        { name: 'drivingLicenseBack', maxCount: 1 },
         { name: 'aadharCard', maxCount: 1 },
+        { name: 'aadharCardBack', maxCount: 1 },
     ]),
     validate(registerSchema),
     authController.register
@@ -42,6 +45,7 @@ router.get('/auth/profile', ...deliveryAuth, authController.getProfile);
 router.put('/auth/profile', ...deliveryAuth, authController.updateProfile);
 
 // Orders
+router.get('/orders/available', ...deliveryAuth, orderController.getAvailableOrders);
 router.get('/orders', ...deliveryAuth, orderController.getAssignedOrders);
 router.get('/orders/dashboard-summary', ...deliveryAuth, orderController.getDashboardSummary);
 router.get('/orders/profile-summary', ...deliveryAuth, orderController.getProfileSummary);
@@ -50,6 +54,7 @@ if (!IS_PRODUCTION) {
     router.get('/orders/:id/debug-otp', ...deliveryAuth, orderController.getDeliveryOtpForDebug);
 }
 router.patch('/orders/:id/status', ...deliveryAuth, orderController.updateDeliveryStatus);
+router.post('/orders/:id/accept', ...deliveryAuth, assignmentController.acceptOrderAssignment);
 router.post('/orders/:id/resend-delivery-otp', ...deliveryAuth, orderController.resendDeliveryOtp);
 
 // Notifications

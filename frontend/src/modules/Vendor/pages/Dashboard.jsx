@@ -14,6 +14,7 @@ import { getVendorOrders, getVendorEarnings } from "../services/vendorService";
 import { formatPrice } from "../../../shared/utils/helpers";
 import { FiMapPin, FiAlertCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
+import SwipeOrderCard from "../components/SwipeOrderCard";
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const VendorDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const vendorId = vendor?.id;
+  const vendorId = vendor?.id || vendor?._id;
 
   const handleSetLocation = async () => {
     if (!navigator.geolocation) {
@@ -326,12 +327,29 @@ const VendorDashboard = () => {
           {isLoading ? (
             <p className="text-gray-400 text-center py-8">Loading orders...</p>
           ) : recentOrders.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {recentOrders.map((order) => {
+                const currentVendorId = vendorId?.toString();
                 const vendorItem = order.vendorItems?.find(
-                  (vi) => vi.vendorId?.toString() === vendorId?.toString()
+                  (vi) => (vi.vendorId?.toString() === currentVendorId) || (vi.vendorId === currentVendorId)
                 );
-                const displayStatus = vendorItem?.status ?? order.status;
+                const displayStatus = (vendorItem?.status || order.status || 'pending').toLowerCase();
+
+                // If it's an actionable order, show the swipe card
+                if (['pending', 'processing'].includes(displayStatus)) {
+                  return (
+                    <SwipeOrderCard
+                      key={order._id ?? order.orderId}
+                      order={order}
+                      onStatusUpdate={() => {
+                        // Refresh dashboard data after update
+                        // We could also manually update the local state but reload is safer for stats
+                        // loadDashboardData(); 
+                      }}
+                    />
+                  );
+                }
+
                 const displayAmount =
                   vendorItem?.subtotal ?? order.totalAmount ?? order.total ?? 0;
 
@@ -341,27 +359,32 @@ const VendorDashboard = () => {
                     onClick={() =>
                       navigate(`/vendor/orders/${order.orderId ?? order._id}`)
                     }
-                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        {order.orderId ?? order._id}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
+                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white p-2 rounded-lg shadow-sm">
+                        <FiPackage className="text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800">
+                          {order.orderId ?? order._id}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-800">
+                      <p className="font-bold text-gray-800 text-sm">
                         {formatPrice(displayAmount)}
                       </p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${displayStatus === "delivered"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tight ${displayStatus === "delivered"
                           ? "bg-green-100 text-green-700"
-                          : displayStatus === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
+                          : displayStatus === "ready_for_delivery"
+                            ? "bg-indigo-100 text-indigo-700"
                             : "bg-blue-100 text-blue-700"
                           }`}>
-                        {displayStatus}
+                        {displayStatus === "ready_for_delivery" ? "Ready" : displayStatus}
                       </span>
                     </div>
                   </div>

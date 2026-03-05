@@ -18,13 +18,13 @@ const DeliveryOrders = () => {
     acceptOrder,
     completeOrder,
   } = useDeliveryAuthStore();
-  const [filter, setFilter] = useState('all'); // all, pending(open), in-transit, completed
+  const [filter, setFilter] = useState('available'); // available, pending(open), in-transit(shipped), completed(delivered)
   const [loadFailed, setLoadFailed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
   const getBackendStatusFilter = (value) => {
-    if (value === 'all') return undefined;
+    if (value === 'all') return undefined; // No 'all' anymore, using available as default
     if (value === 'pending') return 'open';
     if (value === 'in-transit') return 'shipped';
     if (value === 'completed') return 'delivered';
@@ -34,11 +34,19 @@ const DeliveryOrders = () => {
   const loadOrders = async (page = currentPage, activeFilter = filter) => {
     try {
       setLoadFailed(false);
-      await fetchOrders({
-        page,
-        limit: PAGE_SIZE,
-        status: getBackendStatusFilter(activeFilter),
-      });
+      if (activeFilter === 'available') {
+        const { fetchAvailableOrders } = useDeliveryAuthStore.getState();
+        await fetchAvailableOrders({
+          page,
+          limit: PAGE_SIZE,
+        });
+      } else {
+        await fetchOrders({
+          page,
+          limit: PAGE_SIZE,
+          status: getBackendStatusFilter(activeFilter),
+        });
+      }
     } catch {
       setLoadFailed(true);
       // Error toast handled by API interceptor.
@@ -47,7 +55,11 @@ const DeliveryOrders = () => {
 
   useEffect(() => {
     loadOrders(currentPage, filter);
+    // Refresh interval for available orders
+    const interval = filter === 'available' ? setInterval(() => loadOrders(currentPage, filter), 30000) : null;
+    return () => interval && clearInterval(interval);
   }, [fetchOrders, currentPage, filter]);
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -83,6 +95,9 @@ const DeliveryOrders = () => {
     try {
       await acceptOrder(orderId);
       toast.success('Order accepted successfully');
+      setFilter('pending'); // Switch to pending to show the accepted order
+      setCurrentPage(1);
+      loadOrders(1, 'pending');
     } catch {
       // Error toast handled by API interceptor.
     }
@@ -134,20 +149,19 @@ const DeliveryOrders = () => {
           transition={{ delay: 0.1 }}
           className="flex gap-2 overflow-x-auto pb-2"
         >
-          {['all', 'pending', 'in-transit', 'completed'].map((tab) => (
+          {['available', 'pending', 'in-transit', 'completed'].map((tab) => (
             <button
               key={tab}
               onClick={() => {
                 setFilter(tab);
                 setCurrentPage(1);
               }}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === tab
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${filter === tab
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
+              {tab === 'available' ? 'Available' : tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
             </button>
           ))}
         </motion.div>
@@ -184,7 +198,7 @@ const DeliveryOrders = () => {
               className="text-center py-12"
             >
               <FiPackage className="text-gray-400 text-5xl mx-auto mb-4" />
-              <p className="text-gray-600">No orders found</p>
+              <p className="text-gray-600">No {filter === 'available' ? 'available for acceptance' : filter} orders found</p>
             </motion.div>
           ) : (
             orders.map((order, index) => (
@@ -200,7 +214,7 @@ const DeliveryOrders = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      {getStatusIcon(order.status)}
+                      {getStatusIcon(order.status === 'ready_for_delivery' ? 'pending' : (order.status === 'assigned' ? 'pending' : order.status))}
                       <p className="font-bold text-gray-800">{order.id}</p>
                     </div>
                     <p className="text-sm text-gray-600">{order.customer}</p>
@@ -208,10 +222,10 @@ const DeliveryOrders = () => {
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                      order.status
+                      order.status === 'ready_for_delivery' ? 'pending' : (order.status === 'assigned' ? 'pending' : order.status)
                     )}`}
                   >
-                    {order.status.replace('-', ' ')}
+                    {order.status === 'ready_for_delivery' ? 'Ready' : (order.status === 'assigned' ? 'Assigned' : order.status.replace('-', ' '))}
                   </span>
                 </div>
 
@@ -242,7 +256,8 @@ const DeliveryOrders = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  {order.status === 'pending' && (
+                  {/* Show Accept button if order is ready_for_delivery (backend) AND in available list */}
+                  {(order.rawStatus === 'ready_for_delivery' && filter === 'available') && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -254,6 +269,19 @@ const DeliveryOrders = () => {
                       {isUpdatingOrderStatus ? 'Please wait...' : 'Accept Order'}
                     </button>
                   )}
+                  {/* Show View/Pickup button if order is assigned to us or we have a pending pickup */}
+                  {(order.rawStatus === 'assigned' || (order.rawStatus === 'ready_for_delivery' && filter === 'pending')) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/delivery/orders/${order.id}`);
+                      }}
+                      className="flex-1 gradient-primary text-white py-2.5 rounded-xl font-semibold text-sm"
+                    >
+                      Go to Pickup
+                    </button>
+                  )}
+
                   {order.status === 'in-transit' && (
                     <button
                       onClick={(e) => {

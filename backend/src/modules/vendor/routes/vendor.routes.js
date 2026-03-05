@@ -35,6 +35,7 @@ import {
     updateProductSchema,
     productIdParamSchema,
 } from '../validators/product.validator.js';
+import { updateOrderStatusSchema } from '../validators/order.validator.js';
 import { uploadSingle, uploadMultiple, uploadDocumentSingle } from '../../../middlewares/upload.js';
 
 const router = Router();
@@ -67,7 +68,7 @@ router.patch('/stock/:productId', ...vendorAuth, productController.updateStock);
 // Orders
 router.get('/orders', ...vendorAuth, orderController.getVendorOrders);
 router.get('/orders/:id', ...vendorAuth, orderController.getVendorOrderById);
-router.patch('/orders/:id/status', ...vendorAuth, orderController.updateOrderStatus);
+router.patch('/orders/:id/status', ...vendorAuth, validate(updateOrderStatusSchema), orderController.updateOrderStatus);
 
 // Customers
 router.get('/customers', ...vendorAuth, customerController.getVendorCustomers);

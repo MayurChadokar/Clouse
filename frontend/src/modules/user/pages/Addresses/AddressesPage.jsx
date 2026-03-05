@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AccountLayout from '../../components/Profile/AccountLayout';
 import { MapPin, Search, X, Home, Briefcase, MapPin as MapPinIcon, ChevronLeft, Loader2, Navigation, Target, Plus } from 'lucide-react';
 import { useLocation as useLocationContext } from '../../context/LocationContext';
+import { useAddressStore } from '../../../../shared/store/addressStore';
 import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
+import api from '../../../../shared/utils/api';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -20,7 +23,8 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const REVERSE_GEOCODE_URL = 'https://nominatim.openstreetmap.org/reverse?format=json';
+// Geocoding via internal API proxy to avoid CORS
+const GEOCODE_PROXY_URL = '/geocode';
 const SEARCH_URL = 'https://nominatim.openstreetmap.org/search?format=json&q=';
 
 const LocationMarker = ({ position, setPosition, setAddress }) => {
@@ -64,8 +68,8 @@ const LocationMarker = ({ position, setPosition, setAddress }) => {
 
 const fetchAddress = async (lat, lng, setAddress) => {
     try {
-        const response = await fetch(`${REVERSE_GEOCODE_URL}&lat=${lat}&lon=${lng}`);
-        const data = await response.json();
+        const response = await api.get(`${GEOCODE_PROXY_URL}?lat=${lat}&lon=${lng}`);
+        const data = response?.data || response;
         if (data && data.display_name) {
             const addr = data.address || {};
             setAddress({
@@ -78,7 +82,7 @@ const fetchAddress = async (lat, lng, setAddress) => {
             });
         }
     } catch (error) {
-        console.error("Error fetching address:", error);
+        console.error("Error fetching address via proxy:", error);
     }
 };
 
@@ -126,13 +130,25 @@ const AddressesPage = () => {
 
     const handleConfirmLocation = () => {
         if (fetchedAddress) {
+            const addressParts = fetchedAddress.formatted.split(',');
+            const firstPart = (addressParts[0] || "").trim();
+            const secondPart = (addressParts[1] || "").trim();
+
+            let fullDisplayAddress = firstPart;
+            if (fullDisplayAddress.length < 5 && secondPart) {
+                fullDisplayAddress = `${firstPart}, ${secondPart}`;
+            }
+            if (fullDisplayAddress.length < 5) {
+                fullDisplayAddress = fetchedAddress.formatted.slice(0, 50);
+            }
+
             setNewAddress({
                 ...newAddress,
                 pincode: fetchedAddress.pincode || '',
-                city: fetchedAddress.city || '',
+                city: fetchedAddress.city || firstPart || '',
                 state: fetchedAddress.state || '',
                 locality: fetchedAddress.locality || '',
-                address: fetchedAddress.formatted.split(',')[0] || ''
+                address: fullDisplayAddress
             });
             setView('form');
         } else {
@@ -163,15 +179,32 @@ const AddressesPage = () => {
         }
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        const existing = JSON.parse(localStorage.getItem('userAddresses') || '[]');
-        const updated = [...existing, { ...newAddress, id: Date.now() }];
-        localStorage.setItem('userAddresses', JSON.stringify(updated));
-        refreshAddresses();
-        setView('list');
-        setNewAddress({ name: '', mobile: user?.mobile || '', pincode: '', address: '', locality: '', city: '', state: '', type: 'Home' });
-        setFetchedAddress(null);
+        try {
+            const payload = {
+                name: newAddress.type, // Use Type as the name/label
+                fullName: newAddress.name,
+                phone: newAddress.mobile,
+                address: newAddress.address,
+                city: newAddress.city,
+                state: newAddress.state,
+                zipCode: newAddress.pincode,
+                country: 'India',
+                isDefault: addresses.length === 0
+            };
+
+            const success = await useAddressStore.getState().addAddress(payload);
+            if (success) {
+                toast.success('Address saved successfully');
+                setView('list');
+                setNewAddress({ name: '', mobile: user?.phone || '', pincode: '', address: '', locality: '', city: '', state: '', type: 'Home' });
+                setFetchedAddress(null);
+            }
+        } catch (error) {
+            console.error("Save error:", error);
+            toast.error('Failed to save address');
+        }
     };
 
     return (
@@ -434,11 +467,11 @@ const AddressesPage = () => {
                                     <div className="flex gap-3">
                                         <button className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors">Edit</button>
                                         <button
-                                            onClick={() => {
-                                                const existing = JSON.parse(localStorage.getItem('userAddresses') || '[]');
-                                                const updated = existing.filter(a => a.id !== addr.id);
-                                                localStorage.setItem('userAddresses', JSON.stringify(updated));
-                                                refreshAddresses();
+                                            onClick={async () => {
+                                                if (window.confirm('Delete this address?')) {
+                                                    await useAddressStore.getState().deleteAddress(addr.id || addr._id);
+                                                    toast.success('Address deleted');
+                                                }
                                             }}
                                             className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-red-500 transition-colors"
                                         >

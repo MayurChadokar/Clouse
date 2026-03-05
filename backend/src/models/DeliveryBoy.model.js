@@ -20,7 +20,9 @@ const deliveryBoySchema = new mongoose.Schema(
         rejectionReason: { type: String, trim: true },
         documents: {
             drivingLicense: { type: String, trim: true },
+            drivingLicenseBack: { type: String, trim: true },
             aadharCard: { type: String, trim: true },
+            aadharCardBack: { type: String, trim: true },
         },
         resetOtp: { type: String, select: false },
         resetOtpExpiry: { type: Date, select: false },
@@ -32,11 +34,18 @@ const deliveryBoySchema = new mongoose.Schema(
         status: {
             type: String,
             enum: ['available', 'busy', 'offline'],
-            default: 'available',
+            default: 'offline',
         },
         currentLocation: {
-            lat: { type: Number },
-            lng: { type: Number },
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point',
+            },
+            coordinates: {
+                type: [Number], // [longitude, latitude]
+                default: [0, 0],
+            },
         },
         totalDeliveries: { type: Number, default: 0 },
         rating: { type: Number, default: 0 },
@@ -44,6 +53,8 @@ const deliveryBoySchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+deliveryBoySchema.index({ currentLocation: '2dsphere' });
 
 deliveryBoySchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();

@@ -7,17 +7,45 @@ import { useOrderStore } from '../../../../shared/store/orderStore';
 const TrackOrderPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
-    const { getOrderById, orders: allOrders } = useOrderStore();
+    const { fetchOrderById, getOrder, orders: allOrders } = useOrderStore();
     const [order, setOrder] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (orderId) {
-            const foundOrder = getOrderById(orderId);
-            if (foundOrder) {
-                setOrder(foundOrder);
+        const loadOrder = async () => {
+            if (!orderId) return;
+
+            setIsLoading(true);
+            try {
+                // First try to get from local store
+                let foundOrder = getOrder(orderId);
+
+                // If not found or incomplete, fetch from backend
+                if (!foundOrder) {
+                    foundOrder = await fetchOrderById(orderId);
+                }
+
+                if (foundOrder) {
+                    setOrder(foundOrder);
+                }
+            } catch (error) {
+                console.error("Failed to load order for tracking:", error);
+            } finally {
+                setIsLoading(false);
             }
-        }
-    }, [orderId, allOrders, getOrderById]);
+        };
+
+        loadOrder();
+    }, [orderId, fetchOrderById, getOrder]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+                <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Updating Status...</p>
+            </div>
+        );
+    }
 
     if (!order) {
         return (

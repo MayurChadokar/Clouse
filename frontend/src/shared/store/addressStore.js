@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import toast from 'react-hot-toast';
 import api from '../utils/api';
 
 const normalizeAddress = (address) => ({
@@ -67,6 +68,10 @@ export const useAddressStore = create(
 
       // Update an existing address
       updateAddress: async (id, updatedAddress) => {
+        if (!/^[0-9a-fA-F]{24}$/.test(String(id))) {
+          toast.error('Invalid address selection. Please try re-adding the address.');
+          return null;
+        }
         set({ isLoading: true });
         try {
           const payload = {
@@ -102,6 +107,13 @@ export const useAddressStore = create(
 
       // Delete an address
       deleteAddress: async (id) => {
+        if (!/^[0-9a-fA-F]{24}$/.test(String(id))) {
+          // Local only delete if invalid ID (cleanup stale data)
+          set((state) => ({
+            addresses: state.addresses.filter((addr) => String(addr.id) !== String(id)),
+          }));
+          return true;
+        }
         set({ isLoading: true });
         try {
           const deletedId = String(id);
@@ -139,6 +151,16 @@ export const useAddressStore = create(
 
       // Set default address
       setDefaultAddress: async (id) => {
+        if (!/^[0-9a-fA-F]{24}$/.test(String(id))) {
+          // Just update local state if ID is invalid (fallback)
+          set((state) => ({
+            addresses: state.addresses.map((addr) => ({
+              ...addr,
+              isDefault: String(addr.id) === String(id),
+            })),
+          }));
+          return null;
+        }
         set({ isLoading: true });
         try {
           const response = await api.patch(`/user/addresses/${id}/default`);

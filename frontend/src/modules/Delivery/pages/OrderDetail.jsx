@@ -20,7 +20,15 @@ import { useDeliveryAuthStore } from '../store/deliveryStore';
 const DeliveryOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { fetchOrderById, acceptOrder, completeOrder, resendDeliveryOtp, isLoadingOrder, isUpdatingOrderStatus } = useDeliveryAuthStore();
+  const {
+    fetchOrderById,
+    acceptOrder,
+    completeOrder,
+    resendDeliveryOtp,
+    isLoadingOrder,
+    isUpdatingOrderStatus,
+    updateOrderStatus,
+  } = useDeliveryAuthStore();
   const [order, setOrder] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [deliveryOtp, setDeliveryOtp] = useState('');
@@ -45,8 +53,12 @@ const DeliveryOrderDetail = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'in-transit':
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800';
+      case 'picked-up':
         return 'bg-blue-100 text-blue-800';
+      case 'out-for-delivery':
+        return 'bg-indigo-100 text-indigo-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       default:
@@ -59,14 +71,24 @@ const DeliveryOrderDetail = () => {
     try {
       const updated = await acceptOrder(order.id);
       setOrder(updated);
-      toast.success('Order accepted successfully');
+      toast.success('Order assigned to you');
+    } catch {
+      // Error toast handled by API interceptor.
+    }
+  };
+
+  const handleUpdateStatus = async (newBackendStatus, successMessage) => {
+    try {
+      const updated = await updateOrderStatus(order.id, newBackendStatus);
+      setOrder(updated);
+      toast.success(successMessage);
     } catch {
       // Error toast handled by API interceptor.
     }
   };
 
   const handleCompleteOrder = async () => {
-    if (!order || order.status !== 'in-transit') return;
+    if (!order || order.status !== 'out-for-delivery') return;
     const normalizedOtp = String(deliveryOtp || '').trim();
     if (!/^\d{6}$/.test(normalizedOtp)) {
       toast.error('Please enter valid 6-digit OTP');
@@ -84,7 +106,7 @@ const DeliveryOrderDetail = () => {
   };
 
   const handleResendOtp = async () => {
-    if (!order || order.status !== 'in-transit' || isResendingOtp) return;
+    if (!order || order.status !== 'out-for-delivery' || isResendingOtp) return;
     try {
       setIsResendingOtp(true);
       await resendDeliveryOtp(order.id);
@@ -96,14 +118,16 @@ const DeliveryOrderDetail = () => {
     }
   };
 
-  const openInGoogleMaps = () => {
-    const { latitude, longitude } = order;
-    
+  const openInGoogleMaps = (lat, lng) => {
+    const latitude = lat || order.latitude;
+    const longitude = lng || order.longitude;
+    if (!latitude || !longitude) return;
+
     // Detect platform
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
     const isAndroid = /android/i.test(userAgent);
-    
+
     if (isAndroid) {
       // Android: Use intent URL (opens Google Maps app if installed, otherwise web)
       const intentUrl = `intent://maps.google.com/maps?daddr=${latitude},${longitude}&directionsmode=driving#Intent;scheme=https;package=com.google.android.apps.maps;end`;
@@ -113,7 +137,7 @@ const DeliveryOrderDetail = () => {
       const appUrl = `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`;
       // Universal link as fallback (opens app if installed, otherwise web)
       const universalUrl = `https://maps.google.com/maps?daddr=${latitude},${longitude}&directionsmode=driving`;
-      
+
       // Try app URL
       const link = document.createElement('a');
       link.href = appUrl;
@@ -121,7 +145,7 @@ const DeliveryOrderDetail = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Fallback to universal link after brief delay
       setTimeout(() => {
         window.location.href = universalUrl;
@@ -208,19 +232,42 @@ const DeliveryOrderDetail = () => {
           </div>
         </motion.div>
 
-        {/* Delivery Address */}
+        {/* Pickup Location (Vendor) */}
+        {order.pickupLocation && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-orange-500"
+          >
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <FiPackage className="text-orange-500" />
+              Pickup From (Vendor)
+            </h2>
+            <p className="text-gray-800 font-bold mb-1">{order.vendorName || 'Vendor'}</p>
+            <p className="text-gray-700 text-sm">{order.vendorAddress || 'Vendor address details'}</p>
+            <button
+              onClick={() => openInGoogleMaps(order.pickupLocation.coordinates[1], order.pickupLocation.coordinates[0])}
+              className="mt-3 text-xs font-bold text-primary-600 flex items-center gap-1 hover:underline"
+            >
+              <FiNavigation /> Get Directions to Vendor
+            </button>
+          </motion.div>
+        )}
+
+        {/* Delivery Address (Customer) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl p-4 shadow-sm"
+          className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-primary-500"
         >
-          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <FiMapPin />
-            Delivery Address
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <FiUser className="text-primary-500" />
+            Deliver To (Customer)
           </h2>
-          <p className="text-gray-700 mb-3">{order.address || 'Address unavailable'}</p>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <p className="text-gray-800 font-bold mb-1">{order.customer}</p>
+          <p className="text-gray-700 text-sm mb-3">{order.address || 'Address unavailable'}</p>
+          <div className="flex items-center gap-4 text-xs text-gray-600">
             <div className="flex items-center gap-1">
               <FiNavigation />
               <span>{order.distance}</span>
@@ -230,13 +277,13 @@ const DeliveryOrderDetail = () => {
               <span>{order.estimatedTime}</span>
             </div>
           </div>
-          {order.instructions && (
-            <div className="mt-3 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
-              <p className="text-sm text-yellow-800">
-                <span className="font-semibold">Instructions: </span>
-                {order.instructions}
-              </p>
-            </div>
+          {order.latitude && order.longitude && (
+            <button
+              onClick={() => openInGoogleMaps(order.latitude, order.longitude)}
+              className="mt-3 text-xs font-bold text-primary-600 flex items-center gap-1 hover:underline"
+            >
+              <FiNavigation /> Get Directions to Customer
+            </button>
           )}
         </motion.div>
 
@@ -341,50 +388,66 @@ const DeliveryOrderDetail = () => {
             <button
               onClick={handleAcceptOrder}
               disabled={isUpdatingOrderStatus}
-              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-green-200 disabled:opacity-60"
             >
               <FiCheckCircle />
-              {isUpdatingOrderStatus ? 'Please wait...' : 'Accept Order'}
+              {isUpdatingOrderStatus ? 'Accepting...' : 'Accept Order'}
             </button>
           )}
-          {order.status === 'in-transit' && (
-            <div className="space-y-3">
+
+          {order.status === 'assigned' && (
+            <button
+              onClick={() => handleUpdateStatus('shipped', 'Order marked as Picked Up')}
+              disabled={isUpdatingOrderStatus}
+              className="w-full bg-orange-500 text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-orange-200 disabled:opacity-60"
+            >
+              <FiPackage />
+              {isUpdatingOrderStatus ? 'Updating...' : 'Mark as Picked Up'}
+            </button>
+          )}
+
+          {/* Once picked up (backend: shipped → UI: picked-up), show OTP verify to complete delivery */}
+          {order.status === 'picked-up' && (
+            <div className="space-y-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+              <p className="text-sm font-bold text-gray-700 mb-1">Verify Delivery OTP</p>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
                 value={deliveryOtp}
                 onChange={(e) => setDeliveryOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="Enter 6-digit delivery OTP"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none text-base"
+                placeholder="Enter 6-digit OTP"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none text-center text-xl tracking-[0.5em] font-bold"
               />
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleResendOtp}
                   disabled={isResendingOtp || isUpdatingOrderStatus}
-                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold text-sm hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold text-sm hover:bg-gray-50 disabled:opacity-60"
                 >
                   {isResendingOtp ? 'Resending...' : 'Resend OTP'}
                 </button>
                 <button
                   onClick={handleCompleteOrder}
                   disabled={isUpdatingOrderStatus}
-                  className="w-full gradient-green text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full gradient-green text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 shadow-md shadow-green-100"
                 >
                   <FiCheckCircle />
-                  {isUpdatingOrderStatus ? 'Please wait...' : 'Mark as Delivered'}
+                  {isUpdatingOrderStatus ? 'Wait...' : 'Complete'}
                 </button>
               </div>
             </div>
           )}
-          <button
-            onClick={() => order.phone && window.open(`tel:${order.phone}`, '_self')}
-            disabled={!order.phone}
-            className="w-full bg-gray-100 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <FiPhone />
-            Call Customer
-          </button>
+
+          {order.phone && (
+            <button
+              onClick={() => window.open(`tel:${order.phone}`, '_self')}
+              className="w-full bg-white border border-gray-200 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-50 shadow-sm"
+            >
+              <FiPhone className="text-primary-600" />
+              Call Customer
+            </button>
+          )}
         </motion.div>
       </div>
     </PageTransition>

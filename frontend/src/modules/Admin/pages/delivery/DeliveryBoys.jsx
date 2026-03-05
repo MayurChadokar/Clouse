@@ -176,28 +176,20 @@ const DeliveryBoys = () => {
       label: 'Documents',
       sortable: false,
       render: (_, row) => (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {row.documentUrls?.drivingLicense && (
-            <a
-              href={row.documentUrls.drivingLicense}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
-            >
-              License
-            </a>
+            <a href={row.documentUrls.drivingLicense} target="_blank" rel="noreferrer" className="text-[10px] text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded">DL (F)</a>
+          )}
+          {row.documentUrls?.drivingLicenseBack && (
+            <a href={row.documentUrls.drivingLicenseBack} target="_blank" rel="noreferrer" className="text-[10px] text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded">DL (B)</a>
           )}
           {row.documentUrls?.aadharCard && (
-            <a
-              href={row.documentUrls.aadharCard}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
-            >
-              Aadhar
-            </a>
+            <a href={row.documentUrls.aadharCard} target="_blank" rel="noreferrer" className="text-[10px] text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded">ADR (F)</a>
           )}
-          {!row.documentUrls?.drivingLicense && !row.documentUrls?.aadharCard && (
+          {row.documentUrls?.aadharCardBack && (
+            <a href={row.documentUrls.aadharCardBack} target="_blank" rel="noreferrer" className="text-[10px] text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded">ADR (B)</a>
+          )}
+          {!row.documentUrls?.drivingLicense && !row.documentUrls?.drivingLicenseBack && !row.documentUrls?.aadharCard && !row.documentUrls?.aadharCardBack && (
             <span className="text-xs text-gray-500">N/A</span>
           )}
         </div>
@@ -229,8 +221,8 @@ const DeliveryBoys = () => {
             onClick={() => updateStatus(row.id, !row.isActive)}
             disabled={row.applicationStatus !== 'approved'}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${row.isActive
-                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                : 'bg-green-50 text-green-600 hover:bg-green-100'
+              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+              : 'bg-green-50 text-green-600 hover:bg-green-100'
               } ${row.applicationStatus !== 'approved' ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {row.isActive ? 'Deactivate' : 'Activate'}
@@ -422,27 +414,29 @@ const DeliveryBoys = () => {
                         </div>
                       )}
                     </div>
-                    <div className="mt-3 flex items-center gap-3">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       {editingBoy.documentUrls?.drivingLicense && (
-                        <a
-                          href={editingBoy.documentUrls.drivingLicense}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-semibold"
-                        >
-                          <FiFileText />
-                          Driving License
+                        <a href={editingBoy.documentUrls.drivingLicense} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold bg-primary-50 p-2 rounded-lg border border-primary-100">
+                          <FiFileText className="flex-shrink-0" />
+                          <span>License (Front)</span>
+                        </a>
+                      )}
+                      {editingBoy.documentUrls?.drivingLicenseBack && (
+                        <a href={editingBoy.documentUrls.drivingLicenseBack} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold bg-primary-50 p-2 rounded-lg border border-primary-100">
+                          <FiFileText className="flex-shrink-0" />
+                          <span>License (Back)</span>
                         </a>
                       )}
                       {editingBoy.documentUrls?.aadharCard && (
-                        <a
-                          href={editingBoy.documentUrls.aadharCard}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-semibold"
-                        >
-                          <FiFileText />
-                          Aadhar Card
+                        <a href={editingBoy.documentUrls.aadharCard} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold bg-primary-50 p-2 rounded-lg border border-primary-100">
+                          <FiFileText className="flex-shrink-0" />
+                          <span>Aadhar (Front)</span>
+                        </a>
+                      )}
+                      {editingBoy.documentUrls?.aadharCardBack && (
+                        <a href={editingBoy.documentUrls.aadharCardBack} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold bg-primary-50 p-2 rounded-lg border border-primary-100">
+                          <FiFileText className="flex-shrink-0" />
+                          <span>Aadhar (Back)</span>
                         </a>
                       )}
                     </div>

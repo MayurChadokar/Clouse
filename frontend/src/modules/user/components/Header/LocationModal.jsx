@@ -4,9 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { X, MapPin, CheckCircle2, ChevronLeft, Loader2 } from 'lucide-react';
 import { useLocation as useLocationContext } from '../../context/LocationContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAddressStore } from '../../../../shared/store/addressStore';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import api from '../../../../shared/utils/api';
+import toast from 'react-hot-toast';
 
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -21,8 +24,9 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// URL for reverse geocoding (OpenStreetMap Nominatim)
-const REVERSE_GEOCODE_URL = 'https://nominatim.openstreetmap.org/reverse?format=json';
+// Force HMR: v2.1
+// Geocoding via internal API proxy to avoid CORS
+const GEOCODE_PROXY_URL = '/geocode';
 
 const LocationMarker = ({ position, setPosition, setAddress }) => {
     const markerRef = React.useRef(null);
@@ -65,8 +69,8 @@ const LocationMarker = ({ position, setPosition, setAddress }) => {
 
 const fetchAddress = async (lat, lng, setAddress) => {
     try {
-        const response = await fetch(`${REVERSE_GEOCODE_URL}&lat=${lat}&lon=${lng}`);
-        const data = await response.json();
+        const response = await api.get(`${GEOCODE_PROXY_URL}?lat=${lat}&lon=${lng}`);
+        const data = response?.data || response;
         if (data && data.display_name) {
             const addr = data.address || {};
             setAddress({
@@ -79,7 +83,7 @@ const fetchAddress = async (lat, lng, setAddress) => {
             });
         }
     } catch (error) {
-        console.error("Error fetching address:", error);
+        console.error("Error fetching address via proxy:", error);
     }
 };
 
@@ -136,29 +140,67 @@ const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
         }
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (view === 'map' && fetchedAddress) {
-            const newAddress = {
-                id: Date.now(),
-                name: fetchedAddress.locality || "Current Location",
+            // Validate required fields before sending to backend
+            if (!fetchedAddress.city || !fetchedAddress.pincode) {
+                toast.error('Address is incomplete. Please try moving the pin to a more precise location.');
+                return;
+            }
+
+            const addressParts = fetchedAddress.formatted.split(',');
+            const firstPart = (addressParts[0] || "").trim();
+            const secondPart = (addressParts[1] || "").trim();
+
+            // Ensure address is at least 5 chars for backend Joi validation
+            let fullDisplayAddress = firstPart;
+            if (fullDisplayAddress.length < 5 && secondPart) {
+                fullDisplayAddress = `${firstPart}, ${secondPart}`;
+            }
+            if (fullDisplayAddress.length < 5) {
+                fullDisplayAddress = fetchedAddress.formatted.slice(0, 50) || "Near Pinned Location";
+            }
+
+            const newAddressData = {
+                name: (fetchedAddress.locality || "Current Location").slice(0, 50),
+                fullName: (user?.name || user?.fullName || "Customer").slice(0, 80),
+                phone: (user?.phone || user?.mobile || "0000000000").replace(/\D/g, '').slice(-10),
+                address: fullDisplayAddress.slice(0, 200),
+                city: (fetchedAddress.city || firstPart || "City").slice(0, 80),
+                state: (fetchedAddress.state || "State").slice(0, 80),
+                zipCode: (fetchedAddress.pincode || "000000").slice(0, 12),
+                country: "India",
                 type: "Current",
-                address: fetchedAddress.formatted.split(',')[0],
-                city: fetchedAddress.city,
-                state: fetchedAddress.state,
-                pincode: fetchedAddress.pincode,
-                mobile: user?.mobile || "",
-                isCurrentLocation: true
+                isDefault: true
             };
 
-            const existingAddresses = JSON.parse(localStorage.getItem('userAddresses') || '[]');
-            const updatedAddresses = [newAddress, ...existingAddresses];
-            localStorage.setItem('userAddresses', JSON.stringify(updatedAddresses));
-
-            updateActiveAddress(newAddress);
-            handleClose();
-            refreshAddresses();
+            try {
+                if (user) {
+                    const created = await useAddressStore.getState().addAddress(newAddressData);
+                    if (created) {
+                        updateActiveAddress(created);
+                        toast.success('Location saved successfully');
+                    }
+                } else {
+                    // Guest mode
+                    const newAddress = {
+                        ...newAddressData,
+                        id: Date.now(),
+                        isCurrentLocation: true
+                    };
+                    const existingAddresses = JSON.parse(localStorage.getItem('userAddresses') || '[]');
+                    localStorage.setItem('userAddresses', JSON.stringify([newAddress, ...existingAddresses]));
+                    updateActiveAddress(newAddress);
+                }
+                handleClose();
+                refreshAddresses();
+            } catch (error) {
+                console.error("Failed to save address:", error);
+                const msg = error.response?.data?.message || "Failed to save location. Please enter address manually.";
+                toast.error(msg);
+            }
         } else {
-            const selected = addresses.find(a => a.id === selectedAddressId);
+            const selected = addresses.find(a => String(a.id || a._id) === String(selectedAddressId));
             if (selected) {
                 updateActiveAddress(selected);
             }

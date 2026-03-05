@@ -45,7 +45,7 @@ export const getAssignedOrders = asyncHandler(async (req, res) => {
     const { status, page, limit } = req.query;
     const filter = { deliveryBoyId: req.user.id, isDeleted: { $ne: true } };
     if (status === 'open') {
-        filter.status = { $in: ['pending', 'processing'] };
+        filter.status = { $in: ['pending', 'processing', 'ready_for_delivery', 'assigned'] };
     } else if (status) {
         filter.status = status;
     }
@@ -83,6 +83,43 @@ export const getAssignedOrders = asyncHandler(async (req, res) => {
         )
     );
 });
+
+// GET /api/delivery/orders/available
+export const getAvailableOrders = asyncHandler(async (req, res) => {
+    const { page, limit } = req.query;
+    const numericPage = Math.max(1, Number(page) || 1);
+    const numericLimit = Math.min(Math.max(1, Number(limit) || 20), 100);
+    const skip = (numericPage - 1) * numericLimit;
+
+    // Available orders are those ready for delivery and NOT assigned to anyone.
+    const filter = {
+        status: 'ready_for_delivery',
+        deliveryBoyId: { $exists: false },
+        isDeleted: { $ne: true }
+    };
+
+    const [orders, total] = await Promise.all([
+        Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(numericLimit),
+        Order.countDocuments(filter),
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                orders,
+                pagination: {
+                    total,
+                    page: numericPage,
+                    limit: numericLimit,
+                    pages: Math.ceil(total / numericLimit) || 1,
+                },
+            },
+            'Available orders fetched.'
+        )
+    );
+});
+
 
 // GET /api/delivery/orders/dashboard-summary
 export const getDashboardSummary = asyncHandler(async (req, res) => {
@@ -201,14 +238,29 @@ export const getProfileSummary = asyncHandler(async (req, res) => {
 
 // GET /api/delivery/orders/:id
 export const getOrderDetail = asyncHandler(async (req, res) => {
-    const query = {
-        deliveryBoyId: req.user.id,
-        isDeleted: { $ne: true },
-        $or: [{ orderId: req.params.id }],
-    };
-    if (mongoose.isValidObjectId(req.params.id)) {
-        query.$or.push({ _id: req.params.id });
+    const { id } = req.params;
+    const deliveryBoyId = req.user.id;
+
+    const idFilter = [{ orderId: id }];
+    if (mongoose.isValidObjectId(id)) {
+        idFilter.push({ _id: id });
     }
+
+    const query = {
+        isDeleted: { $ne: true },
+        $and: [
+            { $or: idFilter },
+            {
+                $or: [
+                    { deliveryBoyId: deliveryBoyId },
+                    {
+                        deliveryBoyId: { $exists: false },
+                        status: 'ready_for_delivery'
+                    }
+                ]
+            }
+        ]
+    };
 
     const order = await Order.findOne(query).select('+deliveryOtpHash +deliveryOtpExpiry +deliveryOtpSentAt +deliveryOtpAttempts +deliveryOtpDebug');
     if (!order) throw new ApiError(404, 'Order not found.');
@@ -235,7 +287,7 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
 
     // Server-side transition guard (frontend guard already exists).
     const transitionAllowed =
-        (status === 'shipped' && ['pending', 'processing'].includes(order.status)) ||
+        (status === 'shipped' && ['pending', 'processing', 'ready_for_delivery', 'assigned'].includes(order.status)) ||
         (status === 'delivered' && order.status === 'shipped');
     if (!transitionAllowed) {
         throw new ApiError(409, `Cannot move order from ${order.status} to ${status}.`);

@@ -97,6 +97,7 @@ export const useOrderStore = create(
           };
           const idempotencyKey = buildIdempotencyKey(payload, orderData.userId);
 
+          console.log("Order Store - Placing Order with Payload:", payload);
           const response = await api.post('/user/orders', payload, {
             headers: {
               "x-idempotency-key": idempotencyKey,
@@ -117,8 +118,10 @@ export const useOrderStore = create(
           set({ isLoading: false, lastError: null });
           return createdOrder;
         } catch (error) {
-          set({ isLoading: false, lastError: error?.message || 'Failed to place order.' });
-          throw error;
+          const detail = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message;
+          console.error("Order Creation Error Detail:", error.response?.data);
+          set({ isLoading: false, lastError: detail || 'Failed to place order.' });
+          throw new Error(detail);
         }
       },
 

@@ -38,6 +38,11 @@ const errorHandler = (err, req, res, next) => {
         ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
     };
 
+    if (response.message === 'Validation failed') {
+        console.error('------- VALIDATION FAILED LOG -------');
+        console.error(JSON.stringify(response.errors, null, 2));
+    }
+
     res.status(error.statusCode || 500).json(response);
 };
 

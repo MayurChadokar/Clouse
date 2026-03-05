@@ -104,11 +104,15 @@ export const getAllDeliveryBoys = asyncHandler(async (req, res) => {
             applicationStatus: boy.applicationStatus || 'approved',
             documents: {
                 drivingLicense: boy.documents?.drivingLicense || '',
+                drivingLicenseBack: boy.documents?.drivingLicenseBack || '',
                 aadharCard: boy.documents?.aadharCard || '',
+                aadharCardBack: boy.documents?.aadharCardBack || '',
             },
             documentUrls: {
                 drivingLicense: buildDocUrl(req, boy.documents?.drivingLicense || ''),
+                drivingLicenseBack: buildDocUrl(req, boy.documents?.drivingLicenseBack || ''),
                 aadharCard: buildDocUrl(req, boy.documents?.aadharCard || ''),
+                aadharCardBack: buildDocUrl(req, boy.documents?.aadharCardBack || ''),
             },
             stats: {
                 totalDeliveries: boyStats.totalDeliveries,
@@ -181,7 +185,9 @@ export const getDeliveryBoyById = asyncHandler(async (req, res) => {
             applicationStatus: boy.applicationStatus || 'approved',
             documentUrls: {
                 drivingLicense: buildDocUrl(req, boy.documents?.drivingLicense || ''),
+                drivingLicenseBack: buildDocUrl(req, boy.documents?.drivingLicenseBack || ''),
                 aadharCard: buildDocUrl(req, boy.documents?.aadharCard || ''),
+                aadharCardBack: buildDocUrl(req, boy.documents?.aadharCardBack || ''),
             },
             stats: boyStats,
             recentOrders: orders

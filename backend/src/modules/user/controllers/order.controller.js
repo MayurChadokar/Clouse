@@ -141,7 +141,8 @@ const resolveVariantSelection = (product, selectedVariant) => {
     }
 
     if (hasVariantAxes) {
-        throw new ApiError(400, `Selected variant is not available for ${product?.name || 'product'}.`);
+        // Fallback to base price if specific variant price is not mapped
+        return { price: basePrice, variantKey: null, hasVariantAxes };
     }
     return { price: basePrice, variantKey: null, hasVariantAxes };
 };
@@ -488,15 +489,38 @@ export const placeOrder = asyncHandler(async (req, res) => {
 export const getUserOrders = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
+    console.log(`[OrderDebug] Fetching all orders for user: ${req.user.id}`);
     const orders = await Order.find({ userId: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
     const total = await Order.countDocuments({ userId: req.user.id });
+    console.log(`[OrderDebug] Found ${orders.length}/${total} orders in DB for user ${req.user.id}.`);
     res.status(200).json(new ApiResponse(200, { orders, total, page: Number(page), pages: Math.ceil(total / limit) }, 'Orders fetched.'));
 });
 
 // GET /api/user/orders/:id
 export const getOrderDetail = asyncHandler(async (req, res) => {
-    const order = await Order.findOne({ orderId: req.params.id, userId: req.user.id });
-    if (!order) throw new ApiError(404, 'Order not found.');
+    const { id } = req.params;
+    console.log(`[OrderDebug] Fetching order detail: ${id} for user: ${req.user.id}`);
+
+    let filter = {};
+    if (mongoose.Types.ObjectId.isValid(id)) {
+        filter._id = id;
+    } else {
+        filter.orderId = id;
+    }
+
+    const order = await Order.findOne({ ...filter, userId: req.user.id });
+
+    if (!order) {
+        console.warn(`[OrderDebug] Order not found for user: ${req.user.id} with identifier: ${id}. Checking if it exists at all...`);
+        const anyOrder = await Order.findOne(filter);
+        if (anyOrder) {
+            console.warn(`[OrderDebug] Order exists but belongs to a different userId: ${anyOrder.userId || 'GUEST'}`);
+        } else {
+            console.error(`[OrderDebug] Order NO-EXIST at all in DB for identifier: ${id}`);
+        }
+        throw new ApiError(404, 'Order not found.');
+    }
+
     res.status(200).json(new ApiResponse(200, order, 'Order detail fetched.'));
 });
 

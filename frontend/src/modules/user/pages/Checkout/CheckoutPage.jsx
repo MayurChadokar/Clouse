@@ -19,6 +19,7 @@ import {
     ShoppingCart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import LocationModal from '../../components/Header/LocationModal';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
@@ -31,11 +32,14 @@ const CheckoutPage = () => {
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showSizeModal, setShowSizeModal] = useState(null); // productId for which to show modal
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     useEffect(() => {
         // Scroll to top on mount
         window.scrollTo(0, 0);
-    }, []);
+        // Refresh addresses to ensure latest data
+        fetchAddresses().catch(() => { });
+    }, [fetchAddresses]);
 
     const totalPrice = getCartTotal();
     const shipping = totalPrice > 500 ? 0 : 40;
@@ -132,7 +136,7 @@ const CheckoutPage = () => {
                                 </span>
                             </div>
                             <button
-                                onClick={() => navigate('/account/addresses')}
+                                onClick={() => setIsLocationModalOpen(true)}
                                 className="bg-[#9F1239] text-white px-5 py-2 rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-transform"
                             >
                                 Add
@@ -419,7 +423,7 @@ const CheckoutPage = () => {
                             </div>
                         </div>
                         <button
-                            onClick={() => navigate('/account/addresses')}
+                            onClick={() => setIsLocationModalOpen(true)}
                             className="text-[11px] font-black uppercase text-[#9F1239] hover:underline"
                         >
                             {activeAddress ? 'Change' : 'Add'}
@@ -427,7 +431,7 @@ const CheckoutPage = () => {
                     </div>
 
                     <button
-                        onClick={() => activeAddress ? navigate('/payment') : navigate('/account/addresses')}
+                        onClick={() => activeAddress ? navigate('/payment') : setIsLocationModalOpen(true)}
                         className={`w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 ${activeAddress
                             ? 'bg-black text-white hover:bg-gray-800'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -438,8 +442,15 @@ const CheckoutPage = () => {
                 </div>
             </div>
 
+            {/* Address Selection Modal */}
+            <LocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
+
             {/* Global Custom Styles */}
-            <style jsx>{`
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 @keyframes pulse-subtle {
@@ -447,7 +458,7 @@ const CheckoutPage = () => {
                     50% { opacity: 0.95; transform: scale(0.995); }
                 }
                 .animate-pulse-subtle { animation: pulse-subtle 3s ease-in-out infinite; }
-            `}</style>
+            ` }} />
         </div>
     );
 };

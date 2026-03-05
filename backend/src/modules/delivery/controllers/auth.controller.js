@@ -24,10 +24,12 @@ export const register = asyncHandler(async (req, res) => {
     const { name, email, password, phone, address, vehicleType, vehicleNumber } = req.body;
 
     const drivingLicenseFile = req.files?.drivingLicense?.[0];
+    const drivingLicenseBackFile = req.files?.drivingLicenseBack?.[0];
     const aadharCardFile = req.files?.aadharCard?.[0];
+    const aadharCardBackFile = req.files?.aadharCardBack?.[0];
 
-    if (!drivingLicenseFile || !aadharCardFile) {
-        throw new ApiError(400, 'Driving license and Aadhar card are required.');
+    if (!drivingLicenseFile || !drivingLicenseBackFile || !aadharCardFile || !aadharCardBackFile) {
+        throw new ApiError(400, 'All document images (Driving License Front/Back and Aadhar Card Front/Back) are required.');
     }
 
     const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -47,7 +49,9 @@ export const register = asyncHandler(async (req, res) => {
             vehicleNumber: String(vehicleNumber || '').trim(),
             documents: {
                 drivingLicense: getUploadedPath(drivingLicenseFile),
+                drivingLicenseBack: getUploadedPath(drivingLicenseBackFile),
                 aadharCard: getUploadedPath(aadharCardFile),
+                aadharCardBack: getUploadedPath(aadharCardBackFile),
             },
             applicationStatus: 'pending',
             isActive: false,
@@ -81,7 +85,9 @@ export const register = asyncHandler(async (req, res) => {
         if (shouldCleanupLocalDocs) {
             await cleanupLocalFiles([
                 drivingLicenseFile?.path,
+                drivingLicenseBackFile?.path,
                 aadharCardFile?.path,
+                aadharCardBackFile?.path,
             ]);
         }
         throw error;

@@ -192,6 +192,19 @@ export const useVendorAuthStore = create(
           throw error;
         }
       },
+
+      updateOrderStatus: async (orderId, status) => {
+        set({ isLoading: true });
+        try {
+          const { updateVendorOrderStatus } = await import("../services/vendorService");
+          const response = await updateVendorOrderStatus(orderId, status);
+          set({ isLoading: false });
+          return { success: true, data: response?.data ?? response };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
       // Initialize vendor auth state from localStorage
       initialize: () => {
         const token = localStorage.getItem("vendor-token");

@@ -8,11 +8,12 @@ import toast from 'react-hot-toast';
 import { formatPrice } from '../../../shared/utils/helpers';
 
 const DeliveryDashboard = () => {
-  const { deliveryBoy, updateStatus, fetchProfile, fetchDashboardSummary, isUpdatingStatus } = useDeliveryAuthStore();
+  const { deliveryBoy, updateStatus, fetchProfile, fetchDashboardSummary, isUpdatingStatus, isUpdatingOrderStatus } = useDeliveryAuthStore();
   const navigate = useNavigate();
   const statusMenuRef = useRef(null);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [recentOrders, setRecentOrders] = useState([]);
+  const [availableOrders, setAvailableOrders] = useState([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -21,6 +22,7 @@ const DeliveryDashboard = () => {
     openOrders: 0,
     earnings: 0,
   });
+
   const statCards = [
     {
       icon: FiPackage,
@@ -69,17 +71,25 @@ const DeliveryDashboard = () => {
         openOrders: Number(summary.openOrders || 0),
         earnings: Number(summary.earnings || 0),
       });
+
+      // Fetch available orders
+      const available = await useDeliveryAuthStore.getState().fetchAvailableOrders({ limit: 5 });
+      setAvailableOrders(available || []);
     } catch {
       setLoadFailed(true);
-      setRecentOrders([]);
-      setStats({
-        totalOrders: 0,
-        completedToday: 0,
-        openOrders: 0,
-        earnings: 0,
-      });
     } finally {
       setIsDashboardLoading(false);
+    }
+  };
+
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      const { acceptOrder } = useDeliveryAuthStore.getState();
+      await acceptOrder(orderId);
+      toast.success('Order accepted successfully!');
+      loadDashboardData();
+    } catch {
+      // Error toast handled by API interceptor.
     }
   };
 
@@ -117,8 +127,12 @@ const DeliveryDashboard = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'in-transit':
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800';
+      case 'picked-up':
         return 'bg-blue-100 text-blue-800';
+      case 'out-for-delivery':
+        return 'bg-indigo-100 text-indigo-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       default:
@@ -154,11 +168,11 @@ const DeliveryDashboard = () => {
             <div className="flex-1">
               <h1 className="text-2xl font-bold mb-2">Welcome back, {deliveryBoy?.name || 'Delivery Boy'}!</h1>
               <p className="text-primary-100 text-sm">
-                {deliveryBoy?.status === 'available' 
-                  ? 'You are available for new orders' 
+                {deliveryBoy?.status === 'available'
+                  ? 'You are available for new orders'
                   : deliveryBoy?.status === 'busy'
-                  ? 'You are currently busy'
-                  : 'You are offline'}
+                    ? 'You are currently busy'
+                    : 'You are offline'}
               </p>
             </div>
             <div className="relative" ref={statusMenuRef}>
@@ -243,48 +257,93 @@ const DeliveryDashboard = () => {
           })}
         </div>
 
-        {/* Recent Orders */}
+        {/* Available Orders Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-green-50 rounded-2xl p-5 border border-green-200 shadow-sm"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg">
+                <FiPackage className="text-white text-lg" />
+              </div>
+              <h2 className="text-lg font-bold text-green-800">New Available Orders</h2>
+            </div>
+            <button
+              onClick={() => navigate('/delivery/orders')}
+              className="text-green-700 text-sm font-bold hover:underline bg-white px-3 py-1 rounded-full shadow-sm"
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {isDashboardLoading ? (
+              <div className="h-20 w-full bg-white/50 rounded-xl animate-pulse" />
+            ) : availableOrders.length === 0 ? (
+              <div className="text-center py-4 text-green-700/60 text-sm italic bg-white/30 rounded-xl border border-dashed border-green-300">
+                No new orders available near you right now.
+              </div>
+            ) : (
+              availableOrders.slice(0, 2).map((order) => (
+                <div key={order.id} className="bg-white rounded-xl p-4 shadow-sm border border-green-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="font-bold text-gray-800 text-sm">{order.id}</p>
+                    <span className="text-green-600 font-bold text-sm">{formatPrice(order.amount)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
+                    <FiMapPin className="text-green-500" />
+                    <span className="line-clamp-1">{order.address || 'Address unavailable'}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAcceptOrder(order.id);
+                    }}
+                    disabled={isUpdatingOrderStatus}
+                    className="w-full gradient-green text-white py-2 rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {isUpdatingOrderStatus ? 'Accepting...' : 'Accept Order Now'}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </motion.div>
+
+        {/* Recent Orders (Assigned) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white rounded-2xl p-4 shadow-sm"
+          className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Recent Orders</h2>
-            <div className="flex items-center gap-3">
-              {loadFailed && (
-                <button
-                  onClick={loadDashboardData}
-                  className="text-red-500 text-xs font-semibold"
-                >
-                  Retry
-                </button>
-              )}
-              <button
-                onClick={() => navigate('/delivery/orders')}
-                className="text-primary-600 text-sm font-semibold"
-              >
-                View All
-              </button>
-            </div>
+            <h2 className="text-lg font-bold text-gray-800">My Active Orders</h2>
+            <button
+              onClick={() => navigate('/delivery/orders')}
+              className="text-primary-600 text-sm font-semibold"
+            >
+              View My List
+            </button>
           </div>
 
           <div className="space-y-3">
             {isDashboardLoading && (
               <div className="space-y-3">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="border border-gray-200 rounded-xl p-4">
-                    <div className="h-4 w-28 bg-gray-200 rounded animate-pulse mb-2" />
-                    <div className="h-3 w-40 bg-gray-100 rounded animate-pulse mb-3" />
-                    <div className="h-3 w-full bg-gray-100 rounded animate-pulse mb-2" />
-                    <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
-                  </div>
+                {[1, 2].map((item) => (
+                  <div key={item} className="border border-gray-200 rounded-xl p-4 h-24 animate-pulse" />
                 ))}
               </div>
             )}
             {!isDashboardLoading && displayOrders.length === 0 && (
-              <div className="text-sm text-gray-500 py-3 text-center">No assigned orders yet.</div>
+              <div className="text-sm text-gray-500 py-6 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                You haven't accepted any orders yet.
+                <br />
+                Accept an order from the section above!
+              </div>
             )}
             {!isDashboardLoading && displayOrders.map((order, index) => (
               <motion.div
@@ -293,7 +352,7 @@ const DeliveryDashboard = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1 }}
                 onClick={() => navigate(`/delivery/orders/${order.id}`)}
-                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="border border-gray-100 bg-gray-50/50 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
@@ -304,18 +363,15 @@ const DeliveryDashboard = () => {
                     {order.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <FiMapPin className="text-primary-600" />
-                  <span>{order.address || 'Address unavailable'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Distance: {order.distance || '-'}</span>
-                  <span className="font-bold text-primary-600">{formatPrice(order.amount)}</span>
+                  <span className="line-clamp-1">{order.address || 'Address unavailable'}</span>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.div>
+
 
       </div>
     </PageTransition>

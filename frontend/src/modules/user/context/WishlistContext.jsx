@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useState, useEffect } from 'react';
 import { useWishlistStore } from '../../../shared/store/wishlistStore';
 
 const WishlistContext = createContext();
@@ -11,7 +11,7 @@ export const WishlistProvider = ({ children }) => {
     const storeIsInWishlist = useWishlistStore(state => state.isInWishlist);
 
     // Fetch wishlist items on mount if authenticated
-    React.useEffect(() => {
+    useEffect(() => {
         storeFetchWishlist().catch(() => { });
     }, [storeFetchWishlist]);
 

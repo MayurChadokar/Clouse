@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, MapPin, User, ShoppingCart, X, LayoutGrid, Compass, Heart, ChevronRight, ChevronDown } from 'lucide-react';
 import MegaMenu from './MegaMenu';
@@ -113,7 +113,7 @@ const Header = ({ variant = 'default' }) => {
     // Compute dynamic horizontal categories (Root vs SubCategory siblings)
     const isSubcategoryMode = location.pathname === '/shop' && activeSubCategory !== 'All';
 
-    const finalDisplayCategories = React.useMemo(() => {
+    const finalDisplayCategories = useMemo(() => {
         // Premium fallback images for when DB images are missing
         const fallbackMap = {
             'Women': 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=150&q=80',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, X, Heart, Search, MapPin, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
@@ -11,8 +11,8 @@ const WishlistPage = () => {
     const { addToCart } = useCart();
     const { activeAddress } = useLocationContext();
     const navigate = useNavigate();
-    const [isLocationModalOpen, setIsLocationModalOpen] = React.useState(false);
-    const [addedItems, setAddedItems] = React.useState({});
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [addedItems, setAddedItems] = useState({});
 
     const handleAddToCart = (product) => {
         addToCart({ ...product, selectedSize: product.size ? product.size[0] : 'M' });

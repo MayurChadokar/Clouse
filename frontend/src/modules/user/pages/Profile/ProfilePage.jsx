@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AccountLayout from '../../components/Profile/AccountLayout';
@@ -24,7 +24,7 @@ const ProfilePage = () => {
     });
 
     // Update formData when user object changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (user) {
             setFormData({
                 firstName: user.firstName || user.name?.split(' ')[0] || '',

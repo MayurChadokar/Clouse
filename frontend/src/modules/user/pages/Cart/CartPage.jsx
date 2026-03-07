@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Heart, ShieldCheck, ChevronRight, MapPin, ChevronDown } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
@@ -11,7 +11,7 @@ const CartPage = () => {
     const { addToWishlist } = useWishlist();
     const { activeAddress } = useLocationContext();
     const navigate = useNavigate();
-    const [isLocationModalOpen, setIsLocationModalOpen] = React.useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     const totalMRP = cart.reduce((acc, item) => {
         const itemSellingPrice = item.discountedPrice !== undefined ? item.discountedPrice : (item.price || item.originalPrice || 0);

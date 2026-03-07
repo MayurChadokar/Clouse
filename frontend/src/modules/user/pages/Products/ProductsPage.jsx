@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useProductStore } from '../../../../shared/store/productStore';
 import { useWishlist } from '../../context/WishlistContext';
@@ -119,8 +119,10 @@ const ProductsPage = () => {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
+    const [searchQuery, setSearchQuery] = useState('');
+
     // Derived filtered products
-    const filteredProducts = React.useMemo(() => {
+    const filteredProducts = useMemo(() => {
         let result = [...(products || [])];
 
         // 1. Gender Filter (Manual override)

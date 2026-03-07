@@ -9,10 +9,10 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
     const navigate = useNavigate();
     const location = useLocation();
     const { activeAddress } = useLocationContext();
-    const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024); // lg breakpoint
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // lg breakpoint
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);

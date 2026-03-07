@@ -53,7 +53,7 @@ const PaymentPage = () => {
     const [deliveryType, setDeliveryType] = useState(location.state?.deliveryType === 'standard' ? 'check_and_buy' : (location.state?.deliveryType || 'check_and_buy'));
     const [isProcessing, setIsProcessing] = useState(false);
     const [expandedOption, setExpandedOption] = useState('');
-    const isNavigatingToSuccess = React.useRef(false);
+    const isNavigatingToSuccess = useRef(false);
 
     // Promo Code States
     const [promoCode, setPromoCode] = useState('');

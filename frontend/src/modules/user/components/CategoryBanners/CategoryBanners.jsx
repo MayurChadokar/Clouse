@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { bannerCategories, secondaryBannerCategories } from '../../data';
 import { useCategoryStore } from '../../../../shared/store/categoryStore';
@@ -9,7 +9,7 @@ const CategoryBanners = () => {
     const { setActiveCategory } = useCategory();
     const navigate = useNavigate();
 
-    React.useEffect(() => {
+    useEffect(() => {
         initialize();
     }, [initialize]);
 

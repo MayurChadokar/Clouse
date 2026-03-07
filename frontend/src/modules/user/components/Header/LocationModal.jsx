@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, MapPin, CheckCircle2, ChevronLeft, Loader2 } from 'lucide-react';
@@ -29,7 +29,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const GEOCODE_PROXY_URL = '/geocode';
 
 const LocationMarker = ({ position, setPosition, setAddress }) => {
-    const markerRef = React.useRef(null);
+    const markerRef = useRef(null);
     const map = useMapEvents({
         click(e) {
             setPosition(e.latlng);
@@ -37,7 +37,7 @@ const LocationMarker = ({ position, setPosition, setAddress }) => {
         }
     });
 
-    const eventHandlers = React.useMemo(
+    const eventHandlers = useMemo(
         () => ({
             dragend() {
                 const marker = markerRef.current;

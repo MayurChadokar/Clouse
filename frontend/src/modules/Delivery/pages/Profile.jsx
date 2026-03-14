@@ -217,7 +217,7 @@ const DeliveryProfile = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800">{formData.name}</p>
+              <p className="px-4 py-3 bg-white rounded-xl text-gray-800">{formData.name}</p>
             )}
           </div>
 
@@ -236,7 +236,7 @@ const DeliveryProfile = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800">{formData.email}</p>
+              <p className="px-4 py-3 bg-white rounded-xl text-gray-800">{formData.email}</p>
             )}
           </div>
 
@@ -255,7 +255,7 @@ const DeliveryProfile = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800">{formData.phone}</p>
+              <p className="px-4 py-3 bg-white rounded-xl text-gray-800">{formData.phone}</p>
             )}
           </div>
         </motion.div>
@@ -288,7 +288,7 @@ const DeliveryProfile = () => {
                 <option value="Van">Van</option>
               </select>
             ) : (
-              <p className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800">{formData.vehicleType}</p>
+              <p className="px-4 py-3 bg-white rounded-xl text-gray-800">{formData.vehicleType}</p>
             )}
           </div>
 
@@ -304,7 +304,7 @@ const DeliveryProfile = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800">{formData.vehicleNumber}</p>
+              <p className="px-4 py-3 bg-white rounded-xl text-gray-800">{formData.vehicleNumber}</p>
             )}
           </div>
         </motion.div>

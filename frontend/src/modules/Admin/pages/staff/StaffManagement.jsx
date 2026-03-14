@@ -298,7 +298,7 @@ const StaffManagement = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => handleOpenRoleModal()}
-                        className="bg-white text-gray-700 px-5 py-2.5 rounded-lg font-semibold border border-gray-200 flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
+                        className="bg-white text-gray-700 px-5 py-2.5 rounded-lg font-semibold border border-gray-200 flex items-center gap-2 hover:bg-white hover:text-black transition-colors shadow-sm"
                     >
                         <FiShield size={18} />
                         <span>Manage Roles</span>
@@ -350,13 +350,13 @@ const StaffManagement = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Permissions</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Document</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                            <tr className="bg-white border-b border-gray-200">
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase ">Employee</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase ">Role</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase ">Permissions</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase ">Document</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase ">Status</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase  text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -370,7 +370,7 @@ const StaffManagement = () => {
                                 </tr>
                             ) : (
                                 filteredEmployees.map((emp) => (
-                                    <tr key={emp._id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={emp._id} className="hover:bg-white hover:text-black transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
@@ -402,7 +402,7 @@ const StaffManagement = () => {
                                                             </span>
                                                         ))}
                                                         {emp.permissions?.length > 3 && (
-                                                            <span className="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs font-medium text-gray-500">+{emp.permissions.length - 3}</span>
+                                                            <span className="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-medium text-gray-500">+{emp.permissions.length - 3}</span>
                                                         )}
                                                         {(!emp.permissions || emp.permissions.length === 0) && (
                                                             <span className="text-xs text-gray-400 italic">No permissions</span>
@@ -463,7 +463,7 @@ const StaffManagement = () => {
                     <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
 
                         {/* Header */}
-                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white/50">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800">{editingEmployee ? "Edit Staff Member" : "Add New Staff"}</h2>
                                 <p className="text-xs text-gray-500 mt-1">Configure details and access permissions.</p>
@@ -538,7 +538,7 @@ const StaffManagement = () => {
                                     {PRESETS.filter(p => p.id !== 'custom').map(p => {
                                         const Icon = p.icon;
                                         return (
-                                            <button key={p.id} type="button" onClick={() => applyPreset(p.id)} className="p-2 border border-gray-200 rounded-lg bg-gray-50 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-700 text-gray-600 transition-colors flex flex-col items-center justify-center gap-1.5 text-center px-1">
+                                            <button key={p.id} type="button" onClick={() => applyPreset(p.id)} className="p-2 border border-gray-200 rounded-lg bg-white hover:bg-primary-50 hover:border-primary-200 hover:text-primary-700 text-gray-600 transition-colors flex flex-col items-center justify-center gap-1.5 text-center px-1">
                                                 <Icon size={16} />
                                                 <span className="text-[10px] font-semibold leading-tight">{p.label}</span>
                                             </button>
@@ -552,7 +552,7 @@ const StaffManagement = () => {
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">Permissions</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {PERMISSIONS.map(cap => (
-                                        <label key={cap.id} className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${formData.permissions.includes(cap.id) ? 'bg-primary-50 border-primary-200' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                        <label key={cap.id} className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${formData.permissions.includes(cap.id) ? 'bg-primary-50 border-primary-200' : 'bg-white border-gray-200 hover:bg-white hover:text-black'}`}>
                                             <div className="relative flex-shrink-0">
                                                 <input type="checkbox" className="peer sr-only" checked={formData.permissions.includes(cap.id)} onChange={() => togglePermission(cap.id)} />
                                                 <div className="w-4 h-4 rounded border border-gray-300 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-colors">
@@ -570,8 +570,8 @@ const StaffManagement = () => {
                         </form>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                            <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="px-6 py-4 border-t border-gray-200 bg-white flex justify-end gap-3">
+                            <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-white hover:text-black transition-colors">
                                 Cancel
                             </button>
                             <button type="submit" onClick={handleSubmit} className="px-5 py-2.5 text-sm font-bold text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
@@ -589,7 +589,7 @@ const StaffManagement = () => {
                     <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
 
                         {/* Header */}
-                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white/50">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800">Role Management</h2>
                                 <p className="text-xs text-gray-500 mt-1">Create and manage custom roles and their permissions.</p>
@@ -601,7 +601,7 @@ const StaffManagement = () => {
 
                         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                             {/* Role List Side */}
-                            <div className="w-full md:w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/30">
+                            <div className="w-full md:w-1/3 border-r border-gray-100 flex flex-col bg-white/30">
                                 <div className="p-4 border-b border-gray-100 bg-white">
                                     <button
                                         onClick={() => handleOpenRoleModal()}
@@ -618,14 +618,14 @@ const StaffManagement = () => {
                                         roles.map(role => (
                                             <div
                                                 key={role._id}
-                                                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${editingRole?._id === role._id ? 'bg-primary-50 border-primary-100 text-primary-700 shadow-sm' : 'hover:bg-white hover:shadow-sm text-gray-700'}`}
+                                                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${editingRole?._id === role._id ? 'bg-primary-50 border-primary-100 text-primary-700 shadow-sm' : 'hover:bg-white hover:text-black hover:shadow-sm text-gray-700'}`}
                                                 onClick={() => handleOpenRoleModal(role)}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${editingRole?._id === role._id ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
                                                         <FiShield size={16} />
                                                     </div>
-                                                    <span className="text-sm font-semibold uppercase tracking-tight">{role.name}</span>
+                                                    <span className="text-sm font-semibold uppercase ">{role.name}</span>
                                                 </div>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDeleteRole(role._id); }}
@@ -645,7 +645,7 @@ const StaffManagement = () => {
                                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                                         <div className="grid grid-cols-1 gap-4">
                                             <div>
-                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5 tracking-tight uppercase">Role Name</label>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5  uppercase">Role Name</label>
                                                 <input
                                                     required
                                                     type="text"
@@ -656,7 +656,7 @@ const StaffManagement = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5 tracking-tight uppercase">Description</label>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1.5  uppercase">Description</label>
                                                 <input
                                                     type="text"
                                                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-all"
@@ -668,7 +668,7 @@ const StaffManagement = () => {
                                         </div>
 
                                         <div className="border-t border-gray-100 pt-6">
-                                            <label className="block text-sm font-bold text-gray-800 mb-4 tracking-tight uppercase flex items-center gap-2">
+                                            <label className="block text-sm font-bold text-gray-800 mb-4  uppercase flex items-center gap-2">
                                                 <FiLock className="text-primary-500" />
                                                 Permissions & Access
                                             </label>
@@ -691,7 +691,7 @@ const StaffManagement = () => {
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 mt-auto">
+                                    <div className="px-6 py-4 border-t border-gray-200 bg-white flex justify-end gap-3 mt-auto">
                                         <button type="submit" className="w-full bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-primary-700 shadow-md shadow-primary-500/20 transition-all flex items-center justify-center gap-2">
                                             {editingRole ? "Update Role" : "Create New Role"}
                                         </button>

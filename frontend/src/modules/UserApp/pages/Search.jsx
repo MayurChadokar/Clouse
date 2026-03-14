@@ -380,7 +380,7 @@ const MobileSearch = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={true} showCartBar={true}>
-        <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-gray-50">
+        <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-white">
           {/* Search Header */}
           <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-1 z-30">
             <form onSubmit={handleSearch} className="mb-3 lg:hidden">
@@ -395,7 +395,7 @@ const MobileSearch = () => {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Search products..."
-                  className="w-full pl-12 pr-20 py-3 glass-card rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-700 placeholder:text-gray-400 text-base"
+                  className="w-full pl-12 pr-20 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5722] text-gray-700 placeholder:text-gray-400 text-base shadow-sm"
                   autoFocus
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
@@ -462,7 +462,7 @@ const MobileSearch = () => {
                   <option value="rating">Top Rated</option>
                 </select>
                 {/* View Toggle Buttons */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center bg-white border border-gray-100 rounded-lg p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-1.5 rounded transition-colors ${viewMode === 'list'
@@ -485,7 +485,7 @@ const MobileSearch = () => {
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-2 glass-card rounded-xl hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
+                    className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-white hover:text-black transition-all shadow-sm ${showFilters ? "border-[#FF5722] ring-1 ring-[#FF5722]" : ""
                       }`}
                   >
                     <FiFilter
@@ -519,7 +519,7 @@ const MobileSearch = () => {
                           className="filter-dropdown absolute right-0 top-full w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[10001] overflow-hidden"
                           style={{ marginTop: "10px" }}>
                           {/* Header */}
-                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-white">
                             <div className="flex items-center gap-1.5">
                               <FiFilter className="text-sm text-gray-700" />
                               <h3 className="text-sm font-bold text-gray-800">
@@ -565,14 +565,14 @@ const MobileSearch = () => {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="mt-1 bg-gray-50 rounded-xl border border-gray-100 overflow-hidden"
+                                        className="mt-1 bg-white rounded-xl border border-gray-100 overflow-hidden"
                                       >
                                         <div
                                           onClick={() => {
                                             handleFilterChange("category", "");
                                             setShowCategoryDropdown(false);
                                           }}
-                                          className={`px-3 py-2 text-sm cursor-pointer hover:bg-white transition-colors ${!filters.category ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                          className={`px-3 py-2 text-sm cursor-pointer hover:bg-white hover:text-black transition-colors ${!filters.category ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                         >
                                           All Categories
                                         </div>
@@ -583,7 +583,7 @@ const MobileSearch = () => {
                                               handleFilterChange("category", normalizeId(cat.id));
                                               setShowCategoryDropdown(false);
                                             }}
-                                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-white transition-colors ${normalizeId(filters.category) === normalizeId(cat.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-white hover:text-black transition-colors ${normalizeId(filters.category) === normalizeId(cat.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                           >
                                             {cat.name}
                                           </div>
@@ -658,14 +658,14 @@ const MobileSearch = () => {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="mt-2 bg-gray-50 border border-primary-50 rounded-2xl overflow-hidden"
+                                        className="mt-2 bg-white border border-primary-50 rounded-2xl overflow-hidden"
                                       >
                                         <div
                                           onClick={() => {
                                             handleFilterChange("vendor", "");
                                             setShowVendorDropdown(false);
                                           }}
-                                          className={`p-3 text-sm cursor-pointer hover:bg-white transition-colors border-b border-gray-100 flex items-center justify-between ${!filters.vendor ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                          className={`p-3 text-sm cursor-pointer hover:bg-white hover:text-black transition-colors border-b border-gray-100 flex items-center justify-between ${!filters.vendor ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                         >
                                           <span>All Vendors</span>
                                           {!filters.vendor && <FiFilter className="text-primary-500" />}
@@ -677,7 +677,7 @@ const MobileSearch = () => {
                                               handleFilterChange("vendor", normalizeId(vendor.id));
                                               setShowVendorDropdown(false);
                                             }}
-                                            className={`p-3 text-sm cursor-pointer hover:bg-white transition-colors border-b last:border-0 border-gray-100 flex items-center justify-between ${normalizeId(filters.vendor) === normalizeId(vendor.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
+                                            className={`p-3 text-sm cursor-pointer hover:bg-white hover:text-black transition-colors border-b last:border-0 border-gray-100 flex items-center justify-between ${normalizeId(filters.vendor) === normalizeId(vendor.id) ? "bg-white text-primary-700 font-bold" : "text-gray-600"}`}
                                           >
                                             <div className="flex items-center gap-2">
                                               <span>{vendor.storeName || vendor.name}</span>
@@ -701,7 +701,7 @@ const MobileSearch = () => {
                                   {[4, 3, 2, 1].map((rating) => (
                                     <label
                                       key={rating}
-                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-gray-50 transition-colors">
+                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-white hover:text-black transition-colors">
                                       <input
                                         type="radio"
                                         name="minRating"
@@ -734,7 +734,7 @@ const MobileSearch = () => {
                           </div>
 
                           {/* Footer */}
-                          <div className="border-t border-gray-200 p-2 bg-gray-50 space-y-1.5">
+                          <div className="border-t border-gray-200 p-2 bg-white space-y-1.5">
                             <button
                               onClick={clearFilters}
                               className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300 transition-colors">

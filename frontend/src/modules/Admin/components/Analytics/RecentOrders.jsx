@@ -33,7 +33,7 @@ const RecentOrders = ({ orders, onViewOrder }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">

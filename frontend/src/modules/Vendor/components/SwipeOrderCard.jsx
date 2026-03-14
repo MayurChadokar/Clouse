@@ -67,7 +67,7 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
                     </div>
                     <div>
                         <p className="font-bold text-green-800">{orderId}</p>
-                        <p className="text-xs text-green-600 uppercase font-bold tracking-wider">Status Updated!</p>
+                        <p className="text-xs text-green-600 uppercase font-bold ">Status Updated!</p>
                     </div>
                 </div>
                 <span className="text-green-700 font-bold">{formatPrice(displayAmount)}</span>
@@ -89,7 +89,7 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
                         <p className="font-bold text-gray-900">{formatPrice(displayAmount)}</p>
                         <div className="flex items-center gap-1 justify-end text-orange-500">
                             <FiPackage className="text-xs" />
-                            <span className="text-[10px] uppercase font-bold tracking-tight">{currentStatus.replace(/_/g, ' ')}</span>
+                            <span className="text-[10px] uppercase font-bold ">{currentStatus.replace(/_/g, ' ')}</span>
                         </div>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
             {/* Swipe Track */}
             <div
                 ref={constraintsRef}
-                className="absolute bottom-2 left-2 right-2 h-10 bg-gray-50 rounded-lg overflow-hidden border border-dashed border-gray-200"
+                className="absolute bottom-2 left-2 right-2 h-10 bg-white rounded-lg overflow-hidden border border-dashed border-gray-200"
             >
                 <motion.div
                     style={{ background }}
@@ -106,13 +106,13 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
                 >
                     <motion.p
                         style={{ opacity }}
-                        className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mx-auto"
+                        className="text-[10px] font-bold text-gray-400 uppercase  flex items-center gap-2 mx-auto"
                     >
                         Swipe to {nextActionLabel} <FiArrowRight />
                     </motion.p>
                     <motion.p
                         style={{ opacity: successOpacity }}
-                        className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-2 mx-auto absolute inset-0 flex items-center justify-center p-0"
+                        className="text-[10px] font-bold text-green-600 uppercase  flex items-center gap-2 mx-auto absolute inset-0 flex items-center justify-center p-0"
                     >
                         Confirmed! <FiCheckCircle />
                     </motion.p>

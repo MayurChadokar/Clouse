@@ -53,7 +53,7 @@ const StoreProfile = () => {
                 value={formData.storeName}
                 onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -63,7 +63,7 @@ const StoreProfile = () => {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -73,7 +73,7 @@ const StoreProfile = () => {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -83,7 +83,7 @@ const StoreProfile = () => {
                 value={formData.taxId}
                 onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
           </div>
@@ -95,7 +95,7 @@ const StoreProfile = () => {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white"
             />
           </div>
 
@@ -107,7 +107,7 @@ const StoreProfile = () => {
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -117,7 +117,7 @@ const StoreProfile = () => {
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -127,7 +127,7 @@ const StoreProfile = () => {
                 value={formData.zipCode}
                 onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
             <div>
@@ -137,7 +137,7 @@ const StoreProfile = () => {
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 text-sm sm:text-base"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white text-sm sm:text-base"
               />
             </div>
           </div>
@@ -149,7 +149,7 @@ const StoreProfile = () => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               disabled={!isEditing}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-white"
             />
           </div>
 

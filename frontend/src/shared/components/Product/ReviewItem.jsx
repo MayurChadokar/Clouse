@@ -24,7 +24,7 @@ const ReviewItem = ({ review, onHelpful, onNotHelpful }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-50 rounded-xl p-6"
+      className="bg-white rounded-xl p-6"
     >
       {/* Review Header */}
       <div className="flex items-center justify-between mb-3">

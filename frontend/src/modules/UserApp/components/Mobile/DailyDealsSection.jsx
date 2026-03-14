@@ -64,11 +64,11 @@ const DailyDealsSection = ({ products = null }) => {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 md:p-3">
+              <div className="bg-gray-200 backdrop-blur-sm rounded-full p-2 md:p-3">
                 <FiZap className="text-white text-lg md:text-2xl" />
               </div>
               <div>
-                <h2 className="text-xl md:text-3xl font-extrabold text-white drop-shadow-lg uppercase tracking-tight">
+                <h2 className="text-xl md:text-3xl font-extrabold text-white drop-shadow-lg uppercase ">
                   Daily Deals
                 </h2>
                 <p className="text-xs md:text-sm text-white/90 font-medium">
@@ -78,7 +78,7 @@ const DailyDealsSection = ({ products = null }) => {
             </div>
             <Link
               to="/daily-deals"
-              className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all">
+              className="bg-gray-200 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white hover:text-black/30 transition-all">
               See All
             </Link>
           </div>
@@ -87,7 +87,7 @@ const DailyDealsSection = ({ products = null }) => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl p-4 shadow-2xl border-2 border-white/50">
+            className="bg-white rounded-xl p-4 shadow-2xl border-2 border-gray-1000">
             <div className="mb-2">
               <p className="text-xs font-semibold text-gray-700 mb-2 ml-11">
                 Deal ends in
@@ -97,21 +97,21 @@ const DailyDealsSection = ({ products = null }) => {
                   <FiClock className="text-white text-base" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-white/20">
+                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-gray-300">
                     <div className="text-base font-extrabold leading-tight">
                       {formatTime(timeLeft.hours)}
                     </div>
                     <div className="text-[8px] opacity-90 font-medium uppercase">Hrs</div>
                   </div>
                   <span className="text-red-500 font-bold text-lg">:</span>
-                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-white/20">
+                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-gray-300">
                     <div className="text-base font-extrabold leading-tight">
                       {formatTime(timeLeft.minutes)}
                     </div>
                     <div className="text-[8px] opacity-90 font-medium uppercase">Min</div>
                   </div>
                   <span className="text-red-500 font-bold text-lg">:</span>
-                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-white/20 animate-pulse">
+                  <div className="bg-gradient-to-br from-red-500 to-orange-500 text-white rounded-lg px-2.5 py-1.5 min-w-[2.8rem] text-center shadow-lg border border-gray-300 animate-pulse">
                     <div className="text-base font-extrabold leading-tight">
                       {formatTime(timeLeft.seconds)}
                     </div>
@@ -124,14 +124,14 @@ const DailyDealsSection = ({ products = null }) => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+        <div className="flex overflow-x-auto pb-4 gap-3 snap-x scrollbar-hide -mx-2 px-2">
           {dailyDeals.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="h-full">
+              className="w-[140px] sm:w-[160px] md:w-[200px] flex-shrink-0 snap-center h-full">
               <ProductCard product={product} isFlashSale={true} />
             </motion.div>
           ))}

@@ -189,7 +189,7 @@ const ProductPerformanceReport = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm">
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm">
               <option value="revenue">Revenue</option>
               <option value="quantity">Quantity Sold</option>
               <option value="orders">Number of Orders</option>

@@ -186,7 +186,7 @@ const PendingApprovals = () => {
       render: (value, row) => (
         <div>
           <span className="font-semibold text-gray-800 block text-sm">{value || row.fileName}</span>
-          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
+          <span className="text-[10px] text-gray-500 uppercase font-bold ">
             {row.category || "Other"}
           </span>
         </div>
@@ -418,7 +418,7 @@ const PendingApprovals = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search pending vendors..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
                 />
               </div>
             </div>

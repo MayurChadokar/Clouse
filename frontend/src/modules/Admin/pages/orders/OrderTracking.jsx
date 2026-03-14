@@ -235,7 +235,7 @@ const OrderTracking = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by Order ID or customer name..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
@@ -261,14 +261,14 @@ const OrderTracking = () => {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-bold text-gray-800">Tracking Progress</h3>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-1">Order #{selectedOrder.id}</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase  mt-1">Order #{selectedOrder.id}</p>
               </div>
               <Badge variant={selectedOrder.status}>{selectedOrder.status}</Badge>
             </div>
 
             {/* Live Map Section */}
             {(selectedOrder.status === 'shipped' || selectedOrder.status === 'out_for_delivery' || selectedOrder.status === 'delivered') && (
-              <div className="h-64 sm:h-80 w-full rounded-2xl overflow-hidden shadow-inner border border-gray-100 relative bg-gray-50">
+              <div className="h-64 sm:h-80 w-full rounded-2xl overflow-hidden shadow-inner border border-gray-100 relative bg-white">
                 {riderPos ? (
                   <MapContainer center={riderPos} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OSM" />
@@ -289,7 +289,7 @@ const OrderTracking = () => {
                         <Popup>
                           <div className="text-xs font-bold text-center">
                             <p>{selectedOrder.customer.name}</p>
-                            <p className="text-gray-500 uppercase tracking-tighter">Delivery Location</p>
+                            <p className="text-gray-500 uppercase er">Delivery Location</p>
                           </div>
                         </Popup>
                       </Marker>
@@ -303,20 +303,20 @@ const OrderTracking = () => {
                       <FiTruck className="text-gray-400 text-xl" />
                     </div>
                     <p className="text-gray-500 font-bold text-sm italic">Waiting for rider live location...</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase mt-1 tracking-widest animate-pulse">Live Tracking Active</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-1  animate-pulse">Live Tracking Active</p>
                   </div>
                 )}
                 <div className="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Live Status</span>
+                  <span className="text-[10px] font-bold uppercase  text-emerald-600">Live Status</span>
                 </div>
               </div>
             )}
 
             {/* Info Cards */}
             <div className="grid grid-cols-1 gap-4">
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Delivery Partner</p>
+              <div className="bg-white p-4 rounded-xl border border-gray-100">
+                <p className="text-[10px] font-bold uppercase  text-gray-400 mb-2">Delivery Partner</p>
                 {selectedOrder.deliveryBoyId ? (
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 gradient-blue text-white rounded-lg flex items-center justify-center font-bold text-sm">
@@ -335,8 +335,8 @@ const OrderTracking = () => {
                 )}
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Customer Details</p>
+              <div className="bg-white p-4 rounded-xl border border-gray-100">
+                <p className="text-[10px] font-bold uppercase  text-gray-400 mb-2">Customer Details</p>
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-bold text-gray-800">{selectedOrder.customer.name}</p>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -366,7 +366,7 @@ const OrderTracking = () => {
                       {step.status === "completed" && (
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <FiClock className="text-[10px]" />
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">Updated Successfully</p>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase ">Updated Successfully</p>
                         </div>
                       )}
                     </div>
@@ -377,7 +377,7 @@ const OrderTracking = () => {
 
             <button
               onClick={() => navigate(`/admin/orders/${selectedOrder.id}`)}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-100 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all font-bold"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-100 text-gray-400 rounded-2xl text-[10px] font-bold uppercase  hover:bg-white hover:text-black transition-all font-bold"
             >
               <FiPackage />
               Full Order Management

@@ -236,7 +236,7 @@ const SearchBar = () => {
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
             placeholder="Search products..."
-            className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:shadow-glow transition-all duration-300 text-gray-700 placeholder:text-gray-400"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5722] transition-all duration-300 text-gray-700 placeholder:text-gray-400 shadow-sm"
           />
         </div>
       </form>
@@ -255,7 +255,7 @@ const SearchBar = () => {
                 <button
                   key={suggestion.id}
                   onClick={() => handleSuggestionSelect(index)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedIndex === index ? 'bg-primary-50' : ''
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white hover:text-black transition-colors ${selectedIndex === index ? 'bg-primary-50' : ''
                     }`}
                 >
                   <img
@@ -283,7 +283,7 @@ const SearchBar = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestionSelect(index)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left ${selectedIndex === index ? 'bg-primary-50' : ''
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white hover:text-black transition-colors text-left ${selectedIndex === index ? 'bg-primary-50' : ''
                     }`}
                 >
                   <FiClock className="text-gray-400" />
@@ -304,7 +304,7 @@ const SearchBar = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestionSelect(recentSearches.length + index)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left ${selectedIndex === recentSearches.length + index ? 'bg-primary-50' : ''
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white hover:text-black transition-colors text-left ${selectedIndex === recentSearches.length + index ? 'bg-primary-50' : ''
                     }`}
                 >
                   <FiTrendingUp className="text-gray-400" />

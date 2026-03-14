@@ -25,13 +25,13 @@ const CategoryContent = () => {
 
     if (isLoading && categories.length === 0) return (
         <div className="flex items-center justify-center p-20 animate-pulse bg-[#FAFAFA]">
-            <div className="text-[12px] font-premium font-black uppercase tracking-widest text-[#111111]/40">Syncing Collections...</div>
+            <div className="text-[12px] font-bold uppercase  text-black/40">Syncing Collections...</div>
         </div>
     );
 
     if (!activeRoot && !isLoading) return (
         <div className="flex flex-col items-center justify-center p-20 text-center bg-[#FAFAFA]">
-            <p className="text-[12px] font-premium font-black uppercase tracking-[0.2em] text-[#111111]/40">Select a category to explore</p>
+            <p className="text-[12px] font-bold uppercase text-black/40">Select a category to explore</p>
         </div>
     );
 
@@ -40,17 +40,17 @@ const CategoryContent = () => {
             {/* Displaying subcategories as a grid in a single section for now, or group them if needed */}
             <div className="px-6 mx-auto max-w-[1920px]">
                 <div className="flex items-end justify-between mb-8 pb-4 border-b border-black/5">
-                    <h3 className="text-[20px] md:text-[28px] font-premium font-black text-[#111111] uppercase tracking-tighter">
+                    <h3 className="text-[20px] md:text-[28px] font-bold text-black uppercase er">
                         {activeRoot.name} Collections
                     </h3>
                 </div>
 
                 {subCategories.length === 0 ? (
-                    <div className="py-24 text-center bg-white/50 backdrop-blur-xl rounded-[32px] border border-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
-                        <p className="font-premium text-[14px] font-black text-[#111111]/40 uppercase tracking-[0.2em] mb-6">No sub-collections curated yet</p>
+                    <div className="py-24 text-center bg-gray-500 backdrop-blur-xl rounded-[32px] border border-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+                        <p className=" text-[14px] font-bold text-black/40 uppercase mb-6">No sub-collections curated yet</p>
                         <button
                             onClick={() => navigate(`/shop?category=${activeRoot.id}`)}
-                            className="px-8 py-3.5 bg-[#111111] text-[#FAFAFA] text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-[#D4AF37] hover:text-[#111111] hover:shadow-[0_10px_30px_rgba(212,175,55,0.3)] transition-all duration-500 active:scale-95"
+                            className="px-8 py-3.5 bg-white text-gray-900 text-[11px] font-bold uppercase  rounded-full hover:bg-black hover:text-white hover:shadow-[0_10px_30px_rgba(212,175,55,0.3)] transition-all duration-500 active:scale-95"
                         >
                             View All {activeRoot.name}
                         </button>
@@ -64,7 +64,7 @@ const CategoryContent = () => {
                                 onClick={() => navigate(`/products?category=${activeRoot.id}&subCategory=${item.id}`)}
                             >
                                 {/* Premium Card Container */}
-                                <div className="w-full aspect-[4/5] bg-white rounded-[24px] overflow-hidden mb-4 border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] group-hover:border-[#D4AF37]/30 group-hover:shadow-[0_15px_35px_rgba(212,175,55,0.15)] transition-all duration-500 relative">
+                                <div className="w-full aspect-[4/5] bg-white rounded-[24px] overflow-hidden mb-4 border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] group-hover:border-black/30 group-hover:shadow-[0_15px_35px_rgba(212,175,55,0.15)] transition-all duration-500 relative">
 
                                     {/* Image with extreme smooth scaling */}
                                     <div className="absolute inset-0 p-1.5 md:p-2">
@@ -81,13 +81,13 @@ const CategoryContent = () => {
 
                                     {/* Elevated Category Title (Hover State) */}
                                     <div className="absolute bottom-4 left-0 w-full text-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 px-3 z-10">
-                                        <span className="block w-full py-2 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-black text-[#111111] uppercase tracking-[0.1em] shadow-sm">
+                                        <span className="block w-full py-2 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-bold text-black uppercase shadow-sm">
                                             Explore
                                         </span>
                                     </div>
                                 </div>
                                 {/* Clean Base Title */}
-                                <span className="font-premium text-[11px] md:text-[12px] font-black text-[#111111]/70 text-center uppercase tracking-widest leading-none px-1 group-hover:text-[#111111] transition-colors duration-300">
+                                <span className=" text-[11px] md:text-[12px] font-bold text-black/70 text-center uppercase  leading-none px-1 group-hover:text-black transition-colors duration-300">
                                     {item.name}
                                 </span>
                             </div>

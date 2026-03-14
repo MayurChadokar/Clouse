@@ -377,7 +377,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
           {/* Close Button - Mobile Only */}
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0 lg:hidden"
+            className="p-2 hover:bg-white hover:text-black/10 rounded-lg transition-colors flex-shrink-0 lg:hidden"
             aria-label="Close sidebar">
             <FiX className="text-xl text-gray-300" />
           </button>

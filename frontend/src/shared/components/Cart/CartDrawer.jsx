@@ -138,7 +138,7 @@ const CartDrawer = () => {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-gray-200 p-3 sm:p-6 bg-gray-50">
+              <div className="border-t border-gray-200 p-3 sm:p-6 bg-white">
                 <div className="flex items-center justify-between mb-2 sm:mb-4">
                   <span className="text-sm sm:text-lg font-semibold text-gray-800">
                     Total:

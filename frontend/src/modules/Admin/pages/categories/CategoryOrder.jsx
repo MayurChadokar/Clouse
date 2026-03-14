@@ -70,7 +70,7 @@ const CategoryOrder = () => {
             {orderedCategories.map((category, index) => (
               <div
                 key={category.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-white hover:text-black transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <button

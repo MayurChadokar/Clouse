@@ -77,7 +77,7 @@ const NewArrivalsSection = ({ products = null }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <motion.div
-              className="bg-white/20 backdrop-blur-sm rounded-full p-2"
+              className="bg-gray-200 backdrop-blur-sm rounded-full p-2"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 5, -5, 0],
@@ -128,7 +128,7 @@ const NewArrivalsSection = ({ products = null }) => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="/new-arrivals"
-              className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all block">
+              className="bg-gray-200 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-white hover:text-black/30 transition-all block">
               See All
             </Link>
           </motion.div>
@@ -165,7 +165,7 @@ const NewArrivalsSection = ({ products = null }) => {
                       ease: "easeInOut",
                       delay: index * 0.2,
                     }}
-                    className="rounded-xl overflow-hidden aspect-square bg-white/10 backdrop-blur-sm relative">
+                    className="rounded-xl overflow-hidden aspect-square bg-gray-100 backdrop-blur-sm relative">
                     <div className="w-full h-full relative overflow-hidden">
                       <LazyImage
                         src={product.image}

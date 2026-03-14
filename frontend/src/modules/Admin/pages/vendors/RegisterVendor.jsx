@@ -105,7 +105,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="Enter vendor's full name"
                                     />
                                 </div>
@@ -120,7 +120,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="name@example.com"
                                     />
                                 </div>
@@ -147,7 +147,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.storeName}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="Enter shop name"
                                     />
                                 </div>
@@ -162,7 +162,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="Enter phone number"
                                     />
                                 </div>
@@ -177,7 +177,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.gstNumber}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="15-digit GST number"
                                         maxLength={15}
                                     />
@@ -193,7 +193,7 @@ const RegisterVendor = () => {
                                         required
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                         placeholder="Enter login password"
                                     />
                                 </div>
@@ -209,7 +209,7 @@ const RegisterVendor = () => {
                                     value={formData.shopAddress}
                                     onChange={handleChange}
                                     rows={3}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                     placeholder="Enter full shop address"
                                 />
                             </div>
@@ -222,7 +222,7 @@ const RegisterVendor = () => {
                                     type="file"
                                     name="document"
                                     onChange={handleFileChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                 />
                             </div>
                             <p className="text-xs text-gray-500 italic">Upload a copy of GST certificate or valid business ID</p>
@@ -233,7 +233,7 @@ const RegisterVendor = () => {
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
-                            className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-50 rounded-xl transition-colors"
+                            className="px-6 py-2.5 text-gray-600 font-medium hover:bg-white hover:text-black rounded-xl transition-colors"
                         >
                             Cancel
                         </button>

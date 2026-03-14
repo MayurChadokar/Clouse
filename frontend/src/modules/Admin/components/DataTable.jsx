@@ -77,7 +77,7 @@ const DataTable = ({
                 key={row.id || index}
                 onClick={() => onRowClick && onRowClick(row)}
                 className={`p-4 ${
-                  onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
+                  onRowClick ? 'cursor-pointer hover:bg-white hover:text-black' : ''
                 } transition-colors`}
               >
                 <div className="space-y-2.5">
@@ -126,12 +126,12 @@ const DataTable = ({
       {/* Desktop Table View - Hide on mobile, show on desktop */}
       <div className="hidden md:block overflow-x-auto scrollbar-admin">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white border-b border-gray-200">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${
+                  className={`px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-700 uppercase  ${
                     sortable && column.sortable !== false
                       ? 'cursor-pointer hover:bg-gray-100'
                       : ''
@@ -172,7 +172,7 @@ const DataTable = ({
                   key={row.id || index}
                   onClick={() => onRowClick && onRowClick(row)}
                   className={`${
-                    onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
+                    onRowClick ? 'cursor-pointer hover:bg-white hover:text-black' : ''
                   } transition-colors`}
                 >
                   {columns.map((column) => {
@@ -208,7 +208,7 @@ const DataTable = ({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 border-t border-gray-200">
+        <div className="bg-white px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 border-t border-gray-200">
           <div className="text-xs sm:text-sm text-gray-700">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
             {Math.min(currentPage * itemsPerPage, sortedData.length)} of{' '}

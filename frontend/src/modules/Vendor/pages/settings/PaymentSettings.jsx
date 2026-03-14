@@ -213,7 +213,7 @@ const PaymentSettings = () => {
               <div>
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Preferred Payment Methods</h3>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                     <input
                       type="checkbox"
                       checked={formData.paymentMethods.bankTransfer || false}
@@ -226,7 +226,7 @@ const PaymentSettings = () => {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                     <input
                       type="checkbox"
                       checked={formData.paymentMethods.upi || false}
@@ -255,7 +255,7 @@ const PaymentSettings = () => {
                     </div>
                   )}
 
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                     <input
                       type="checkbox"
                       checked={formData.paymentMethods.paypal || false}

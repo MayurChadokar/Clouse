@@ -38,13 +38,13 @@ const RecommendedSection = ({ products = null }) => {
           <FiArrowRight className="text-sm" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+      <div className="flex overflow-x-auto pb-4 gap-3 snap-x scrollbar-hide -mx-2 px-2">
         {recommended.map((product, index) => (
           <motion.div
             key={product.id}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={index === 5 ? "xl:hidden" : ""}
+            className="w-[140px] sm:w-[160px] md:w-[200px] flex-shrink-0 snap-center"
             transition={{ delay: index * 0.05 }}
           >
             <ProductCard product={product} />

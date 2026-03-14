@@ -107,7 +107,7 @@ const AllNotifications = () => {
             <button
               onClick={() => fetchNotifications(page + 1)}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-white hover:text-black disabled:opacity-60"
             >
               <FiChevronDown />
               {isLoading ? "Loading..." : "Load more"}

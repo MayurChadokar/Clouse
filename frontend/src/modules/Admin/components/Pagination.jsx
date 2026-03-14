@@ -22,7 +22,7 @@ const Pagination = ({
   };
 
   return (
-    <div className={`bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 border-t border-gray-200 ${className}`}>
+    <div className={`bg-white px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 border-t border-gray-200 ${className}`}>
       <div className="text-xs sm:text-sm text-gray-700">
         Showing {startItem} to {endItem} of {totalItems} results
       </div>

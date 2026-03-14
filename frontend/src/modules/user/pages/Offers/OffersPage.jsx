@@ -50,8 +50,8 @@ const OffersPage = () => {
                         <ArrowLeft size={20} strokeWidth={3} />
                     </button>
                     <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight text-gray-900">Available Offers</h2>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Select a code for your order</p>
+                        <h2 className="text-xl font-bold uppercase  text-gray-900">Available Offers</h2>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase ">Select a code for your order</p>
                     </div>
                 </div>
             )}
@@ -62,8 +62,8 @@ const OffersPage = () => {
                         <Tag size={20} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight text-gray-900">Available Offers</h2>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Apply active promo codes for extra savings</p>
+                        <h2 className="text-xl font-bold uppercase  text-gray-900">Available Offers</h2>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase ">Apply active promo codes for extra savings</p>
                     </div>
                 </div>
             )}
@@ -79,8 +79,8 @@ const OffersPage = () => {
                                             <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
                                                 <Percent size={24} strokeWidth={3} />
                                             </div>
-                                            <div className="border-2 border-dashed border-gray-300 rounded-lg px-4 py-1.5 bg-gray-50 flex flex-col items-center">
-                                                <span className="font-black text-lg tracking-[0.15em] text-gray-900 uppercase">{promo.code}</span>
+                                            <div className="border-2 border-dashed border-gray-300 rounded-lg px-4 py-1.5 bg-white flex flex-col items-center">
+                                                <span className="font-bold text-lg text-gray-900 uppercase">{promo.code}</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2">
@@ -90,7 +90,7 @@ const OffersPage = () => {
                                                         navigate('/payment', { state: { ...location.state, appliedCode: promo.code } });
                                                         toast.success(`Applying ${promo.code}...`);
                                                     }}
-                                                    className="bg-emerald-600 text-white px-8 py-2.5 rounded-xl font-black text-[12px] hover:bg-emerald-700 transition-all uppercase tracking-[0.2em] shadow-lg active:scale-95"
+                                                    className="bg-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold text-[12px] hover:bg-emerald-700 transition-all uppercase shadow-lg active:scale-95"
                                                 >
                                                     Apply
                                                 </button>
@@ -100,7 +100,7 @@ const OffersPage = () => {
                                                         navigator.clipboard.writeText(promo.code);
                                                         toast.success('Code copied!');
                                                     }}
-                                                    className="bg-black text-white px-8 py-2.5 rounded-xl font-black text-[12px] hover:bg-gray-800 transition-all uppercase tracking-[0.2em] shadow-lg active:scale-95"
+                                                    className="bg-black text-white px-8 py-2.5 rounded-xl font-bold text-[12px] hover:bg-gray-800 transition-all uppercase shadow-lg active:scale-95"
                                                 >
                                                     Copy
                                                 </button>
@@ -109,7 +109,7 @@ const OffersPage = () => {
                                     </div>
 
                                     <div className="space-y-1">
-                                        <h3 className="text-[16px] font-black text-gray-900 uppercase tracking-tight">
+                                        <h3 className="text-[16px] font-bold text-gray-900 uppercase ">
                                             {promo.type === 'percentage' ? `${promo.value}% OFF` : `₹${promo.value} OFF`} ON MINIMUM PURCHASE: ₹{promo.minPurchase}
                                         </h3>
                                         <p className="text-gray-500 text-[13px] font-medium leading-relaxed">
@@ -127,7 +127,7 @@ const OffersPage = () => {
                                 <div className="border-t border-gray-50 bg-[#fafafa]/50">
                                     <button
                                         onClick={() => toggleTerms(promo.id)}
-                                        className="w-full py-3.5 flex items-center justify-center gap-2 text-gray-500 text-[12px] font-black uppercase tracking-widest hover:text-gray-900 transition-all"
+                                        className="w-full py-3.5 flex items-center justify-center gap-2 text-gray-500 text-[12px] font-bold uppercase  hover:text-gray-900 transition-all"
                                     >
                                         Terms & Conditions {expandedTerms[promo.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                     </button>
@@ -149,10 +149,10 @@ const OffersPage = () => {
                     </div>
                 ) : (
                     <div className="bg-white rounded-[32px] p-12 border-2 border-dashed border-gray-100 flex flex-col items-center text-center">
-                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6">
                             <Tag size={40} className="text-gray-200" />
                         </div>
-                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">No active offers</h3>
+                        <h3 className="text-lg font-bold text-gray-900 uppercase  mb-2">No active offers</h3>
                         <p className="text-gray-400 text-[13px] font-medium max-w-[250px]">Check back later for exciting discounts and promo codes!</p>
                     </div>
                 )}

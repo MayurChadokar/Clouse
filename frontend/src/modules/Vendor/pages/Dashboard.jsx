@@ -388,7 +388,7 @@ const VendorDashboard = () => {
                     onClick={() =>
                       navigate(`/vendor/orders/${order.orderId ?? order._id}`)
                     }
-                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors border border-gray-100">
+                    className="flex items-center justify-between p-3 bg-white hover:bg-gray-100 rounded-lg cursor-pointer transition-colors border border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="bg-white p-2 rounded-lg shadow-sm">
                         <FiPackage className="text-gray-400" />
@@ -407,7 +407,7 @@ const VendorDashboard = () => {
                         {formatPrice(displayAmount)}
                       </p>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tight ${displayStatus === "delivered"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase  ${displayStatus === "delivered"
                           ? "bg-green-100 text-green-700"
                           : displayStatus === "ready_for_delivery"
                             ? "bg-indigo-100 text-indigo-700"
@@ -443,7 +443,7 @@ const VendorDashboard = () => {
                   onClick={() =>
                     navigate(`/vendor/products/${product._id ?? product.id}`)
                   }
-                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+                  className="flex items-center gap-3 p-3 bg-white hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
                   <img
                     src={product.image || product.images?.[0]}
                     alt={product.name}

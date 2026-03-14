@@ -97,7 +97,7 @@ const MobileFilterPanel = ({ isOpen, onClose, filters, onFilterChange, onClearFi
                   {categories.map((category) => (
                     <label
                       key={category.id}
-                      className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white hover:text-black transition-colors"
                     >
                       <input
                         type="radio"
@@ -141,7 +141,7 @@ const MobileFilterPanel = ({ isOpen, onClose, filters, onFilterChange, onClearFi
                   {[4, 3, 2, 1].map((rating) => (
                     <label
                       key={rating}
-                      className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white hover:text-black transition-colors"
                     >
                       <input
                         type="radio"

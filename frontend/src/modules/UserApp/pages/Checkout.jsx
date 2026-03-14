@@ -347,7 +347,7 @@ const MobileCheckout = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full pb-24 min-h-screen bg-gray-50">
+        <div className="w-full pb-24 min-h-screen bg-white">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
             {/* Title Bar */}
@@ -661,7 +661,7 @@ const MobileCheckout = () => {
                             </button>
                           </div>
                           {availableCoupons.length > 0 && (
-                            <div className="mt-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                            <div className="mt-3 bg-white rounded-xl p-3 border border-gray-200">
                               <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
                                 <FiTag className="text-primary-600" />
                                 Available coupons
@@ -747,7 +747,7 @@ const MobileCheckout = () => {
                       finalTotal={finalTotal}
                       formatPrice={formatPrice}
                     />
-                    <div className="p-4 border-t border-gray-100 bg-gray-50">
+                    <div className="p-4 border-t border-gray-100 bg-white">
                       <button
                         type="submit"
                         disabled={step === 2 && isPlacingOrder}

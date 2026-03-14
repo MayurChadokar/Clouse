@@ -90,7 +90,7 @@ const LiveChat = ({ type = 'customer' }) => {
               <div
                 key={chat.id}
                 onClick={() => handleSelectChat(chat)}
-                className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedTicket?.id === chat.id ? 'bg-primary-50' : ''
+                className={`p-4 cursor-pointer hover:bg-white hover:text-black transition-colors ${selectedTicket?.id === chat.id ? 'bg-primary-50' : ''
                   }`}
               >
                 <div className="flex items-start justify-between mb-2">

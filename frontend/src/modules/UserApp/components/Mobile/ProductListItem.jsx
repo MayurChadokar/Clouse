@@ -130,7 +130,7 @@ const ProductListItem = ({ product, index, isFlashSale = false }) => {
               onClick={handleFavorite}
               className={`flex-shrink-0 p-2 rounded-full transition-all ${isFavorite
                 ? "bg-red-50 text-red-500 shadow-inner"
-                : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                : "bg-white text-gray-400 hover:bg-gray-100"
                 }`}>
               <FiHeart
                 className={`text-sm ${isFavorite ? "fill-current scale-110" : ""}`}
@@ -170,7 +170,7 @@ const ProductListItem = ({ product, index, isFlashSale = false }) => {
           {/* Bottom Row: Price + Add Button */}
           <div className="mt-auto flex items-center justify-between gap-3 pt-2 border-t border-gray-50">
             <div className="flex flex-col">
-              <span className="text-base md:text-xl font-black text-gray-900 leading-none">
+              <span className="text-base md:text-xl font-bold text-gray-900 leading-none">
                 {formatPrice(product.price)}
               </span>
               {product.originalPrice && (

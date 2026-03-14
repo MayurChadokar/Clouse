@@ -31,39 +31,39 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
     };
 
     return (
-        <div className="bg-[#111111] text-[#FAFAFA] min-h-screen pb-12">
+        <div className="bg-white text-gray-900 min-h-screen pb-12">
             <div className="container mx-auto px-4 md:px-8 lg:px-12 py-4 md:py-8">
                 {/* Mobile Location Bar - Global Consistency */}
                 {isMobile && !hideHeader && (
                     <div
                         onClick={() => setIsLocationModalOpen(true)}
-                        className="flex items-center justify-between py-3 mb-6 bg-[#1a1a1a] border-b border-white/10 cursor-pointer active:bg-white/5 transition-colors -mx-4 px-4 shadow-sm"
+                        className="flex items-center justify-between py-3 mb-6 bg-gray-50 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors -mx-4 px-4 shadow-sm"
                     >
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <MapPin size={16} className="text-[#FAFAFA] shrink-0" />
+                            <MapPin size={16} className="text-gray-900 shrink-0" />
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[12px] font-black leading-tight flex items-center gap-2 text-[#FAFAFA]">
-                                    {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase tracking-wider text-white/50">{activeAddress?.type}</span>
+                                <span className="text-[12px] font-bold leading-tight flex items-center gap-2 text-gray-900">
+                                    {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase  text-gray-500">{activeAddress?.type}</span>
                                 </span>
-                                <span className="text-[10px] font-medium truncate max-w-[200px] text-white/50">
+                                <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
                                     {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
                                 </span>
                             </div>
                         </div>
-                        <ChevronDown size={14} className="text-white/40" />
+                        <ChevronDown size={14} className="text-gray-400" />
                     </div>
                 )}
 
                 {/* Mobile Back Header */}
                 {isMobile && !isMenuPage && !hideHeader && (
-                    <div className="flex items-center gap-4 mb-6 bg-[#1a1a1a] p-4 rounded-2xl shadow-sm border border-white/10">
+                    <div className="flex items-center gap-4 mb-6 bg-gray-50 p-4 rounded-2xl shadow-sm border border-gray-200">
                         <button
                             onClick={() => navigate('/account')}
-                            className="w-10 h-10 bg-[#D4AF37] text-black rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                            className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)]"
                         >
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <h1 className="font-black text-xl text-[#FAFAFA] uppercase tracking-tight">{getPageTitle()}</h1>
+                        <h1 className="font-bold text-xl text-gray-900 uppercase ">{getPageTitle()}</h1>
                     </div>
                 )}
 
@@ -74,7 +74,7 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
                     {/* Hide detail content on mobile account menu */}
                     {(!isMobile || !isMenuPage) && (
                         <main className="flex-1">
-                            <div className="bg-[#1a1a1a] rounded-[32px] md:rounded-3xl shadow-2xl border border-white/10 p-5 md:p-8 min-h-[350px] md:min-h-[500px]">
+                            <div className="bg-gray-50 rounded-[32px] md:rounded-3xl shadow-2xl border border-gray-200 p-5 md:p-8 min-h-[350px] md:min-h-[500px]">
                                 {children}
                             </div>
                         </main>
@@ -84,7 +84,7 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
                 {/* Benefits Section - Hide on mobile detail pages to keep it clean */}
                 {(!isMobile || isMenuPage) && (
                     <div className="mt-8 overflow-x-auto scrollbar-hide">
-                        <div className="flex justify-between min-w-0 w-full border-t border-white/10 pt-6 pb-6 lg:pb-8">
+                        <div className="flex justify-between min-w-0 w-full border-t border-gray-200 pt-6 pb-6 lg:pb-8">
                             {[
                                 { icon: <ShieldCheck size={20} />, label: 'Secure Payments' },
                                 { icon: <History size={20} />, label: 'Genuine Product' },
@@ -92,8 +92,8 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
                                 { icon: <Truck size={20} />, label: '7 Day Return' }
                             ].map((item, idx) => (
                                 <div key={idx} className="flex flex-col items-center gap-1.5 px-2 flex-1 group">
-                                    <div className="text-white/40 group-hover:text-[#D4AF37] transition-colors">{item.icon}</div>
-                                    <span className="text-[11px] md:text-[12px] font-bold text-white/50 text-center leading-tight group-hover:text-white transition-colors">{item.label}</span>
+                                    <div className="text-gray-400 group-hover:text-black transition-colors">{item.icon}</div>
+                                    <span className="text-[11px] md:text-[12px] font-bold text-gray-500 text-center leading-tight group-hover:text-white transition-colors">{item.label}</span>
                                 </div>
                             ))}
                         </div>

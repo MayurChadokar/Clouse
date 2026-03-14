@@ -208,7 +208,7 @@ const SalesReport = () => {
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               placeholder="Start Date"
             />
             <span className="text-gray-500">to</span>
@@ -216,7 +216,7 @@ const SalesReport = () => {
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               placeholder="End Date"
             />
           </div>
@@ -251,7 +251,7 @@ const SalesReport = () => {
           <h3 className="text-lg font-bold text-gray-800 mb-4">Top Selling Products</h3>
           <div className="space-y-3">
             {topProducts.map((product, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
                 <div>
                   <p className="font-semibold text-gray-800">{product.name}</p>
                   <p className="text-sm text-gray-600">Quantity: {product.quantity}</p>

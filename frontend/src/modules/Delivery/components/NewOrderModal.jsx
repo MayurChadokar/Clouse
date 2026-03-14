@@ -30,7 +30,7 @@ const NewOrderModal = ({ order, isOpen, onClose, onAccept, isAccepting }) => {
                         <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white relative flex-shrink-0">
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                                className="absolute top-4 right-4 p-1 rounded-full bg-white/20 hover:bg-white hover:text-black/30 transition-colors"
                             >
                                 <FiX size={20} />
                             </button>
@@ -51,17 +51,17 @@ const NewOrderModal = ({ order, isOpen, onClose, onAccept, isAccepting }) => {
                             {/* Earnings & Time */}
                             <div className="flex justify-between items-center bg-green-50 rounded-2xl p-4 mb-5 border border-green-100">
                                 <div className="text-center flex-1">
-                                    <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider mb-1">Earning</p>
-                                    <p className="text-xl font-black text-green-800">{formatPrice(order.deliveryFee || 0)}</p>
+                                    <p className="text-[10px] text-green-600 font-bold uppercase  mb-1">Earning</p>
+                                    <p className="text-xl font-bold text-green-800">{formatPrice(order.deliveryFee || 0)}</p>
                                 </div>
                                 <div className="w-px h-8 bg-green-200"></div>
                                 <div className="text-center flex-1">
-                                    <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider mb-1">Est. Time</p>
+                                    <p className="text-[10px] text-green-600 font-bold uppercase  mb-1">Est. Time</p>
                                     <p className="text-lg font-bold text-green-800">{order.estimatedTime || 'N/A'}</p>
                                 </div>
                                 <div className="w-px h-8 bg-green-200"></div>
                                 <div className="text-center flex-1">
-                                    <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider mb-1">Distance</p>
+                                    <p className="text-[10px] text-green-600 font-bold uppercase  mb-1">Distance</p>
                                     <p className="text-lg font-bold text-green-800">{order.distance || 'N/A'}</p>
                                 </div>
                             </div>
@@ -75,7 +75,7 @@ const NewOrderModal = ({ order, isOpen, onClose, onAccept, isAccepting }) => {
                                     <div className="absolute -left-[27px] top-1 w-4 h-4 bg-orange-100 border border-orange-500 rounded-full flex items-center justify-center">
                                         <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
                                     </div>
-                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pickup From</h3>
+                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Pickup From</h3>
                                     <p className="font-bold text-gray-800 text-sm">{order.vendorName || 'Vendor'}</p>
                                     <p className="text-xs text-gray-600">{order.vendorAddress || 'Address unavailable'}</p>
                                 </div>
@@ -85,14 +85,14 @@ const NewOrderModal = ({ order, isOpen, onClose, onAccept, isAccepting }) => {
                                     <div className="absolute -left-[27px] top-1 w-4 h-4 bg-green-100 border border-green-500 rounded-full flex items-center justify-center">
                                         <FiMapPin size={10} className="text-green-600" />
                                     </div>
-                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Deliver To</h3>
+                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Deliver To</h3>
                                     <p className="font-bold text-gray-800 text-sm">{order.customer || 'Customer'}</p>
                                     <p className="text-xs text-gray-600">{order.address || 'Address unavailable'}</p>
                                 </div>
                             </div>
 
                             <div className="mb-4">
-                                <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Order Value: {formatPrice(order.total || 0)}</p>
+                                <p className="text-center text-[10px] font-bold text-gray-400 uppercase  mb-2">Order Value: {formatPrice(order.total || 0)}</p>
                             </div>
 
                             {/* Swipe to Accept */}

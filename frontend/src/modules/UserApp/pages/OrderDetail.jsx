@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPackage, FiTruck, FiMapPin, FiCreditCard, FiRotateCw, FiArrowLeft, FiShoppingBag, FiX } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -74,7 +74,7 @@ const MobileOrderDetail = () => {
               <h2 className="text-xl font-bold text-gray-800 mb-4">Order Not Found</h2>
               <button
                 onClick={() => navigate('/orders')}
-                className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
+                className="bg-black text-white px-6 py-3 rounded-xl font-bold uppercase"
               >
                 Back to Orders
               </button>
@@ -198,14 +198,14 @@ const MobileOrderDetail = () => {
                     {order.vendorItems.map((vendorGroup) => (
                       <div key={vendorGroup.vendorId} className="space-y-2">
                         {/* Vendor Header */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200/50">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center flex-shrink-0">
                             <FiShoppingBag className="text-white text-[10px]" />
                           </div>
-                          <span className="text-sm font-bold text-primary-700 flex-1">
+                          <span className="text-sm font-bold text-gray-900 flex-1">
                             {vendorGroup.vendorName}
                           </span>
-                          <span className="text-xs font-semibold text-primary-600 bg-white px-2 py-0.5 rounded-md">
+                          <span className="text-xs font-bold text-gray-900 bg-white px-2 py-0.5 rounded-md border border-gray-100">
                             {formatPrice(vendorGroup.subtotal)}
                           </span>
                         </div>
@@ -274,7 +274,7 @@ const MobileOrderDetail = () => {
               {/* Shipping Address */}
               <div className="glass-card rounded-2xl p-4">
                 <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FiMapPin className="text-primary-600" />
+                  <FiMapPin className="text-black" />
                   Shipping Address
                 </h2>
                 <div className="text-sm text-gray-600 space-y-1">
@@ -292,7 +292,7 @@ const MobileOrderDetail = () => {
               {/* Payment Info */}
               <div className="glass-card rounded-2xl p-4">
                 <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FiCreditCard className="text-primary-600" />
+                  <FiCreditCard className="text-black" />
                   Payment Information
                 </h2>
                 <div className="text-sm text-gray-600 space-y-2">
@@ -339,7 +339,7 @@ const MobileOrderDetail = () => {
                   </div>
                   <div className="flex justify-between text-lg font-bold text-gray-800 pt-2 border-t border-gray-200">
                     <span>Total</span>
-                    <span className="text-primary-600">{formatPrice(order.total)}</span>
+                    <span className="text-black">{formatPrice(order.total)}</span>
                   </div>
                 </div>
               </div>
@@ -356,7 +356,7 @@ const MobileOrderDetail = () => {
                 )}
                 <button
                   onClick={handleReorder}
-                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-glow-green transition-all"
+                  className="w-full py-3 bg-black text-white rounded-xl font-bold uppercase flex items-center justify-center gap-2 hover:bg-gray-800 shadow-md transition-all"
                 >
                   <FiRotateCw className="text-lg" />
                   Reorder
@@ -386,7 +386,7 @@ const MobileOrderDetail = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center"
+              className="fixed inset-0 bg-gray-100 z-50 flex items-end sm:items-center sm:justify-center"
               onClick={() => setShowReturnModal(false)}
             >
               <motion.div
@@ -442,7 +442,7 @@ const MobileOrderDetail = () => {
                 <button
                   onClick={handleRequestReturn}
                   disabled={isSubmittingReturn}
-                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold disabled:opacity-70"
+                  className="w-full py-3 bg-black text-white rounded-xl font-bold uppercase disabled:opacity-70"
                 >
                   {isSubmittingReturn ? 'Submitting...' : 'Submit Return Request'}
                 </button>

@@ -45,7 +45,7 @@ const CategoryBanners = () => {
                                     onError={(e) => { e.target.src = 'https://placehold.co/150?text=' + category.name }}
                                 />
                             </div>
-                            <p className="text-[10px] sm:text-xs md:text-sm font-bold text-center text-text-primary uppercase tracking-tight line-clamp-1">{category.name}</p>
+                            <p className="text-[10px] sm:text-xs md:text-sm font-bold text-center text-text-primary uppercase  line-clamp-1">{category.name}</p>
                         </div>
                     ))}
                 </div>

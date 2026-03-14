@@ -327,7 +327,7 @@ const MobileCategory = () => {
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 glass-card rounded-xl hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
+                    className={`p-2.5 glass-card rounded-xl hover:bg-white hover:text-black/80 transition-colors ${showFilters ? "bg-white/80" : ""
                       }`}>
                     <FiFilter
                       className={`text-lg transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"
@@ -359,7 +359,7 @@ const MobileCategory = () => {
                           className="filter-dropdown absolute right-0 top-full w-56 bg-white rounded-xl shadow-2xl border border-gray-200 z-[10001] overflow-hidden"
                           style={{ marginTop: "-50px" }}>
                           {/* Header */}
-                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-white">
                             <div className="flex items-center gap-1.5">
                               <FiFilter className="text-sm text-gray-700" />
                               <h3 className="text-sm font-bold text-gray-800">
@@ -440,7 +440,7 @@ const MobileCategory = () => {
                                   {[4, 3, 2, 1].map((rating) => (
                                     <label
                                       key={rating}
-                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-gray-50 transition-colors">
+                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-white hover:text-black transition-colors">
                                       <input
                                         type="radio"
                                         name="minRating"
@@ -475,7 +475,7 @@ const MobileCategory = () => {
                           </div>
 
                           {/* Footer */}
-                          <div className="border-t border-gray-200 p-2 bg-gray-50 space-y-1.5">
+                          <div className="border-t border-gray-200 p-2 bg-white space-y-1.5">
                             <button
                               onClick={clearFilters}
                               className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300 transition-colors">
@@ -511,7 +511,7 @@ const MobileCategory = () => {
               </div>
             ) : viewMode === "grid" ? (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6">
                   {displayedItems.map((product, index) => (
                     <motion.div
                       key={product.id}

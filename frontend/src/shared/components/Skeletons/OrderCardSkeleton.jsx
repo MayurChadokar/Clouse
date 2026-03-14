@@ -21,7 +21,7 @@ const OrderCardSkeleton = () => {
         <div className="h-5 bg-gray-300 rounded w-24 mb-3"></div>
         <div className="space-y-3">
           {[...Array(2)].map((_, index) => (
-            <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
+            <div key={index} className="flex items-center gap-4 p-3 bg-white rounded-xl">
               <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
               <div className="flex-1">
                 <div className="h-4 bg-gray-300 rounded w-48 mb-2"></div>

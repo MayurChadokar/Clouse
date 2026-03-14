@@ -319,7 +319,7 @@ const ManageProducts = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Status Tabs */}
-        <div className="flex border-b border-gray-200 bg-gray-50/50 overflow-x-auto no-scrollbar">
+        <div className="flex border-b border-gray-200 bg-white/50 overflow-x-auto no-scrollbar">
           {[
             { id: "all", label: "All Products", icon: FiGrid },
             { id: "pending", label: "Pending Approval", icon: FiClock },
@@ -366,7 +366,7 @@ const ManageProducts = () => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search products..."
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
                     />
                   </div>
 
@@ -476,7 +476,7 @@ const ManageProducts = () => {
                         onClick={() => setExplorerVendorId(vendor._id || vendor.id)}
                         className={`w-full text-left px-3 py-3 rounded-xl transition-all flex items-center gap-3 ${explorerVendorId === (vendor._id || vendor.id)
                           ? "bg-primary-50 text-primary-700 shadow-sm border-l-4 border-primary-600"
-                          : "hover:bg-gray-50 text-gray-600"
+                          : "hover:bg-white hover:text-black text-gray-600"
                           }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${explorerVendorId === (vendor._id || vendor.id) ? "bg-primary-600 text-white" : "bg-gray-100"}`}>
@@ -499,7 +499,7 @@ const ManageProducts = () => {
                   <>
                     <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                       <div>
-                        <h3 className="font-black text-lg text-gray-800">
+                        <h3 className="font-bold text-lg text-gray-800">
                           {vendors.find(v => (v._id || v.id) === explorerVendorId)?.storeName || "Vendor Products"}
                         </h3>
                         <p className="text-xs text-gray-500">Managing products for this vendor</p>
@@ -514,9 +514,9 @@ const ManageProducts = () => {
                           <button
                             key={st.id}
                             onClick={() => setExplorerStatus(st.id)}
-                            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${explorerStatus === st.id
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase  rounded-md transition-all ${explorerStatus === st.id
                               ? "bg-white text-primary-600 shadow-sm"
-                              : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                              : "text-gray-500 hover:text-gray-700 hover:bg-white hover:text-black/50"
                               }`}
                           >
                             {st.label}
@@ -541,7 +541,7 @@ const ManageProducts = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
                     <FiUser size={48} className="opacity-20 mb-4" />
-                    <p className="font-black uppercase tracking-widest opacity-40">Select a vendor from list</p>
+                    <p className="font-bold uppercase  opacity-40">Select a vendor from list</p>
                   </div>
                 )}
               </div>

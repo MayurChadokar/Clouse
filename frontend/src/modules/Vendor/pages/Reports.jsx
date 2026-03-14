@@ -39,7 +39,7 @@ const Reports = () => {
                 className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-primary-600 text-primary-600 bg-primary-50'
-                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-white hover:text-black'
                 }`}>
                 <Icon className="text-sm sm:text-base" />
                 <span className="text-sm sm:text-base font-semibold">{tab.label}</span>

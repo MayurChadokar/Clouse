@@ -113,10 +113,10 @@ const EarningsReport = () => {
             sortable: true,
             render: (value) => (
                 <div className="flex flex-col">
-                    <span className={`font-black text-lg ${value >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    <span className={`font-bold text-lg ${value >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                         {formatPrice(value)}
                     </span>
-                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Earnings - Delivery</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold er">Earnings - Delivery</span>
                 </div>
             ),
         },
@@ -175,8 +175,8 @@ const EarningsReport = () => {
                         className={`bg-white rounded-xl p-5 shadow-sm border ${card.highlight ? 'border-primary-200 ring-4 ring-primary-50' : 'border-gray-200'}`}
                     >
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{card.title}</p>
-                            <div className="p-2 bg-gray-50 rounded-lg">
+                            <p className="text-xs font-semibold text-gray-500 uppercase ">{card.title}</p>
+                            <div className="p-2 bg-white rounded-lg">
                                 {card.icon}
                             </div>
                         </div>
@@ -198,7 +198,7 @@ const EarningsReport = () => {
                             type="date"
                             value={dateRange.start}
                             onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-inter"
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-inter"
                         />
                     </div>
                     <div className="flex-1 min-w-[200px]">
@@ -207,7 +207,7 @@ const EarningsReport = () => {
                             type="date"
                             value={dateRange.end}
                             onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-inter"
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-inter"
                         />
                     </div>
                     <div className="flex gap-2">

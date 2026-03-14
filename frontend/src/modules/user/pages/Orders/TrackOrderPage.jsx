@@ -77,16 +77,16 @@ const TrackOrderPage = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
                 <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Updating Status...</p>
+                <p className="text-gray-400 font-bold uppercase  text-[10px]">Updating Status...</p>
             </div>
         );
     }
 
     if (!order) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-white">
                 <p className="text-gray-500 font-bold">Order not found</p>
             </div>
         );
@@ -122,17 +122,17 @@ const TrackOrderPage = () => {
     const riderPosition = hasRiderLocation ? [riderLocation[1], riderLocation[0]] : null;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-white pb-20">
             {/* Header */}
             <div className="bg-white p-4 flex items-center gap-4 border-b border-gray-100 sticky top-0 z-50">
-                <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                <button onClick={() => navigate(-1)} className="p-2 hover:bg-white hover:text-black rounded-full transition-colors">
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 className="text-lg font-black uppercase tracking-tight">Track Order</h1>
+                    <h1 className="text-lg font-bold uppercase ">Track Order</h1>
                     <p className="text-[10px] text-gray-400 font-bold">Order #{order.orderId || orderId}</p>
                 </div>
-                <div className={`ml-auto px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor()}`}>
+                <div className={`ml-auto px-3 py-1 rounded-full text-[10px] font-bold uppercase  ${getStatusColor()}`}>
                     {status.replace('_', ' ')}
                 </div>
             </div>
@@ -160,7 +160,7 @@ const TrackOrderPage = () => {
                                     <Popup>
                                         <div className="text-center">
                                             <p className="font-bold text-gray-900">{order?.deliveryBoyId?.name || 'Delivery Partner'}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase font-black">Out for Delivery</p>
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold">Out for Delivery</p>
                                         </div>
                                     </Popup>
                                 </Marker>
@@ -172,7 +172,7 @@ const TrackOrderPage = () => {
                                     <Truck className="text-emerald-600" size={24} />
                                 </div>
                                 <h3 className="font-bold text-gray-900">Tracking Active</h3>
-                                <p className="text-[10px] text-gray-400 font-black uppercase mt-1">Waiting for live signal...</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Waiting for live signal...</p>
                             </div>
                         )}
                     </motion.div>
@@ -184,7 +184,7 @@ const TrackOrderPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
                 >
-                    <h2 className="text-sm font-black uppercase tracking-widest mb-6 text-gray-400">Order Status</h2>
+                    <h2 className="text-sm font-bold uppercase  mb-6 text-gray-400">Order Status</h2>
                     <div className="relative pl-8 border-l-2 border-gray-100 space-y-8">
                         {steps.map((step, index) => {
                             const isCompleted = index < currentStep;
@@ -198,7 +198,7 @@ const TrackOrderPage = () => {
                                     </div>
                                     <div className={`${isCompleted || isCurrent ? 'opacity-100' : 'opacity-40'}`}>
                                         <p className="text-sm font-bold text-gray-900">{step.label}</p>
-                                        <p className={`text-[10px] uppercase font-bold tracking-wide mt-1 ${isCompleted ? 'text-emerald-500' : 'text-gray-400'}`}>
+                                        <p className={`text-[10px] uppercase font-bold mt-1 ${isCompleted ? 'text-emerald-500' : 'text-gray-400'}`}>
                                             {step.label === 'Delivered' && !isCompleted ? 'Instant (60 Mins)' : step.date}
                                         </p>
                                     </div>
@@ -215,7 +215,7 @@ const TrackOrderPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
                     >
-                        <h2 className="text-sm font-black uppercase tracking-widest mb-4 text-gray-400">Delivery Partner</h2>
+                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Delivery Partner</h2>
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
                                 <Truck size={24} />
@@ -229,7 +229,7 @@ const TrackOrderPage = () => {
                             {(order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone) && (
                                 <a
                                     href={`tel:${order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone}`}
-                                    className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-tight hover:bg-emerald-100 transition-colors"
+                                    className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase  hover:bg-emerald-100 transition-colors"
                                 >
                                     Call
                                 </a>
@@ -240,19 +240,19 @@ const TrackOrderPage = () => {
 
                 {/* Tracking Number */}
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                    <h2 className="text-sm font-black uppercase tracking-widest mb-4 text-gray-400">Tracking Number</h2>
+                    <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Tracking Number</h2>
                     <div className="bg-purple-50 rounded-2xl p-4">
-                        <p className="text-xl font-black text-purple-900 tracking-widest">{trackingNumber}</p>
+                        <p className="text-xl font-bold text-purple-900 ">{trackingNumber}</p>
                     </div>
                 </div>
 
                 {/* Shipping Address */}
                 {address && (
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h2 className="text-sm font-black uppercase tracking-widest mb-4 text-gray-400 flex items-center gap-2">
+                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400 flex items-center gap-2">
                             <MapPin size={16} /> Shipping Address
                         </h2>
-                        <div className="bg-gray-50 rounded-2xl p-4">
+                        <div className="bg-white rounded-2xl p-4">
                             <p className="text-sm font-bold text-gray-900">{address.name}</p>
                             <p className="text-xs font-medium text-gray-500 mt-1 leading-relaxed">
                                 {address.address}{address.locality ? `, ${address.locality}` : ''} <br />
@@ -265,16 +265,16 @@ const TrackOrderPage = () => {
                 {/* Order Items */}
                 {Array.isArray(order.items) && order.items.length > 0 && (
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h2 className="text-sm font-black uppercase tracking-widest mb-4 text-gray-400">Order Items</h2>
+                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Order Items</h2>
                         <div className="space-y-4">
                             {order.items.map((item, idx) => (
-                                <div key={idx} className="flex gap-4 items-center bg-gray-50 p-3 rounded-2xl">
+                                <div key={idx} className="flex gap-4 items-center bg-white p-3 rounded-2xl">
                                     <div className="w-16 h-16 bg-white rounded-xl overflow-hidden shrink-0 border border-gray-100">
                                         <img src={item.image} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="text-xs font-black text-gray-900 line-clamp-1">{item.name}</h4>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-1">
+                                        <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{item.name}</h4>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">
                                             Qty: {item.quantity}
                                         </p>
                                     </div>
@@ -287,8 +287,8 @@ const TrackOrderPage = () => {
                 {/* Delivery Info */}
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">Delivery Type</p>
-                        <p className="text-lg font-black text-emerald-600">Instant Delivery (60 Mins)</p>
+                        <p className="text-[10px] uppercase font-bold text-gray-400  mb-1">Delivery Type</p>
+                        <p className="text-lg font-bold text-emerald-600">Instant Delivery (60 Mins)</p>
                     </div>
                     <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500">
                         <Clock size={24} />
@@ -297,7 +297,7 @@ const TrackOrderPage = () => {
 
                 <button
                     onClick={() => navigate(`/orders/${order.orderId || orderId}`)}
-                    className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-200"
+                    className="w-full py-4 bg-black text-white rounded-2xl font-bold text-xs uppercase hover:bg-gray-800 shadow-lg shadow-gray-200"
                 >
                     View Order Details
                 </button>

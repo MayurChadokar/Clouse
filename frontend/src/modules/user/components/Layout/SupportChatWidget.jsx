@@ -85,7 +85,7 @@ const SupportChatWidget = () => {
                         {/* Header */}
                         <div className="bg-primary-600 p-4 text-white flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-lg">
+                                <div className="p-2 bg-gray-200 rounded-lg">
                                     <FiMessageCircle className="text-xl" />
                                 </div>
                                 <div>
@@ -97,19 +97,19 @@ const SupportChatWidget = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded">
+                                <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-200 rounded">
                                     <FiMinus />
                                 </button>
-                                <button onClick={closeChat} className="p-1 hover:bg-white/20 rounded">
+                                <button onClick={closeChat} className="p-1 hover:bg-gray-200 rounded">
                                     <FiX />
                                 </button>
                             </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col relative">
+                        <div className="flex-1 overflow-y-auto bg-white flex flex-col relative">
                             {isLoading && (
-                                <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-50 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-gray-500 backdrop-blur-[2px] z-50 flex items-center justify-center">
                                     <FiLoader className="text-3xl text-primary-600 animate-spin" />
                                 </div>
                             )}
@@ -213,7 +213,7 @@ const SupportChatWidget = () => {
                                                 leaveTicketRoom(selectedTicket.id || selectedTicket._id);
                                                 setView('list');
                                             }}
-                                            className="text-xs text-primary-600 font-bold flex items-center gap-1 p-1 hover:bg-gray-50 rounded"
+                                            className="text-xs text-primary-600 font-bold flex items-center gap-1 p-1 hover:bg-white hover:text-black rounded"
                                         >
                                             &larr; Back
                                         </button>
@@ -247,7 +247,7 @@ const SupportChatWidget = () => {
                                             onChange={(e) => setMessage(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                             placeholder="Type a message..."
-                                            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         />
                                         <button
                                             onClick={handleSendMessage}

@@ -177,7 +177,7 @@ const VendorAnalytics = () => {
               {vendorStats.map((vendor) => (
                 <tr
                   key={vendor.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="border-b border-gray-100 hover:bg-white hover:text-black transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/vendors/${vendor.id}`)}>
                   <td className="py-3 px-4">
                     <div>

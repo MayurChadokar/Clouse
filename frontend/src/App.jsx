@@ -116,6 +116,7 @@ import UserProductDetail from "./modules/user/pages/Product/ProductDetailsPage";
 import UserShopPage from "./modules/user/pages/Shop/ShopPage";
 import UserProductsPage from "./modules/user/pages/Products/ProductsPage";
 import UserCartPage from "./modules/user/pages/Cart/CartPage";
+import MobileCategories from "./modules/UserApp/pages/categories";
 import UserCheckoutPage from "./modules/user/pages/Checkout/CheckoutPage";
 import UserPaymentPage from "./modules/user/pages/Payment/PaymentPage";
 import UserLoginPage from "./modules/user/pages/Auth/LoginPage";
@@ -428,9 +429,13 @@ const AppRoutes = () => {
       />
       <Route
         path="/shop"
+        element={<Navigate to="/categories" replace />}
+      />
+      <Route
+        path="/categories"
         element={
           <RouteWrapper>
-            <UserLayout variant="shop"><UserShopPage /></UserLayout>
+            <UserLayout><MobileCategories /></UserLayout>
           </RouteWrapper>
         }
       />

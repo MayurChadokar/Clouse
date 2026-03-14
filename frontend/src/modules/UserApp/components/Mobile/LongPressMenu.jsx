@@ -34,7 +34,7 @@ const LongPressMenu = ({ isOpen, onClose, position, onAddToCart, onAddToWishlist
         onClose();
       },
       color: 'text-gray-600',
-      bgColor: 'bg-gray-50',
+      bgColor: 'bg-white',
     },
   ];
 

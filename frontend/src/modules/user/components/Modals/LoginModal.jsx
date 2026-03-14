@@ -110,7 +110,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[#111111]/60 backdrop-blur-xl animate-fadeIn"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-white/60 backdrop-blur-xl animate-fadeIn"
             onClick={handleBackdropClick}
         >
             <div className="bg-[#FAFAFA] w-full max-w-[420px] rounded-[36px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden animate-scaleIn border border-white/40">
@@ -121,7 +121,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 z-20 w-10 h-10 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white transition-all duration-300 active:scale-95 text-[#878787] hover:text-[#111111] shadow-sm hover:shadow-md border border-gray-100"
+                    className="absolute top-6 right-6 z-20 w-10 h-10 bg-gray-100 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-all duration-300 active:scale-95 text-gray-600 shadow-sm hover:shadow-md border border-gray-200"
                 >
                     <X size={20} strokeWidth={2} />
                 </button>
@@ -130,7 +130,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                 {step === 2 && (
                     <button
                         onClick={() => setStep(1)}
-                        className="absolute top-6 left-6 z-20 w-10 h-10 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white transition-all duration-300 active:scale-95 text-[#878787] hover:text-[#111111] shadow-sm hover:shadow-md border border-gray-100"
+                        className="absolute top-6 left-6 z-20 w-10 h-10 bg-gray-100 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-all duration-300 active:scale-95 text-gray-600 shadow-sm hover:shadow-md border border-gray-200"
                     >
                         <ChevronLeft size={22} strokeWidth={2} />
                     </button>
@@ -138,13 +138,13 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
                 <div className="p-10 pt-12 text-center">
                     {/* Icon */}
-                    <div className="w-16 h-16 bg-[#111111] rounded-[20px] flex items-center justify-center mx-auto mb-8 shadow-[0_8px_16px_rgba(17,17,17,0.2)] transform -rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-400 group relative">
-                        <div className="absolute inset-0 bg-[#D4AF37] blur-xl opacity-20 rounded-[20px] group-hover:opacity-40 transition-opacity duration-400"></div>
-                        <Phone className="text-[#D4AF37] relative z-10" size={28} strokeWidth={2} />
+                    <div className="w-16 h-16 bg-white rounded-[20px] flex items-center justify-center mx-auto mb-8 shadow-[0_8px_16px_rgba(17,17,17,0.2)] transform -rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-400 group relative">
+                        <div className="absolute inset-0 bg-black blur-xl opacity-20 rounded-[20px] group-hover:opacity-40 transition-opacity duration-400"></div>
+                        <Phone className="text-black relative z-10" size={28} strokeWidth={2} />
                     </div>
 
                     {/* Header */}
-                    <h2 className="font-premium text-[28px] font-bold text-[#111111] mb-2 tracking-tight">
+                    <h2 className=" text-[28px] font-bold text-black mb-2 ">
                         {step === 1 ? 'Welcome Back' : 'Security Check'}
                     </h2>
                     <p className="text-[#878787] text-[13px] font-medium max-w-[260px] mx-auto leading-relaxed mb-10">
@@ -157,12 +157,12 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                     <form onSubmit={step === 1 ? handleSendOTP : handleVerifyOTP} className="space-y-6">
                         {step === 1 ? (
                             <div className="relative text-left group">
-                                <label className="absolute -top-2.5 left-4 bg-[#FAFAFA] px-2 text-[10px] font-bold text-[#878787] uppercase tracking-wider z-10 transition-colors group-focus-within:text-[#D4AF37]">
+                                <label className="absolute -top-2.5 left-4 bg-[#FAFAFA] px-2 text-[10px] font-bold text-[#878787] uppercase  z-10 transition-colors group-focus-within:text-black">
                                     Mobile Number
                                 </label>
-                                <div className="flex items-center relative gap-3 bg-white border border-gray-200 rounded-[20px] p-1.5 focus-within:border-[#D4AF37] focus-within:ring-4 focus-within:ring-[#D4AF37]/10 transition-all duration-300 shadow-sm hover:shadow-md">
+                                <div className="flex items-center relative gap-3 bg-white border border-gray-200 rounded-[20px] p-1.5 focus-within:border-black focus-within:ring-4 focus-within:ring-black/10 transition-all duration-300 shadow-sm hover:shadow-md">
                                     <div className="pl-4 pr-3 py-3 border-r border-gray-100 flex items-center justify-center">
-                                        <span className="text-[15px] font-bold text-[#111111]">+91</span>
+                                        <span className="text-[15px] font-bold text-black">+91</span>
                                     </div>
                                     <input
                                         type="tel"
@@ -173,18 +173,18 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                                             setMobileNumber(e.target.value.replace(/\D/g, ''));
                                             if (error) setError('');
                                         }}
-                                        className="w-full bg-transparent border-none outline-none text-[16px] font-semibold text-[#111111] placeholder:text-gray-300 placeholder:font-medium tracking-wide"
+                                        className="w-full bg-transparent border-none outline-none text-[16px] font-semibold text-black placeholder:text-gray-300 placeholder:font-medium"
                                         placeholder="Enter your digits"
                                     />
                                 </div>
                             </div>
                         ) : (
                             <div className="relative text-left group">
-                                <label className="absolute -top-2.5 left-4 bg-[#FAFAFA] px-2 text-[10px] font-bold text-[#878787] uppercase tracking-wider z-10 transition-colors group-focus-within:text-[#D4AF37]">
+                                <label className="absolute -top-2.5 left-4 bg-[#FAFAFA] px-2 text-[10px] font-bold text-[#878787] uppercase  z-10 transition-colors group-focus-within:text-black">
                                     Secure Code
                                 </label>
-                                <div className="flex items-center relative bg-white border border-gray-200 rounded-[20px] focus-within:border-[#D4AF37] focus-within:ring-4 focus-within:ring-[#D4AF37]/10 transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden">
-                                    <div className="pl-5 py-4 text-[#878787] group-focus-within:text-[#D4AF37] transition-colors">
+                                <div className="flex items-center relative bg-white border border-gray-200 rounded-[20px] focus-within:border-black focus-within:ring-4 focus-within:ring-black/10 transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden">
+                                    <div className="pl-5 py-4 text-[#878787] group-focus-within:text-black transition-colors">
                                         <ShieldCheck size={20} strokeWidth={2} />
                                     </div>
                                     <input
@@ -196,7 +196,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                                             setOtp(e.target.value.replace(/\D/g, ''));
                                             if (error) setError('');
                                         }}
-                                        className="w-full py-4 px-3 bg-transparent border-none outline-none text-[20px] font-bold tracking-[0.4em] text-[#111111] placeholder:text-gray-200"
+                                        className="w-full py-4 px-3 bg-transparent border-none outline-none text-[20px] font-bold text-black placeholder:text-gray-200"
                                         placeholder="••••••"
                                     />
                                 </div>
@@ -219,7 +219,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                                             }
                                         }}
                                         disabled={resendTimer > 0 || loading}
-                                        className={`text-[12px] font-bold text-[#111111] hover:text-[#D4AF37] transition-colors ${resendTimer > 0 || loading ? 'opacity-40 cursor-not-allowed hover:text-[#111111]' : ''}`}
+                                        className={`text-[12px] font-bold text-black hover:text-black transition-colors ${resendTimer > 0 || loading ? 'opacity-40 cursor-not-allowed hover:text-black' : ''}`}
                                     >
                                         Send new code
                                     </button>
@@ -239,20 +239,20 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading || (step === 1 ? mobileNumber.length !== 10 : otp.length !== 6)}
-                            className="w-full py-4 bg-[#111111] text-white rounded-[20px] font-premium font-bold text-[15px] tracking-wide shadow-[0_8px_20px_rgba(17,17,17,0.2)] hover:bg-[#1A1A1A] hover:shadow-[0_12px_24px_rgba(17,17,17,0.3)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed group relative overflow-hidden mt-8"
+                            className="w-full py-4 bg-black text-white rounded-[20px] font-bold text-[15px] shadow-[0_8px_20px_rgba(17,17,17,0.2)] hover:bg-[#1A1A1A] hover:shadow-[0_12px_24px_rgba(17,17,17,0.3)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed group relative overflow-hidden mt-8"
                         >
                             {/* Button Shimmer Effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-[200%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out" />
 
                             {loading ? (
                                 <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-[2.5px] border-white/20 border-t-[#D4AF37] rounded-full animate-spin" />
-                                    <span className="text-[#D4AF37]">Processing...</span>
+                                    <div className="w-5 h-5 border-[2.5px] border-gray-300 border-t-[#D4AF37] rounded-full animate-spin" />
+                                    <span className="text-black">Processing...</span>
                                 </div>
                             ) : (
                                 <>
                                     {step === 1 ? 'Continue Securely' : 'Verify Identity'}
-                                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#111111] transition-all duration-300">
+                                    <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-300">
                                         <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                                     </div>
                                 </>
@@ -265,10 +265,10 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
                         <p className="text-[11px] font-medium text-[#878787] leading-relaxed mb-5">
                             By continuing, you acknowledge our<br />
-                            <span className="text-[#111111] font-semibold cursor-pointer hover:text-[#D4AF37] transition-colors">Terms of Service</span> & <span className="text-[#111111] font-semibold cursor-pointer hover:text-[#D4AF37] transition-colors">Privacy Policy</span>
+                            <span className="text-black font-semibold cursor-pointer hover:text-black transition-colors">Terms of Service</span> & <span className="text-black font-semibold cursor-pointer hover:text-black transition-colors">Privacy Policy</span>
                         </p>
                         <p className="text-[12px] font-medium text-[#878787] bg-white inline-block px-4 py-2 rounded-full border border-gray-100 shadow-sm">
-                            Need help? <span className="text-[#111111] font-bold cursor-pointer hover:text-[#D4AF37] transition-colors">Contact Support</span>
+                            Need help? <span className="text-black font-bold cursor-pointer hover:text-black transition-colors">Contact Support</span>
                         </p>
                     </div>
                 </div>

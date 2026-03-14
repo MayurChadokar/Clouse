@@ -220,7 +220,7 @@ const OrderDetail = () => {
                         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                             Order #{order.orderId ?? order._id}
                             {order.orderType && (
-                                <span className={`px-2 py-0.5 ${order.orderType === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-black rounded-lg border uppercase tracking-tighter shadow-sm animate-pulse`}>
+                                <span className={`px-2 py-0.5 ${order.orderType === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-bold rounded-lg border uppercase  shadow-sm animate-pulse`}>
                                     {order.orderType.replace(/_/g, ' ')}
                                 </span>
                             )}
@@ -323,8 +323,8 @@ const OrderDetail = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {order.pickupPhoto && (
                                     <div className="space-y-2">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pickup Proof (from Your Store)</p>
-                                        <div className="relative aspect-video bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase ">Pickup Proof (from Your Store)</p>
+                                        <div className="relative aspect-video bg-white rounded-lg overflow-hidden border border-gray-100 group">
                                             <img
                                                 src={order.pickupPhoto}
                                                 alt="Pickup Proof"
@@ -332,15 +332,15 @@ const OrderDetail = () => {
                                                 onClick={() => window.open(order.pickupPhoto, '_blank')}
                                             />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                                <span className="text-white text-[10px] font-bold uppercase tracking-widest">View Full Size</span>
+                                                <span className="text-white text-[10px] font-bold uppercase ">View Full Size</span>
                                             </div>
                                         </div>
                                     </div>
                                 )}
                                 {order.deliveryPhoto && (
                                     <div className="space-y-2">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Delivery Proof (to Customer)</p>
-                                        <div className="relative aspect-video bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase ">Delivery Proof (to Customer)</p>
+                                        <div className="relative aspect-video bg-white rounded-lg overflow-hidden border border-gray-100 group">
                                             <img
                                                 src={order.deliveryPhoto}
                                                 alt="Delivery Proof"
@@ -348,7 +348,7 @@ const OrderDetail = () => {
                                                 onClick={() => window.open(order.deliveryPhoto, '_blank')}
                                             />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                                <span className="text-white text-[10px] font-bold uppercase tracking-widest">View Full Size</span>
+                                                <span className="text-white text-[10px] font-bold uppercase ">View Full Size</span>
                                             </div>
                                         </div>
                                     </div>
@@ -390,21 +390,21 @@ const OrderDetail = () => {
                         </h2>
                         <div className="space-y-4">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Payment Method</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Payment Method</p>
                                 <div className="flex items-center gap-2">
                                     {(order.paymentMethod === 'cod' || order.paymentMethod === 'cash') ? (
-                                        <span className="px-2 py-1 bg-purple-50 text-purple-700 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter flex items-center gap-1">
+                                        <span className="px-2 py-1 bg-purple-50 text-purple-700 text-[10px] font-bold rounded border border-purple-100 uppercase er flex items-center gap-1">
                                             <FiDollarSign /> Cash on Delivery
                                         </span>
                                     ) : (
-                                        <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-100 uppercase tracking-tighter">
+                                        <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-100 uppercase er">
                                             Prepaid ({order.paymentMethod?.toUpperCase()})
                                         </span>
                                     )}
                                 </div>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Payment Status</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Payment Status</p>
                                 <Badge variant={order.paymentStatus === 'paid' ? 'delivered' : 'pending'}>
                                     {order.paymentStatus?.replace(/_/g, ' ')?.toUpperCase() || 'PENDING'}
                                 </Badge>

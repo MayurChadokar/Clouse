@@ -141,7 +141,7 @@ const OrderDetail = () => {
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{order.id}</h1>
               {order.orderType && order.orderType !== 'standard' && (
-                <span className={`px-2 py-0.5 ${order.orderType === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-black rounded-lg border uppercase tracking-tighter shadow-sm animate-pulse`}>
+                <span className={`px-2 py-0.5 ${order.orderType === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-bold rounded-lg border uppercase er shadow-sm animate-pulse`}>
                   {order.orderType.replace(/_/g, ' ')}
                 </span>
               )}
@@ -229,7 +229,7 @@ const OrderDetail = () => {
                 {(order.paymentMethod === 'cod' || order.paymentMethod === 'cash') && (
                   <div>
                     <p className="text-xs text-gray-500 mb-0.5">Cash Settlement</p>
-                    <Badge variant={order.isCashSettled ? 'delivered' : 'pending'} className="text-[10px] font-black uppercase">
+                    <Badge variant={order.isCashSettled ? 'delivered' : 'pending'} className="text-[10px] font-bold uppercase">
                       {order.isCashSettled ? 'Settled to Office' : 'Pending Settlement'}
                     </Badge>
                   </div>
@@ -247,7 +247,7 @@ const OrderDetail = () => {
               </h2>
               <div className="space-y-2">
                 {itemsArray.map((item) => (
-                  <div key={item.id || item.name} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg">
+                  <div key={item.id || item.name} className="flex items-center gap-3 p-2.5 bg-white rounded-lg">
                     <img
                       src={getProductImage(item)}
                       alt={item.name || 'Product'}
@@ -335,7 +335,7 @@ const OrderDetail = () => {
               <div className={`mt-4 p-3 rounded-lg border-l-4 ${order.deliveryType === 'try_and_buy' ? 'bg-orange-50 border-orange-500' : 'bg-blue-50 border-blue-500'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <FiClock className={order.deliveryType === 'try_and_buy' ? 'text-orange-600' : 'text-blue-600'} />
-                  <h2 className="text-sm font-black uppercase text-gray-800">
+                  <h2 className="text-sm font-bold uppercase text-gray-800">
                     {order.deliveryType.replace(/_/g, ' ')} Instruction
                   </h2>
                 </div>
@@ -394,7 +394,7 @@ const OrderDetail = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {order.pickupPhoto && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pickup Proof (from Vendor)</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase ">Pickup Proof (from Vendor)</p>
                     <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
                       <img
                         src={order.pickupPhoto}
@@ -403,14 +403,14 @@ const OrderDetail = () => {
                         onClick={() => window.open(order.pickupPhoto, '_blank')}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-widest">Click to View</span>
+                        <span className="text-white text-[10px] font-bold uppercase ">Click to View</span>
                       </div>
                     </div>
                   </div>
                 )}
                 {order.deliveryPhoto && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Proof (to Customer)</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase ">Delivery Proof (to Customer)</p>
                     <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
                       <img
                         src={order.deliveryPhoto}
@@ -419,7 +419,7 @@ const OrderDetail = () => {
                         onClick={() => window.open(order.deliveryPhoto, '_blank')}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-widest">Click to View</span>
+                        <span className="text-white text-[10px] font-bold uppercase ">Click to View</span>
                       </div>
                     </div>
                   </div>
@@ -543,7 +543,7 @@ const OrderDetail = () => {
               {order.customer?.email && (
                 <button
                   onClick={() => window.location.href = `mailto:${order.customer.email}`}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
                 >
                   <FiMail className="text-sm" />
                   Email Customer
@@ -552,7 +552,7 @@ const OrderDetail = () => {
               {(order.customer?.phone || order.shippingAddress?.phone) && (
                 <button
                   onClick={() => window.location.href = `tel:${order.customer?.phone || order.shippingAddress?.phone}`}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
                 >
                   <FiPhone className="text-sm" />
                   Call Customer

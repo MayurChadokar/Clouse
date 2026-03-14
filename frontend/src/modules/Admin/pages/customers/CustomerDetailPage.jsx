@@ -396,15 +396,15 @@ const CustomerDetailPage = () => {
             )}
           </div>
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-500 mb-1">Total Orders</p>
               <p className="text-2xl font-bold text-gray-800">{orders.length}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-500 mb-1">Total Spent</p>
               <p className="text-2xl font-bold text-primary-600">{formatPrice(totalSpent)}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-500 mb-1">Last Order</p>
               <p className="text-sm font-semibold text-gray-800">
                 {customer.lastOrderDate ? formatDateTime(customer.lastOrderDate) : 'No orders yet'}
@@ -515,7 +515,7 @@ const CustomerDetailPage = () => {
                     {orders.slice(0, 5).map((order) => (
                       <div
                         key={order.orderId || order._id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                         onClick={() => navigate(`/admin/orders/${order.orderId || order._id}`)}
                       >
                         <div>
@@ -550,7 +550,7 @@ const CustomerDetailPage = () => {
                     {customer.activityHistory.slice(0, 10).map((activity) => (
                       <div
                         key={activity.id}
-                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                        className="flex items-start gap-3 p-3 bg-white rounded-lg"
                       >
                         <div className="w-2 h-2 bg-primary-600 rounded-full mt-2"></div>
                         <div className="flex-1">

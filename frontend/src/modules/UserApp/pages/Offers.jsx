@@ -242,7 +242,7 @@ const MobileOffers = () => {
                 <FiArrowLeft className="text-xl text-gray-700" />
               </button>
               <div className="flex-1">
-                <h1 className="text-2xl font-black text-gray-800 tracking-tight uppercase">
+                <h1 className="text-2xl font-bold text-gray-800  uppercase">
                   Special Offers
                 </h1>
                 <p className="text-sm font-medium text-red-600">
@@ -273,7 +273,7 @@ const MobileOffers = () => {
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2 glass-card rounded-xl hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""
+                    className={`p-2 glass-card rounded-xl hover:bg-white hover:text-black/80 transition-colors ${showFilters ? "bg-white/80" : ""
                       }`}>
                     <FiFilter
                       className={`text-lg transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"
@@ -302,7 +302,7 @@ const MobileOffers = () => {
                           }}
                           className="filter-dropdown absolute right-0 top-full w-56 bg-white rounded-xl shadow-2xl border border-gray-200 z-[10001] overflow-hidden"
                           style={{ marginTop: "-50px" }}>
-                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-white">
                             <div className="flex items-center gap-1.5">
                               <FiFilter className="text-sm text-gray-700" />
                               <h3 className="text-sm font-bold text-gray-800">
@@ -372,7 +372,7 @@ const MobileOffers = () => {
                                   {[4, 3, 2, 1].map((rating) => (
                                     <label
                                       key={rating}
-                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-gray-50 transition-colors">
+                                      className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-white hover:text-black transition-colors">
                                       <input
                                         type="radio"
                                         name="minRating"
@@ -399,7 +399,7 @@ const MobileOffers = () => {
                             </div>
                           </div>
 
-                          <div className="border-t border-gray-200 p-2 bg-gray-50 space-y-1.5">
+                          <div className="border-t border-gray-200 p-2 bg-white space-y-1.5">
                             <button
                               onClick={clearFilters}
                               className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300 transition-colors">
@@ -432,7 +432,7 @@ const MobileOffers = () => {
                     <button
                       key={coupon._id || coupon.code}
                       onClick={() => copyCoupon(coupon.code)}
-                      className="w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                      className="w-full text-left p-2 rounded-lg bg-white hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-800">{coupon.code}</p>

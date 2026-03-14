@@ -1,696 +1,280 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiFilter, FiX, FiSearch } from "react-icons/fi";
-import MobileLayout from "../components/Layout/MobileLayout";
+import { FiArrowLeft, FiSearch, FiGrid, FiHeart, FiHome, FiChevronRight, FiCompass } from "react-icons/fi";
 import { categories as fallbackCategories } from "../../../data/categories";
-import { getCatalogProducts } from "../data/catalogData";
 import { useCategoryStore } from "../../../shared/store/categoryStore";
 import PageTransition from "../../../shared/components/PageTransition";
-import LazyImage from "../../../shared/components/LazyImage";
 import ProductCard from "../../../shared/components/ProductCard";
 import api from "../../../shared/utils/api";
 
-const normalizeId = (value) => String(value ?? "").trim();
-
-const getParentId = (category) => {
-  const parent = category?.parentId;
-  if (!parent) return null;
-  if (typeof parent === "object") {
-    return normalizeId(parent?._id ?? parent?.id ?? "");
-  }
-  return normalizeId(parent);
-};
-
-const normalizeProduct = (raw) => {
-  const vendorObj =
-    raw?.vendor && typeof raw.vendor === "object"
-      ? raw.vendor
-      : raw?.vendorId && typeof raw.vendorId === "object"
-        ? raw.vendorId
-        : null;
-  const brandObj =
-    raw?.brand && typeof raw.brand === "object"
-      ? raw.brand
-      : raw?.brandId && typeof raw.brandId === "object"
-        ? raw.brandId
-        : null;
-  const categoryObj =
-    raw?.category && typeof raw.category === "object"
-      ? raw.category
-      : raw?.categoryId && typeof raw.categoryId === "object"
-        ? raw.categoryId
-        : null;
-
-  const id = normalizeId(raw?.id || raw?._id);
-
-  return {
-    ...raw,
-    id,
-    _id: id,
-    vendorId: normalizeId(vendorObj?._id || vendorObj?.id || raw?.vendorId),
-    vendorName: raw?.vendorName || vendorObj?.storeName || vendorObj?.name || "",
-    brandId: normalizeId(brandObj?._id || brandObj?.id || raw?.brandId),
-    brandName: raw?.brandName || brandObj?.name || "",
-    categoryId: normalizeId(categoryObj?._id || categoryObj?.id || raw?.categoryId),
-    categoryName: raw?.categoryName || categoryObj?.name || "",
-    image: raw?.image || raw?.images?.[0] || "",
-    images: Array.isArray(raw?.images)
-      ? raw.images
-      : raw?.image
-        ? [raw.image]
-        : [],
-    price: Number(raw?.price) || 0,
-    rating: Number(raw?.rating) || 0,
-  };
+// Robust ID normalization
+const normalizeId = (value) => {
+  if (!value) return null;
+  if (typeof value === "object") return String(value?._id || value?.id || "").trim();
+  return String(value).trim();
 };
 
 const MobileCategories = () => {
   const navigate = useNavigate();
-  const { categories, initialize, getCategoriesByParent, getRootCategories } =
-    useCategoryStore();
+  const { categories: allCategoriesInStore, initialize } = useCategoryStore();
+  
+  // State for 3-level navigation
+  const [selectedRootId, setSelectedRootId] = useState(null);
+  const [selectedSubId, setSelectedSubId] = useState(null);
+  const [drillDownId, setDrillDownId] = useState(null); // For showing products of a grand-subcategory
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryProductsFeed, setCategoryProductsFeed] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const gridRef = useRef(null);
 
-  // Initialize store on mount
   useEffect(() => {
     initialize();
   }, [initialize]);
 
-  // Get root categories (categories without parent) and merge with fallback.
-  // Backend category image should take priority when present.
+  // 1. Process all categories to ensure normalized structure
+  const allCategories = useMemo(() => {
+    return allCategoriesInStore.map(cat => ({
+      ...cat,
+      normId: normalizeId(cat.id || cat._id),
+      normParentId: normalizeId(cat.parentId)
+    }));
+  }, [allCategoriesInStore]);
+
+  // 2. Filter Root Categories (Level 0)
   const rootCategories = useMemo(() => {
-    const roots = getRootCategories().filter((cat) => cat.isActive !== false);
-    if (roots.length === 0) {
-      return fallbackCategories;
+    const roots = allCategories.filter(cat => !cat.normParentId && cat.isActive !== false);
+    if (roots.length === 0) return fallbackCategories.map(c => ({ ...c, normId: String(c.id) }));
+    return roots;
+  }, [allCategories]);
+
+  // Auto-select first root
+  useEffect(() => {
+    if (rootCategories.length > 0 && !selectedRootId) {
+      setSelectedRootId(rootCategories[0].normId);
     }
-    // Keep backend values as source of truth.
-    // Use fallback image only when backend category has no image.
-    return roots.map((cat) => {
-      const fallbackCat = fallbackCategories.find(
-        (fc) =>
-          normalizeId(fc.id) === normalizeId(cat.id) ||
-          fc.name?.toLowerCase() === cat.name?.toLowerCase()
-      );
-      if (fallbackCat) {
-        return {
-          ...fallbackCat,
-          ...cat,
-          image: cat.image || fallbackCat.image,
-        };
-      }
-      return cat;
-    });
-  }, [categories, getRootCategories]);
+  }, [rootCategories, selectedRootId]);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState(
-    rootCategories[0]?.id || null
-  );
-  const categoryListRef = useRef(null);
-  const activeCategoryRef = useRef(null);
-  const filterButtonRef = useRef(null);
-  const [isInitialMount, setIsInitialMount] = useState(true);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    minPrice: "",
-    maxPrice: "",
-    minRating: "",
-  });
-  const [categoryProductsFeed, setCategoryProductsFeed] = useState([]);
-
-  // Get subcategories for selected category
+  // 3. Subcategories (Level 1) - Linked to selected Root (Vertical Sidebar)
   const subcategories = useMemo(() => {
-    if (!selectedCategoryId) return [];
-    const subcats = getCategoriesByParent(selectedCategoryId);
-    return subcats.filter((cat) => cat.isActive !== false);
-  }, [selectedCategoryId, categories, getCategoriesByParent]);
+    if (!selectedRootId) return [];
+    return allCategories.filter(cat => cat.normParentId === selectedRootId && cat.isActive !== false);
+  }, [selectedRootId, allCategories]);
 
+  // Auto-select first subcategory when root changes
   useEffect(() => {
-    if (!rootCategories.length) return;
-    if (!selectedCategoryId) {
-      setSelectedCategoryId(rootCategories[0].id);
-      return;
+    if (subcategories.length > 0 && !selectedSubId) {
+      setSelectedSubId(subcategories[0].normId);
     }
-    const exists = rootCategories.some(
-      (cat) => normalizeId(cat.id) === normalizeId(selectedCategoryId)
-    );
-    if (!exists) {
-      setSelectedCategoryId(rootCategories[0].id);
-    }
-  }, [rootCategories, selectedCategoryId]);
+  }, [subcategories, selectedSubId]);
 
-  // Reset selected subcategory when category changes
+  // 4. Grand-subcategories (Level 2) - Linked to selected Sub (Main Grid)
+  const grandSubcategories = useMemo(() => {
+    if (!selectedSubId) return [];
+    return allCategories.filter(cat => cat.normParentId === selectedSubId && cat.isActive !== false);
+  }, [selectedSubId, allCategories]);
+
+  // Handlers
+  const handleRootSelect = (id) => {
+    setSelectedRootId(id);
+    setSelectedSubId(null);
+    setDrillDownId(null);
+  };
+
+  const handleSubSelect = (id) => {
+    setSelectedSubId(id);
+    setDrillDownId(null);
+    if (gridRef.current) gridRef.current.scrollTop = 0;
+  };
+
+  const handleGrandSubSelect = (id) => {
+    setDrillDownId(id);
+    if (gridRef.current) gridRef.current.scrollTop = 0;
+  };
+
+  // 5. Product Fetching Logic
   useEffect(() => {
-    if (subcategories.length > 0) {
-      setSelectedSubcategory(subcategories[0].id);
-    } else {
-      setSelectedSubcategory(null);
-    }
-  }, [selectedCategoryId, subcategories]);
+    const fetchProducts = async () => {
+      const targetId = drillDownId || (grandSubcategories.length === 0 ? selectedSubId : null);
+      if (!targetId) return;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchCategoryProducts = async () => {
-      const targetCategoryId = normalizeId(selectedSubcategory || selectedCategoryId);
-      if (!targetCategoryId) {
-        if (!cancelled) {
-          setCategoryProductsFeed([]);
-        }
-        return;
-      }
-
+      setIsLoadingProducts(true);
       try {
         const response = await api.get("/products", {
-          params: {
-            category: targetCategoryId,
-            page: 1,
-            limit: 200,
-            sort: "newest",
-          },
+          params: { category: targetId, limit: 100 }
         });
-        const payload = response?.data ?? response;
-        const products = Array.isArray(payload?.products) ? payload.products : [];
-        if (cancelled) return;
-
-        setCategoryProductsFeed(
-          products.map(normalizeProduct).filter((product) => product.id)
-        );
-      } catch {
-        if (cancelled) return;
-        const selectedId = normalizeId(selectedCategoryId);
-        const selectedSubId = normalizeId(selectedSubcategory);
-        const fallback = getCatalogProducts().filter((product) => {
-          const productCategoryId = normalizeId(product.categoryId);
-          const productCategory = categories.find(
-            (cat) => normalizeId(cat.id) === productCategoryId
-          );
-          const productParentId = getParentId(productCategory);
-
-          if (selectedSubId) return productCategoryId === selectedSubId;
-          return productCategoryId === selectedId || productParentId === selectedId;
-        });
-        setCategoryProductsFeed(fallback);
+        const products = Array.isArray(response?.data?.products) ? response.data.products : [];
+        const normalized = products.map(raw => ({
+          ...raw,
+          id: raw.id || raw._id,
+          price: Number(raw.price) || 0,
+          image: raw.image || raw.images?.[0] || "",
+          brandName: raw.brand?.name || raw.vendor?.storeName || "Premium"
+        }));
+        setCategoryProductsFeed(normalized);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setCategoryProductsFeed([]);
+      } finally {
+        setIsLoadingProducts(false);
       }
     };
+    fetchProducts();
+  }, [drillDownId, selectedSubId, grandSubcategories.length]);
 
-    fetchCategoryProducts();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCategoryId, selectedSubcategory, categories]);
-
-  // Filter products based on selected category, subcategory, search query, and filters
   const filteredProducts = useMemo(() => {
-    if (!selectedCategoryId) return [];
-    let filtered = [...categoryProductsFeed];
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Filter by price range
-    if (filters.minPrice) {
-      filtered = filtered.filter(
-        (product) => product.price >= parseFloat(filters.minPrice)
-      );
-    }
-    if (filters.maxPrice) {
-      filtered = filtered.filter(
-        (product) => product.price <= parseFloat(filters.maxPrice)
-      );
-    }
-
-    // Filter by minimum rating
-    if (filters.minRating) {
-      filtered = filtered.filter(
-        (product) => product.rating >= parseFloat(filters.minRating)
-      );
-    }
-
-    return filtered;
-  }, [
-    selectedCategoryId,
-    categoryProductsFeed,
-    searchQuery,
-    filters,
-  ]);
-
-  // Mark initial mount as complete after first render
-  useEffect(() => {
-    if (isInitialMount) {
-      // Use requestAnimationFrame to ensure smooth initial render
-      requestAnimationFrame(() => {
-        setIsInitialMount(false);
-      });
-    }
-  }, [isInitialMount]);
-
-  // Scroll active category into view (optimized with requestAnimationFrame) - Vertical scroll
-  useEffect(() => {
-    if (activeCategoryRef.current && categoryListRef.current) {
-      const categoryElement = activeCategoryRef.current;
-      const listContainer = categoryListRef.current;
-
-      const elementTop = categoryElement.offsetTop;
-      const elementHeight = categoryElement.offsetHeight;
-      const containerHeight = listContainer.clientHeight;
-      const scrollTop = listContainer.scrollTop;
-
-      // Check if element is not fully visible
-      if (
-        elementTop < scrollTop ||
-        elementTop + elementHeight > scrollTop + containerHeight
-      ) {
-        // Use requestAnimationFrame for smoother scrolling
-        requestAnimationFrame(() => {
-          listContainer.scrollTo({
-            top: elementTop - listContainer.offsetTop - 10,
-            behavior: "smooth",
-          });
-        });
-      }
-    }
-  }, [selectedCategoryId]);
-
-  const handleCategorySelect = (categoryId) => {
-    setSelectedCategoryId(categoryId);
-  };
-
-  const handleFilterChange = (name, value) => {
-    setFilters({ ...filters, [name]: value });
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      minPrice: "",
-      maxPrice: "",
-      minRating: "",
-    });
-  };
-
-  // Close filter dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        showFilters &&
-        filterButtonRef.current &&
-        !filterButtonRef.current.contains(event.target) &&
-        !event.target.closest(".filter-dropdown")
-      ) {
-        setShowFilters(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [showFilters]);
-
-  const selectedCategory = rootCategories.find(
-    (cat) => normalizeId(cat.id) === normalizeId(selectedCategoryId)
-  );
-
-  // Check if any filter is active
-  const hasActiveFilters =
-    filters.minPrice || filters.maxPrice || filters.minRating;
-
-  // Calculate available height for content (accounting for bottom nav and cart bar)
-  const contentHeight = `calc(100vh - 80px)`;
-
-  // Handle empty categories
-  if (rootCategories.length === 0) {
-    return (
-      <PageTransition>
-        <MobileLayout showBottomNav={true} showCartBar={true}>
-          <div className="w-full flex items-center justify-center min-h-[60vh] px-4">
-            <div className="text-center">
-              <div className="text-6xl text-gray-300 mx-auto mb-4">📦</div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                No Categories Available
-              </h2>
-              <p className="text-gray-600">
-                There are no categories to display at the moment.
-              </p>
-            </div>
-          </div>
-        </MobileLayout>
-      </PageTransition>
+    if (!searchQuery) return categoryProductsFeed;
+    return categoryProductsFeed.filter(p => 
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }
-
-  // Calculate header height for layout calculations
-  const headerSectionHeight = 80;
+  }, [categoryProductsFeed, searchQuery]);
 
   return (
     <PageTransition>
-      <MobileLayout showBottomNav={true} showCartBar={true}>
-        <div
-          className="w-full flex flex-col"
-          style={{ minHeight: contentHeight }}>
-          {/* Category Header - Fixed at top */}
-          {selectedCategory && (
-            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
-              <div
-                key={`header-${selectedCategoryId}`}
-                className="flex items-center gap-2 md:gap-3">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
-                  <FiArrowLeft className="text-xl text-gray-700" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-gray-800">
-                    {selectedCategory.name}
-                  </h2>
-                  <p className="text-[10px] text-gray-500">
-                    {filteredProducts.length} product
-                    {filteredProducts.length !== 1 ? "s" : ""} available
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0 relative">
-                  <div ref={filterButtonRef} className="relative">
-                    <button
-                      onClick={() => setShowFilters(!showFilters)}
-                      className={`p-2 hover:bg-gray-100 rounded-full transition-colors ${showFilters ? "bg-gray-100" : ""
-                        }`}>
-                      <FiFilter
-                        className={`text-xl transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-700"
-                          }`}
-                      />
-                    </button>
+      <div className="flex flex-col w-full bg-white min-h-screen overflow-hidden">
+          
+          {/* HEADER: Matching Slikk App EXACTLY */}
+          <div className="sticky top-0 z-40 bg-white">
+            {/* Removed Gradient Backdrop for Pure White UI */}
+            <div className="h-20 w-full absolute top-0 left-0 bg-white -z-10" />
+            
+            <div className="pt-4 pb-4 px-4">
 
-                    {/* Filter Dropdown */}
-                    <AnimatePresence>
-                      {showFilters && (
-                        <>
-                          {/* Backdrop */}
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowFilters(false)}
-                            className="fixed inset-0 bg-black/20 z-40"
-                          />
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30,
-                            }}
-                            className="filter-dropdown absolute right-0 top-full w-56 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
-                            style={{ marginTop: "10px" }}>
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-gray-50">
-                              <div className="flex items-center gap-1.5">
-                                <FiFilter className="text-sm text-gray-700" />
-                                <h3 className="text-sm font-bold text-gray-800">
-                                  Filters
-                                </h3>
-                              </div>
-                              <button
-                                onClick={() => setShowFilters(false)}
-                                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors">
-                                <FiX className="text-sm text-gray-600" />
-                              </button>
-                            </div>
-
-                            {/* Filter Content */}
-                            <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
-                              <div className="p-2 space-y-2">
-                                {/* Price Range */}
-                                <div>
-                                  <h4 className="font-semibold text-gray-700 mb-1 text-xs">
-                                    Price Range
-                                  </h4>
-                                  <div className="space-y-1.5">
-                                    <input
-                                      type="number"
-                                      placeholder="Min Price"
-                                      value={filters.minPrice}
-                                      onChange={(e) =>
-                                        handleFilterChange(
-                                          "minPrice",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="Max Price"
-                                      value={filters.maxPrice}
-                                      onChange={(e) =>
-                                        handleFilterChange(
-                                          "maxPrice",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="w-full px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-xs"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Rating Filter */}
-                                <div>
-                                  <h4 className="font-semibold text-gray-700 mb-1 text-xs">
-                                    Minimum Rating
-                                  </h4>
-                                  <div className="space-y-0.5">
-                                    {[4, 3, 2, 1].map((rating) => (
-                                      <label
-                                        key={rating}
-                                        className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md hover:bg-gray-50 transition-colors">
-                                        <input
-                                          type="radio"
-                                          name="minRating"
-                                          value={rating}
-                                          checked={
-                                            filters.minRating ===
-                                            rating.toString()
-                                          }
-                                          onChange={(e) =>
-                                            handleFilterChange(
-                                              "minRating",
-                                              e.target.value
-                                            )
-                                          }
-                                          className="w-3 h-3 appearance-none rounded-full border-2 border-gray-300 bg-white checked:bg-white checked:border-primary-500 relative cursor-pointer"
-                                          style={{
-                                            backgroundImage:
-                                              filters.minRating ===
-                                                rating.toString()
-                                                ? "radial-gradient(circle, #10b981 40%, transparent 40%)"
-                                                : "none",
-                                          }}
-                                        />
-                                        <span className="text-xs text-gray-700">
-                                          {rating}+ Stars
-                                        </span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="border-t border-gray-200 p-2 bg-gray-50 space-y-1.5">
-                              <button
-                                onClick={clearFilters}
-                                className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300 transition-colors">
-                                Clear All
-                              </button>
-                              <button
-                                onClick={() => setShowFilters(false)}
-                                className="w-full py-1.5 gradient-green text-white rounded-md font-semibold text-xs hover:shadow-glow-green transition-all">
-                                Apply Filters
-                              </button>
-                            </div>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </div>
-
-              {/* New Search Bar Row */}
-              <div className="mt-3 relative">
-                <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                <input
-                  type="text"
-                  placeholder="Search in category..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 shadow-inner placeholder:text-gray-400"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                  >
-                    <FiX className="text-sm" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Main Content Area - Sidebar and Products */}
-          <div
-            className="flex flex-1"
-            style={{
-              minHeight: `calc(${contentHeight} - ${headerSectionHeight}px)`,
-            }}>
-            {/* Left Panel - Vertical Category Sidebar */}
-            <div
-              ref={categoryListRef}
-              className="w-16 md:w-20 bg-gray-50 border-r border-gray-200 overflow-y-auto scrollbar-hide flex-shrink-0"
-              style={{
-                maxHeight: `calc(${contentHeight} - ${headerSectionHeight}px)`,
-              }}>
-              <div className="pb-[190px]">
-                {rootCategories.map((category) => {
-                  const isActive =
-                    normalizeId(category.id) === normalizeId(selectedCategoryId);
+              {/* Horizontal Root Categories (Level 0) */}
+              <div className="flex gap-6 overflow-x-auto scrollbar-hide px-1">
+                {rootCategories.map((cat) => {
+                  const isActive = cat.normId === selectedRootId;
                   return (
-                    <div
-                      key={category.id}
-                      ref={isActive ? activeCategoryRef : null}
-                      style={{
-                        willChange: isActive ? "transform" : "auto",
-                        transform: "translateZ(0)",
-                      }}>
-                      <motion.button
-                        onClick={() => handleCategorySelect(category.id)}
-                        initial={isInitialMount ? { opacity: 0 } : false}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`w-full px-2 py-1.5 text-left transition-all duration-200 relative ${isActive ? "bg-white shadow-sm" : "hover:bg-gray-100"
-                          }`}
-                        style={{ willChange: "transform" }}>
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div
-                            className={`w-8 h-8 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 transition-all duration-200 ${isActive
-                              ? "ring-2 ring-primary-500 ring-offset-1 scale-105"
-                              : ""
-                              }`}
-                            style={{
-                              willChange: isActive ? "transform" : "auto",
-                            }}>
-                            <LazyImage
-                              src={category.image}
-                              alt={category.name}
-                              className="w-full h-full object-cover"
-                              placeholderWidth={48}
-                              placeholderHeight={48}
-                              placeholderText={category.name}
-                            />
-                          </div>
-                          <span
-                            className={`text-[9px] font-semibold text-center leading-tight transition-colors ${isActive ? "text-primary-600" : "text-gray-700"
-                              }`}>
-                            {category.name}
-                          </span>
+                    <button
+                      key={cat.normId}
+                      onClick={() => handleRootSelect(cat.normId)}
+                      className="flex flex-col items-center flex-shrink-0 group"
+                    >
+                      <div className={`w-16 h-16 rounded-full p-0.5 transition-all duration-300 ${isActive ? 'bg-[#FF5722]' : 'bg-transparent'}`}>
+                        <div className="w-full h-full rounded-full overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
+                          <img
+                            src={cat.image || "https://via.placeholder.com/150"}
+                            alt={cat.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
                         </div>
-                      </motion.button>
-                    </div>
+                      </div>
+                      <span className={`text-[12px] mt-2 font-bold ${isActive ? 'text-gray-900' : 'text-gray-500 opacity-80'}`}>
+                        {cat.name}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             </div>
+          </div>
 
-            {/* Right Panel - Products Grid */}
-            <div
-              className="flex-1 overflow-y-auto bg-white flex-shrink-0"
-              style={{
-                maxHeight: `calc(${contentHeight} - ${headerSectionHeight}px)`,
-              }}>
-              <div className="p-0 md:p-3">
-                {/* Subcategory Selector - Above product cards */}
-                {subcategories.length > 0 && (
-                  <div className="mb-3 pb-3 border-b border-gray-200">
-                    <div
-                      className="overflow-x-auto scrollbar-hide px-2 pt-2 md:pt-0 md:-mx-3 md:px-3"
-                      style={{
-                        scrollBehavior: "smooth",
-                        WebkitOverflowScrolling: "touch",
-                      }}>
-                      <div className="flex gap-1.5">
-                        {subcategories.map((subcategory) => {
-                          const isActive =
-                            normalizeId(selectedSubcategory) ===
-                            normalizeId(subcategory.id);
-                          return (
-                            <motion.button
-                              key={subcategory.id}
-                              onClick={() =>
-                                setSelectedSubcategory(subcategory.id)
-                              }
-                              whileTap={{ scale: 0.97 }}
-                              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap border ${isActive
-                                ? "bg-white text-primary-600 border-primary-200 shadow-sm"
-                                : "bg-gray-50 text-gray-600 border-gray-200 active:bg-gray-100"
-                                }`}
-                              style={{ willChange: "transform" }}>
-                              {subcategory.name}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
+          <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 240px)" }}>
+            
+            {/* SIDEBAR: Vertical Subcategories (Level 1) */}
+            <div className="w-24 md:w-28 bg-white overflow-y-auto scrollbar-hide flex flex-col border-r border-gray-100 pb-32">
+              {subcategories.map((sub) => {
+                const isActive = sub.normId === selectedSubId;
+                return (
+                  <button
+                    key={sub.normId}
+                    onClick={() => handleSubSelect(sub.normId)}
+                    className={`w-full py-5 flex flex-col items-center gap-2 transition-all relative ${isActive ? 'bg-white shadow-sm ring-1 ring-gray-100' : 'bg-transparent'}`}
+                  >
+                    {isActive && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-[#FF5722] rounded-r-full" />
+                    )}
+                    <div className={`w-14 h-14 rounded-2xl overflow-hidden transition-all duration-300 ${isActive ? 'scale-105 shadow-sm' : 'opacity-80'}`}>
+                      <img
+                        src={sub.image || "https://via.placeholder.com/150"}
+                        alt={sub.name}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
                     </div>
-                  </div>
-                )}
+                    <span className={`text-[11px] font-bold text-center leading-tight px-2 transition-colors ${isActive ? 'text-[#FF5722]' : 'text-gray-900'}`}>
+                      {sub.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                {filteredProducts.length === 0 ? (
-                  <div key="empty" className="text-center py-12">
-                    <div className="text-6xl text-gray-300 mx-auto mb-4">
-                      📦
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-2">
-                      No products found
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      There are no products available in this category at the
-                      moment.
-                    </p>
-                  </div>
-                ) : (
+            {/* MAIN AREA: Grid of Grand-subcategories (Level 2) or Products */}
+            <div 
+              ref={gridRef}
+              className="flex-1 overflow-y-auto bg-white p-4 pb-48"
+            >
+              <AnimatePresence mode="wait">
+                {drillDownId ? (
+                  // Product Grid View
                   <motion.div
-                    key={`products-${selectedCategoryId}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5 md:gap-4 p-1 md:p-0"
-                    style={{
-                      willChange: "opacity",
-                      transform: "translateZ(0)",
-                    }}>
-                    {filteredProducts.map((product) => (
-                      <div key={product.id}>
-                        <ProductCard product={product} />
+                    key="products"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                  >
+                    <button 
+                      onClick={() => setDrillDownId(null)}
+                      className="flex items-center gap-1 text-[11px] font-bold text-[#FF5722] uppercase mb-4 transition-transform active:scale-95"
+                    >
+                      <FiArrowLeft className="text-sm" /> All {subcategories.find(s => s.normId === selectedSubId)?.name}
+                    </button>
+                    
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                      {filteredProducts.map((p) => (
+                        <div key={p.id}>
+                          <ProductCard product={p} />
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : (
+                  // Category Icons Grid (Exactly like Slikk App)
+                  <motion.div
+                    key="categories"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    {grandSubcategories.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-y-6 gap-x-2">
+                        {grandSubcategories.map((grand) => (
+                          <button
+                            key={grand.normId}
+                            onClick={() => handleGrandSubSelect(grand.normId)}
+                            className="flex flex-col items-center gap-2 group transition-transform active:scale-95"
+                          >
+                            <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-[24px] overflow-hidden p-1.5 flex items-center justify-center border border-gray-100 shadow-sm transition-all group-hover:bg-white hover:text-black">
+                              <img
+                                src={grand.image || "https://via.placeholder.com/150"}
+                                alt={grand.name}
+                                className="w-full h-full object-contain mix-blend-multiply"
+                              />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[70px]">
+                              {grand.name}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                        {filteredProducts.map((p) => (
+                          <div key={p.id}>
+                            <ProductCard product={p} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
           </div>
+
         </div>
-      </MobileLayout>
-    </PageTransition >
+    </PageTransition>
   );
 };
 

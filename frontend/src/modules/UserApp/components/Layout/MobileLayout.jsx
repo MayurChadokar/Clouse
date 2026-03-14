@@ -21,7 +21,6 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
   const shouldShowBottomNav = showBottomNav && !isAuthPage;
   // Hide header on categories, search, wishlist, profile, and auth pages
   const shouldShowHeader = !isAuthPage &&
-    location.pathname !== '/categories' &&
     location.pathname !== '/search' &&
     location.pathname !== '/wishlist' &&
     location.pathname !== '/profile' &&
@@ -38,7 +37,7 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
 
   return (
     <>
-      {!isAuthPage && !isCheckoutPage && <DesktopHeader />}
+      {/* DesktopHeader removed to avoid duplication with platform-wide Header */}
       {shouldShowHeader && <MobileHeader />}
       <main
         className={`min-h-screen w-full overflow-x-hidden md:container md:mx-auto md:px-12 lg:px-24 xl:px-40 ${shouldShowBottomNav ? 'pb-20' : ''} ${showCartBar ? 'pb-24' : ''}`}
@@ -48,7 +47,7 @@ const MobileLayout = ({ children, showBottomNav = true, showCartBar = true }) =>
       </main>
       {showCartBar && <MobileCartBar />}
       {shouldShowBottomNav && <MobileBottomNav />}
-      <CartDrawer />
+      {/* CartDrawer removed to avoid duplication with global CartDrawer in App.jsx */}
     </>
   );
 };

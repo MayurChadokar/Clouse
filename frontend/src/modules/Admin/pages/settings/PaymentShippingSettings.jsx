@@ -315,7 +315,7 @@ const PaymentShippingSettings = () => {
               <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Shipping Methods</h3>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                     <input
                       type="checkbox"
                       checked={shippingData.shippingMethods?.includes('standard') || false}
@@ -324,7 +324,7 @@ const PaymentShippingSettings = () => {
                     />
                     <span className="text-sm font-semibold text-gray-700">Standard Shipping</span>
                   </label>
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                     <input
                       type="checkbox"
                       checked={shippingData.shippingMethods?.includes('express') || false}

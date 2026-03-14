@@ -108,7 +108,7 @@ const SearchSuggestions = ({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   onClick={() => onSelect(search)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:text-black rounded-lg transition-colors text-left"
                 >
                   <FiClock className="text-gray-400 text-sm" />
                   <span className="text-sm text-gray-700 flex-1">{search}</span>
@@ -139,7 +139,7 @@ const SearchSuggestions = ({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   onClick={() => onSelect(product.name)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:text-black rounded-lg transition-colors text-left"
                 >
                   <FiSearch className="text-gray-400 text-sm" />
                   <span className="text-sm text-gray-700">{product.name}</span>

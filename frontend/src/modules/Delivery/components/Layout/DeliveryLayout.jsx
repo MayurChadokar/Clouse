@@ -103,14 +103,14 @@ const DeliveryLayout = () => {
       case "busy":
         return "bg-yellow-500";
       case "offline":
-        return "bg-gray-500";
+        return "bg-white0";
       default:
-        return "bg-gray-500";
+        return "bg-white0";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
@@ -118,7 +118,7 @@ const DeliveryLayout = () => {
           <Link
             to="/delivery/dashboard"
             className="flex items-center flex-shrink-0 relative z-10">
-            <span className="text-primary-600 font-bold text-lg sm:text-xl tracking-tight">
+            <span className="text-primary-600 font-bold text-lg sm:text-xl ">
               CLOUSE
             </span>
           </Link>

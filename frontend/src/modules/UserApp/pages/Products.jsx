@@ -112,14 +112,14 @@ const ProductsPage = () => {
             {/* Header */}
             <div className="sticky top-0 bg-white z-[60] border-b border-gray-100 shadow-sm">
                 <div className="container mx-auto flex items-center gap-4 px-4 py-3">
-                    <button className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors shrink-0" onClick={() => navigate(-1)}>
+                    <button className="p-2 -ml-2 rounded-full hover:bg-white hover:text-black transition-colors shrink-0" onClick={() => navigate(-1)}>
                         <ArrowLeft size={22} className="text-black" />
                     </button>
                     <div className="flex-1 relative">
                         <input
                             type="text"
                             placeholder="Search products..."
-                            className="w-full text-sm font-bold border border-gray-200 outline-none py-2.5 bg-gray-50 rounded-xl px-4 pr-10 focus:border-black focus:bg-white transition-all"
+                            className="w-full text-sm font-bold border border-gray-200 outline-none py-2.5 bg-white rounded-xl px-4 pr-10 focus:border-[#FF5722] transition-all shadow-sm"
                             value={searchValue}
                             onChange={(e) => { setSearchValue(e.target.value); setPage(1); }}
                         />
@@ -131,11 +131,11 @@ const ProductsPage = () => {
             <div className="container mx-auto px-4 py-6">
                 {/* Result count & Active filters */}
                 <div className="flex items-center justify-between mb-6">
-                    <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">
+                    <p className="text-[12px] font-bold text-gray-400 uppercase">
                         {total} Products Found
                     </p>
                     {(selectedCategory || selectedBrand) && (
-                        <button onClick={clearFilters} className="text-[11px] font-black text-red-500 uppercase tracking-wider">
+                        <button onClick={clearFilters} className="text-[11px] font-bold text-red-500 uppercase">
                             Clear Filters
                         </button>
                     )}
@@ -145,17 +145,17 @@ const ProductsPage = () => {
                     {/* Desktop Sidebar Filters */}
                     <aside className="hidden lg:block w-[240px] shrink-0">
                         <div className="sticky top-20 space-y-6">
-                            <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                            <h3 className="text-sm font-bold uppercase flex items-center gap-2">
                                 <Filter size={16} /> Filters
                             </h3>
 
                             {/* Categories */}
                             <div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-3">Category</h4>
+                                <h4 className="text-[12px] font-bold uppercase text-gray-500 mb-3">Category</h4>
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
                                     <button
                                         onClick={() => { setSelectedCategory(''); setPage(1); }}
-                                        className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${!selectedCategory ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${!selectedCategory ? 'bg-black text-white' : 'text-gray-600 hover:bg-white hover:text-black'}`}
                                     >
                                         All Categories
                                     </button>
@@ -163,7 +163,7 @@ const ProductsPage = () => {
                                         <button
                                             key={cat._id}
                                             onClick={() => { setSelectedCategory(cat._id); setPage(1); }}
-                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedCategory === cat._id ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedCategory === cat._id ? 'bg-black text-white' : 'text-gray-600 hover:bg-white hover:text-black'}`}
                                         >
                                             {cat.name}
                                         </button>
@@ -173,11 +173,11 @@ const ProductsPage = () => {
 
                             {/* Brands */}
                             <div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-3">Brand</h4>
+                                <h4 className="text-[12px] font-bold uppercase text-gray-500 mb-3">Brand</h4>
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
                                     <button
                                         onClick={() => { setSelectedBrand(''); setPage(1); }}
-                                        className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${!selectedBrand ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${!selectedBrand ? 'bg-black text-white' : 'text-gray-600 hover:bg-white hover:text-black'}`}
                                     >
                                         All Brands
                                     </button>
@@ -185,7 +185,7 @@ const ProductsPage = () => {
                                         <button
                                             key={brand._id}
                                             onClick={() => { setSelectedBrand(brand._id); setPage(1); }}
-                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedBrand === brand._id ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedBrand === brand._id ? 'bg-black text-white' : 'text-gray-600 hover:bg-white hover:text-black'}`}
                                         >
                                             {brand.name}
                                         </button>
@@ -195,13 +195,13 @@ const ProductsPage = () => {
 
                             {/* Sort */}
                             <div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-3">Sort By</h4>
+                                <h4 className="text-[12px] font-bold uppercase text-gray-500 mb-3">Sort By</h4>
                                 <div className="space-y-1">
                                     {sortOptions.map(opt => (
                                         <button
                                             key={opt.value}
                                             onClick={() => { setSelectedSort(opt.value); setPage(1); }}
-                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedSort === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                            className={`block w-full text-left text-[13px] px-3 py-2 rounded-lg font-bold transition-colors ${selectedSort === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-white hover:text-black'}`}
                                         >
                                             {opt.label}
                                         </button>
@@ -240,7 +240,7 @@ const ProductsPage = () => {
                                                 className="group cursor-pointer flex flex-col"
                                                 onClick={() => navigate(`/product/${id}`)}
                                             >
-                                                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 bg-gray-50 border border-gray-100 group-hover:shadow-lg transition-all duration-300">
+                                                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 bg-white border border-gray-100 group-hover:shadow-lg transition-all duration-300">
                                                     <img
                                                         src={imageUrl}
                                                         alt={product.name}
@@ -265,7 +265,7 @@ const ProductsPage = () => {
                                                     </div>
 
                                                     {hasDiscount && (
-                                                        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">
+                                                        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
                                                             {discountPercent}% OFF
                                                         </div>
                                                     )}
@@ -273,11 +273,11 @@ const ProductsPage = () => {
 
                                                 <div className="px-1">
                                                     {product.vendorId?.storeName && (
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-tight mb-0.5">{product.vendorId.storeName}</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">{product.vendorId.storeName}</p>
                                                     )}
                                                     <h3 className="text-[13px] font-bold text-gray-800 leading-tight line-clamp-1 mb-1">{product.name}</h3>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[14px] font-black text-black">₹{sellingPrice}</span>
+                                                        <span className="text-[14px] font-bold text-black">₹{sellingPrice}</span>
                                                         {hasDiscount && (
                                                             <span className="text-[11px] font-bold text-gray-400 line-through">₹{originalPrice}</span>
                                                         )}
@@ -301,7 +301,7 @@ const ProductsPage = () => {
                                             <button
                                                 key={p}
                                                 onClick={() => setPage(p)}
-                                                className={`w-10 h-10 rounded-xl text-[13px] font-black transition-all ${page === p ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                                className={`w-10 h-10 rounded-xl text-[13px] font-bold transition-all ${page === p ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                                             >
                                                 {p}
                                             </button>
@@ -311,14 +311,14 @@ const ProductsPage = () => {
                             </>
                         ) : (
                             <div className="py-24 text-center">
-                                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
                                     <Search size={40} className="text-gray-200" />
                                 </div>
-                                <h3 className="text-xl font-black uppercase tracking-tight mb-2">No Products Found</h3>
+                                <h3 className="text-xl font-bold uppercase mb-2">No Products Found</h3>
                                 <p className="text-gray-400 text-sm mb-6">Try adjusting your filters or search query</p>
                                 <button
                                     onClick={clearFilters}
-                                    className="px-8 py-3 bg-black text-white text-[12px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-xl"
+                                    className="px-8 py-3 bg-black text-white text-[12px] font-bold uppercase rounded-2xl active:scale-95 transition-all shadow-xl"
                                 >
                                     Reset Filters
                                 </button>
@@ -332,13 +332,13 @@ const ProductsPage = () => {
             <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 z-[90] flex h-14 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
                 <button
                     onClick={() => setIsSortOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2 text-[12px] font-black uppercase tracking-wider border-r border-gray-100"
+                    className="flex-1 flex items-center justify-center gap-2 text-[12px] font-bold uppercase border-r border-gray-100"
                 >
                     <SlidersHorizontal size={14} /> Sort
                 </button>
                 <button
                     onClick={() => setIsFilterOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2 text-[12px] font-black uppercase tracking-wider"
+                    className="flex-1 flex items-center justify-center gap-2 text-[12px] font-bold uppercase"
                 >
                     <Filter size={14} /> Filter
                 </button>
@@ -349,7 +349,7 @@ const ProductsPage = () => {
                 <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setIsSortOpen(false)}>
                     <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[24px] overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                            <h3 className="text-lg font-black uppercase tracking-tight">Sort By</h3>
+                            <h3 className="text-lg font-bold uppercase ">Sort By</h3>
                             <button onClick={() => setIsSortOpen(false)} className="p-2 bg-gray-100 rounded-full"><X size={20} /></button>
                         </div>
                         <div className="p-5 space-y-2 pb-8">
@@ -357,7 +357,7 @@ const ProductsPage = () => {
                                 <button
                                     key={opt.value}
                                     onClick={() => { setSelectedSort(opt.value); setPage(1); setIsSortOpen(false); }}
-                                    className={`w-full text-left p-4 rounded-xl font-bold transition-colors ${selectedSort === opt.value ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}
+                                    className={`w-full text-left p-4 rounded-xl font-bold transition-colors ${selectedSort === opt.value ? 'bg-black text-white' : 'bg-white text-gray-600'}`}
                                 >
                                     {opt.label}
                                 </button>
@@ -371,7 +371,7 @@ const ProductsPage = () => {
             {isFilterOpen && (
                 <div className="fixed inset-0 z-[100] bg-white flex flex-col">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                        <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                        <h3 className="text-lg font-bold uppercase  flex items-center gap-2">
                             <Filter size={20} /> Filters
                         </h3>
                         <button onClick={() => setIsFilterOpen(false)} className="p-2 bg-gray-100 rounded-full"><X size={20} /></button>
@@ -379,28 +379,28 @@ const ProductsPage = () => {
 
                     <div className="flex-1 overflow-y-auto p-5 pb-24 space-y-6">
                         <div>
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-3">Category</h4>
+                            <h4 className="text-[12px] font-bold uppercase  text-gray-500 mb-3">Category</h4>
                             <div className="space-y-2">
-                                <button onClick={() => setSelectedCategory('')} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${!selectedCategory ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}>All</button>
+                                <button onClick={() => setSelectedCategory('')} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${!selectedCategory ? 'bg-black text-white' : 'bg-white text-gray-600'}`}>All</button>
                                 {categories.map(cat => (
-                                    <button key={cat._id} onClick={() => setSelectedCategory(cat._id)} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${selectedCategory === cat._id ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}>{cat.name}</button>
+                                    <button key={cat._id} onClick={() => setSelectedCategory(cat._id)} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${selectedCategory === cat._id ? 'bg-black text-white' : 'bg-white text-gray-600'}`}>{cat.name}</button>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-3">Brand</h4>
+                            <h4 className="text-[12px] font-bold uppercase  text-gray-500 mb-3">Brand</h4>
                             <div className="space-y-2">
-                                <button onClick={() => setSelectedBrand('')} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${!selectedBrand ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}>All</button>
+                                <button onClick={() => setSelectedBrand('')} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${!selectedBrand ? 'bg-black text-white' : 'bg-white text-gray-600'}`}>All</button>
                                 {brands.map(brand => (
-                                    <button key={brand._id} onClick={() => setSelectedBrand(brand._id)} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${selectedBrand === brand._id ? 'bg-black text-white' : 'bg-gray-50 text-gray-600'}`}>{brand.name}</button>
+                                    <button key={brand._id} onClick={() => setSelectedBrand(brand._id)} className={`w-full text-left p-3 rounded-xl font-bold text-[13px] ${selectedBrand === brand._id ? 'bg-black text-white' : 'bg-white text-gray-600'}`}>{brand.name}</button>
                                 ))}
                             </div>
                         </div>
                     </div>
 
                     <div className="border-t border-gray-100 p-4 flex gap-4 bg-white sticky bottom-0">
-                        <button onClick={clearFilters} className="flex-1 py-3.5 border border-gray-200 rounded-xl text-[12px] font-black uppercase tracking-wider text-gray-600">Reset</button>
-                        <button onClick={() => { setPage(1); setIsFilterOpen(false); }} className="flex-1 py-3.5 bg-black text-white rounded-xl text-[12px] font-black uppercase tracking-wider">Apply</button>
+                        <button onClick={clearFilters} className="flex-1 py-3.5 border border-gray-200 rounded-xl text-[12px] font-bold uppercase  text-gray-600">Reset</button>
+                        <button onClick={() => { setPage(1); setIsFilterOpen(false); }} className="flex-1 py-3.5 bg-black text-white rounded-xl text-[12px] font-bold uppercase ">Apply</button>
                     </div>
                 </div>
             )}

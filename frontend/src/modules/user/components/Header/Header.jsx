@@ -92,7 +92,7 @@ const Header = ({ variant = 'default' }) => {
 
     const handleSearch = (e) => {
         if (e && e.key === 'Enter' && searchQuery.trim()) {
-            navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+            navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
             setSearchQuery('');
             setSearchSuggestions([]);
         }
@@ -171,27 +171,7 @@ const Header = ({ variant = 'default' }) => {
     const showCategories = (location.pathname === '/' || location.pathname === '/home' || location.pathname === '/shop');
 
     const getHeaderTheme = (categoryName) => {
-        const name = categoryName?.toLowerCase() || '';
-
-        // Retain the yellow shade at the top, varying the bottom color based on the selected category
-        if (name === 'hello' || name === 'women') {
-            return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/80 to-[#FF4081]/80'; // Yellow to Vibrant Pink
-        }
-        if (name === 'men\'s fashion' || name === 'mens' || name === 'men') {
-            return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/80 to-[#4FC3F7]/80'; // Yellow to Light Blue
-        }
-        if (name === 'bottom wear') {
-            return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/80 to-[#9CCC65]/80'; // Yellow to Light Green
-        }
-        if (name === 'beauty') {
-            return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/80 to-[#F06292]/80'; // Yellow to Rose/Light Pink
-        }
-        if (name === 'accessories') {
-            return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/80 to-[#FFB300]/80'; // Yellow to Amber
-        }
-
-        // Default Vibrant Split (Yellow -> Blue)
-        return 'bg-gradient-to-b from-[#FFEA00] via-[#FFEA00]/90 to-[#00B4D8]/80';
+        return 'bg-white';
     };
 
     const currentHeaderBg = isSubcategoryMode ? getHeaderTheme(activeSubCategory) : getHeaderTheme(activeCategory);
@@ -209,22 +189,22 @@ const Header = ({ variant = 'default' }) => {
                     >
                         {/* LEFT SIDE: 60 MINS Badge */}
                         <div className="flex items-center">
-                            <div className="flex flex-col items-center justify-center bg-[#1a1a1a] rounded-[14px] px-3 py-1.5 shadow-md shrink-0 border border-black/10">
-                                <span className="text-[14px] font-black text-white leading-none tracking-tight">60</span>
-                                <span className="text-[9px] font-black text-[#FFC107] uppercase tracking-[0.2em] leading-none mt-1 drop-shadow-sm">MINS</span>
+                            <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[14px] px-3 py-1.5 shadow-md shrink-0 border border-black/10">
+                                <span className="text-[14px] font-bold text-black leading-none ">60</span>
+                                <span className="text-[9px] font-bold text-[#FFC107] uppercase  leading-none mt-1 drop-shadow-sm">MINS</span>
                             </div>
                         </div>
 
                         {/* RIGHT SIDE: Location Icon and Details + Chevrons/Mobile Icons */}
                         <div className="flex items-center gap-2 justify-end">
-                            <div className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center border border-black/10 shadow-md shrink-0 mr-1">
+                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-black/10 shadow-md shrink-0 mr-1">
                                 <MapPin size={18} className="text-[#FFC107]" />
                             </div>
                             <div className="flex flex-col min-w-0 pr-2 pl-1 text-left">
-                                <span className="text-[14px] font-black leading-tight flex items-center gap-1.5 tracking-tight text-black">
+                                <span className="text-[14px] font-bold leading-tight flex items-center gap-1.5  text-black">
                                     Current Location <ChevronDown size={14} className="text-[#FFC107] drop-shadow-sm" />
                                 </span>
-                                <span className="text-[11.5px] font-bold truncate max-w-[220px] text-black/70 transition-colors flex items-center gap-1">
+                                <span className="text-[11.5px] font-medium truncate max-w-[220px] text-black/70 transition-colors flex items-center gap-1">
                                     {activeAddress ? `${activeAddress.name}, ${activeAddress.address}` : 'Indore City, MP'}
                                 </span>
                             </div>
@@ -240,7 +220,7 @@ const Header = ({ variant = 'default' }) => {
                 )}
 
                 {/* Search Bar & Wishlist Container - Seamless Collapse on Mobile Scroll */}
-                <div className={`px-4 transition-all duration-300 ease-in-out grid relative ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                <div className={`px-4 transition-all duration-300 ease-in-out grid relative ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 h-0 overflow-hidden'}`}>
                     <div className="overflow-hidden w-full flex items-center gap-3">
                         <div className={`flex items-center gap-3 w-full ${variant === 'shop' ? 'pt-4 pb-4' : 'pt-2 pb-4'}`}>
                             <div className="relative flex-1 group">
@@ -262,8 +242,8 @@ const Header = ({ variant = 'default' }) => {
                                 {searchSuggestions.length > 0 && (
                                     <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#FAFAFA] rounded-2xl shadow-xl overflow-hidden z-[1010] border border-black/5 animate-fadeInUp">
                                         <div className="p-4 border-b border-black/5 flex items-center justify-between bg-black/[0.02]">
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40">Products Found</span>
-                                            <span className="text-[10px] font-black text-black uppercase tracking-wider hover:underline cursor-pointer">View All</span>
+                                            <span className="text-[10px] font-bold uppercase  text-black/40">Products Found</span>
+                                            <span className="text-[10px] font-bold text-black uppercase  hover:underline cursor-pointer">View All</span>
                                         </div>
                                         {searchSuggestions.map((item) => (
                                             <div
@@ -276,7 +256,7 @@ const Header = ({ variant = 'default' }) => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="text-[13px] font-bold text-black truncate mb-1">{item.name}</h4>
-                                                    <p className="text-[10px] font-black uppercase text-black/40 tracking-tight">{item.brand} <span className="text-[8px] mx-1 opacity-50">•</span> <span className="text-black">₹{item.discountedPrice}</span></p>
+                                                    <p className="text-[10px] font-bold uppercase text-black/40 ">{item.brand} <span className="text-[8px] mx-1 opacity-50">•</span> <span className="text-black font-semibold">₹{item.discountedPrice}</span></p>
                                                 </div>
                                                 <ChevronRight size={16} className="text-black/20 group-hover/item:text-black group-hover/item:translate-x-1 transition-all" />
                                             </div>
@@ -290,7 +270,7 @@ const Header = ({ variant = 'default' }) => {
                                     <Link to="/wishlist" onClick={(e) => e.stopPropagation()} className="relative flex items-center justify-center w-full h-full">
                                         <Heart size={20} className="text-black transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] group-hover/headerHeart:scale-110 group-active/headerHeart:scale-50" />
                                         {wishlistItems?.length > 0 && (
-                                            <span className="absolute top-[8px] right-[8px] bg-red-500 border-[1.5px] border-white text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                                            <span className="absolute top-[8px] right-[8px] bg-red-500 border-[1.5px] border-white text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                                                 {wishlistItems.length}
                                             </span>
                                         )}
@@ -304,14 +284,14 @@ const Header = ({ variant = 'default' }) => {
                 <div className="hidden md:flex flex-col border-t border-black/5">
                     <div className="flex items-center justify-between px-8 py-3">
                         <Link to="/" className="no-underline group">
-                            <h1 className="font-premium text-[32px] font-black tracking-tighter drop-shadow-md transition-all duration-500 text-black group-hover:text-black/80">
+                            <h1 className="text-[32px] font-bold  drop-shadow-md transition-all duration-500 text-black group-hover:text-black/80">
                                 Clothify<span className="text-black text-[40px] leading-none">.</span>
                             </h1>
                         </Link>
 
                         <div className="flex items-center gap-10">
                             <div
-                                className="flex items-center gap-2.5 text-[12px] font-black uppercase tracking-[0.15em] cursor-pointer transition-colors py-2 group text-black/70 hover:text-black"
+                                className="flex items-center gap-2.5 text-[12px] font-bold uppercase  cursor-pointer transition-colors py-2 group text-black/70 hover:text-black"
                                 onMouseEnter={() => setIsMegaMenuOpen(true)}
                             >
                                 <LayoutGrid size={18} className="text-black/50 group-hover:text-black transition-colors" />
@@ -319,16 +299,16 @@ const Header = ({ variant = 'default' }) => {
                             </div>
                             <div
                                 onClick={() => setIsDiscoverOpen(true)}
-                                className="flex items-center gap-2.5 text-[12px] font-black uppercase tracking-[0.15em] cursor-pointer transition-colors group text-black/70 hover:text-black"
+                                className="flex items-center gap-2.5 text-[12px] font-bold uppercase  cursor-pointer transition-colors group text-black/70 hover:text-black"
                             >
                                 <Compass size={18} className="text-black/50 group-hover:text-black transition-colors group-hover:animate-spin-slow" />
                                 Discover
                             </div>
-                            <Link to="/wishlist" className="relative flex items-center gap-2.5 text-[12px] font-black uppercase tracking-[0.15em] no-underline transition-colors group text-black/70 hover:text-black">
+                            <Link to="/wishlist" className="relative flex items-center gap-2.5 text-[12px] font-bold uppercase  no-underline transition-colors group text-black/70 hover:text-black">
                                 <Heart size={18} className="text-black/50 group-hover:text-black transition-colors" />
                                 Wishlist
                                 {wishlistItems.length > 0 && (
-                                    <span className="absolute -top-2.5 -right-3 bg-white border border-black text-black text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">
+                                    <span className="absolute -top-2.5 -right-3 bg-white border border-black text-black text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
                                         {wishlistItems.length}
                                     </span>
                                 )}
@@ -336,7 +316,7 @@ const Header = ({ variant = 'default' }) => {
                             <Link to="/cart" className="relative transition-colors group text-black/70 hover:text-black">
                                 <ShoppingCart size={24} className="group-hover:scale-110 transition-transform" />
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-2.5 -right-2.5 bg-black border-2 border-white text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+                                    <span className="absolute -top-2.5 -right-2.5 bg-black border-2 border-white text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
                                         {cartCount}
                                     </span>
                                 )}
@@ -347,7 +327,7 @@ const Header = ({ variant = 'default' }) => {
                             >
                                 <User size={24} className={user ? 'text-black' : ''} />
                                 {!user && (
-                                    <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all text-black">
+                                    <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase  whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all text-black">
                                         Login
                                     </span>
                                 )}
@@ -365,7 +345,7 @@ const Header = ({ variant = 'default' }) => {
 
             {/* Backdrop Overlay for Mega Menu */}
             <div
-                className={`fixed inset-0 bg-[#111111]/80 backdrop-blur-md transition-all duration-700 z-[40] ${isMegaMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                className={`fixed inset-0 bg-white/80 backdrop-blur-md transition-all duration-700 z-[40] ${isMegaMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
                 onMouseEnter={() => setIsMegaMenuOpen(false)}
             />
 
@@ -413,8 +393,8 @@ const Header = ({ variant = 'default' }) => {
                                         {/* Category Text */}
                                         <span
                                             className={`mt-2 text-[10.5px] md:text-[11.5px] text-center transition-all duration-300 leading-tight block w-full truncate px-1 ${isSelected
-                                                ? 'text-black font-black drop-shadow-md'
-                                                : 'text-black/70 font-bold group-hover:text-black'
+                                                ? 'text-black font-bold drop-shadow-md'
+                                                : 'text-black/70 font-semibold group-hover:text-black'
                                                 }`}
                                         >
                                             {cat.name}
@@ -428,73 +408,73 @@ const Header = ({ variant = 'default' }) => {
             )}
 
             {/* Mobile Sidebar - Luxury Edit */}
-            <div className={`fixed inset-0 h-[100dvh] w-full bg-[#111111] !opacity-100 z-[99999] transition-all duration-[600ms] ease-out-expo transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-hidden flex flex-col`}>
+            <div className={`fixed inset-0 h-[100dvh] w-full bg-white !opacity-100 z-[99999] transition-all duration-[600ms] ease-out-expo transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-hidden flex flex-col`}>
                 {/* Header of Menu */}
-                <div className="flex justify-between items-center p-6 border-b border-white/10 bg-[#111111] sticky top-0 z-10 backdrop-blur-xl">
+                <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-white sticky top-0 z-10 backdrop-blur-xl">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-[20px] flex items-center justify-center shadow-lg">
-                            <ShoppingCart size={22} className="text-[#D4AF37]" />
+                        <div className="w-12 h-12 bg-black/10 border border-black/30 rounded-[20px] flex items-center justify-center shadow-lg">
+                            <ShoppingCart size={22} className="text-black" />
                         </div>
                         <div>
-                            <h3 className="font-premium font-black text-2xl text-[#FAFAFA] uppercase tracking-tighter leading-none mb-1">Menu</h3>
-                            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-[0.2em] block drop-shadow-sm">The Collection</span>
+                            <h3 className="font-bold text-2xl text-gray-900  leading-none mb-1">Menu</h3>
+                            <span className="text-[10px] font-semibold text-black uppercase  block drop-shadow-sm">The Collection</span>
                         </div>
                     </div>
                     <button
                         onClick={() => setIsMenuOpen(false)}
-                        className="w-12 h-12 bg-white/5 rounded-[20px] flex items-center justify-center hover:bg-white/10 transition-colors active:scale-95 border border-white/5"
+                        className="w-12 h-12 bg-gray-50 rounded-[20px] flex items-center justify-center hover:bg-gray-100 transition-colors active:scale-95 border border-gray-100"
                     >
-                        <X size={24} strokeWidth={2.5} className="text-[#FAFAFA]" />
+                        <X size={24} strokeWidth={2.5} className="text-gray-900" />
                     </button>
                 </div>
 
                 {/* Categories List */}
-                <div className="flex-1 overflow-y-auto bg-[#111111] py-4 px-5">
+                <div className="flex-1 overflow-y-auto bg-white py-4 px-5">
                     <div className="space-y-2 pb-10">
                         {storeCategories.filter(c => c.isActive).map((cat) => (
                             <div key={cat.id} className="group/cat">
                                 <button
-                                    className="w-full flex items-center gap-4 p-3 hover:bg-white/5 rounded-[24px] transition-all duration-300 text-left outline-none border border-transparent hover:border-white/5"
+                                    className="w-full flex items-center gap-4 p-3 hover:bg-gray-50 rounded-[24px] transition-all duration-300 text-left outline-none border border-transparent hover:border-gray-100"
                                     onClick={() => {
                                         setActiveCategory(cat.name);
                                         navigate('/shop');
                                         setIsMenuOpen(false);
                                     }}
                                 >
-                                    <div className="w-14 h-14 rounded-[20px] overflow-hidden bg-black flex-shrink-0 shadow-lg border border-white/10 transition-transform active:scale-95 group-hover/cat:border-[#D4AF37]/50">
+                                    <div className="w-14 h-14 rounded-[20px] overflow-hidden bg-black flex-shrink-0 shadow-lg border border-gray-200 transition-transform active:scale-95 group-hover/cat:border-black/50">
                                         <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/cat:scale-110" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="font-premium font-black text-[#FAFAFA] text-[16px] uppercase tracking-tight block leading-none mb-1.5 group-hover/cat:text-[#D4AF37] transition-colors">
+                                        <span className="font-bold text-gray-900 text-[16px]  block leading-none mb-1.5 group-hover/cat:text-black transition-colors">
                                             {cat.name}
                                         </span>
-                                        <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em] block">
+                                        <span className="text-[9px] font-semibold text-gray-400 uppercase  block">
                                             {cat.sections?.length || 0} Categories
                                         </span>
                                     </div>
-                                    <ChevronRight className="text-white/20 group-hover/cat:text-[#D4AF37] group-hover/cat:translate-x-1 transition-all" size={18} />
+                                    <ChevronRight className="text-white/20 group-hover/cat:text-black group-hover/cat:translate-x-1 transition-all" size={18} />
                                 </button>
                             </div>
                         ))}
                     </div>
 
                     {/* Quick Access Section */}
-                    <div className="pb-12 pt-6 border-t border-white/10 space-y-4">
-                        <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] px-3 mb-5">Personal</h4>
+                    <div className="pb-12 pt-6 border-t border-gray-200 space-y-4">
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase  px-3 mb-5">Personal</h4>
                         <Link
                             to="/orders"
                             onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center justify-between p-5 bg-white/5 border border-white/10 rounded-[28px] group hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all"
+                            className="flex items-center justify-between p-5 bg-gray-50 border border-gray-200 rounded-[28px] group hover:bg-black/10 hover:border-black/30 transition-all"
                         >
-                            <span className="font-bold text-[12px] uppercase tracking-[0.15em] text-[#FAFAFA] group-hover:text-[#D4AF37] transition-colors">Order History</span>
-                            <div className="w-9 h-9 rounded-full bg-black/50 border border-white/10 flex items-center justify-center transition-transform group-hover:translate-x-1 group-hover:border-[#D4AF37]/50">
-                                <ChevronRight size={16} className="text-[#FAFAFA] group-hover:text-[#D4AF37]" />
+                            <span className="font-bold text-[12px] uppercase  text-gray-900 group-hover:text-black transition-colors">Order History</span>
+                            <div className="w-9 h-9 rounded-full bg-black/50 border border-gray-200 flex items-center justify-center transition-transform group-hover:translate-x-1 group-hover:border-black/50">
+                                <ChevronRight size={16} className="text-gray-900 group-hover:text-black" />
                             </div>
                         </Link>
                         <Link
                             to="/login"
                             onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center justify-center gap-3 w-full py-5 bg-[#FAFAFA] text-[#111111] rounded-[28px] font-black uppercase text-[12px] tracking-[0.2em] active:scale-95 transition-all shadow-[0_10px_30px_rgba(250,250,250,0.15)] hover:bg-[#D4AF37]"
+                            className="flex items-center justify-center gap-3 w-full py-5 bg-[#FAFAFA] text-black rounded-[28px] font-bold uppercase text-[12px]  active:scale-95 transition-all shadow-[0_10px_30px_rgba(250,250,250,0.15)] hover:bg-black"
                         >
                             Sign In / Register
                         </Link>
@@ -516,24 +496,24 @@ const Header = ({ variant = 'default' }) => {
 
             {/* Ultra-Premium Cart Toast Notification */}
             {lastAddedItem && (
-                <div className="fixed top-24 right-4 z-[5000] bg-[#111111]/90 backdrop-blur-2xl text-[#FAFAFA] pl-3 pr-6 py-3 rounded-[32px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] animate-fadeInUp flex items-center gap-5 min-w-[320px] border border-white/10 pointer-events-auto">
+                <div className="fixed top-24 right-4 z-[5000] bg-white/90 backdrop-blur-2xl text-gray-900 pl-3 pr-6 py-3 rounded-[32px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] animate-fadeInUp flex items-center gap-5 min-w-[320px] border border-gray-200 pointer-events-auto">
                     {/* Image Circle */}
-                    <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                    <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-black shadow-[0_0_15px_rgba(212,175,55,0.3)]">
                         <img src={lastAddedItem.image} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 py-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D4AF37] mb-1 flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-[#D4AF37] animate-pulse"></span>
+                        <p className="text-[9px] font-bold uppercase  text-black mb-1 flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-black animate-pulse"></span>
                             Reserved in Cart
                         </p>
-                        <h4 className="text-[13px] font-bold truncate max-w-[180px] mb-1 tracking-tight">{lastAddedItem.name}</h4>
-                        <Link to="/cart" className="text-[10px] font-black uppercase tracking-wider text-white/50 hover:text-[#FAFAFA] transition-colors border-b border-transparent hover:border-[#FAFAFA]">Checkout Now</Link>
+                        <h4 className="text-[13px] font-bold truncate max-w-[180px] mb-1 ">{lastAddedItem.name}</h4>
+                        <Link to="/cart" className="text-[10px] font-bold uppercase  text-gray-500 hover:text-gray-900 transition-colors border-b border-transparent hover:border-[#FAFAFA]">Checkout Now</Link>
                     </div>
-                    <button className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-90 absolute top-2 right-2 flex items-center justify-center">
-                        <X size={14} className="text-white/40 hover:text-white" />
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors active:scale-90 absolute top-2 right-2 flex items-center justify-center">
+                        <X size={14} className="text-gray-400 hover:text-white" />
                     </button>
                     {/* Side Highlight Line */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-1/2 bg-[#D4AF37] rounded-r-full shadow-[0_0_10px_#D4AF37]" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-1/2 bg-black rounded-r-full shadow-[0_0_10px_#D4AF37]" />
                 </div>
             )}
 

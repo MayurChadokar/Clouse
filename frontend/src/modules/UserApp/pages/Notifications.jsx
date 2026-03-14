@@ -45,7 +45,7 @@ const UserNotifications = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => fetchNotifications(1)}
-                className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50"
+                className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-white hover:text-black"
                 type="button"
               >
                 <span className="inline-flex items-center gap-1">
@@ -110,7 +110,7 @@ const UserNotifications = () => {
                       {!notification?.isRead && (
                         <button
                           onClick={() => markAsRead(notification?._id)}
-                          className="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-white"
+                          className="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-white hover:text-black"
                           title="Mark as read"
                           type="button"
                         >

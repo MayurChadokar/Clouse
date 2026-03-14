@@ -625,7 +625,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                         Page URL
                       </label>
                       <div className="relative">
-                        <div className="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-600 flex items-center gap-2">
+                        <div className="w-full px-4 py-2 border border-gray-200 bg-white rounded-lg text-sm text-gray-600 flex items-center gap-2">
                           <FiEye className="text-gray-400" />
                           <span>
                             /sale/
@@ -877,7 +877,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                         {paginatedProducts.map((product) => (
                           <label
                             key={product.id}
-                            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-transparent hover:border-gray-200 transition-colors">
+                            className="flex items-center gap-3 p-3 hover:bg-white hover:text-black rounded-lg cursor-pointer border border-transparent hover:border-gray-200 transition-colors">
                             <input
                               type="checkbox"
                               checked={formData.productIds.includes(product.id)}

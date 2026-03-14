@@ -273,7 +273,7 @@ ${order.trackingNumber ? `Tracking Number: ${order.trackingNumber}` : ""}
         {/* Items Table */}
         <div className="mb-8">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-white border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Item
@@ -293,7 +293,7 @@ ${order.trackingNumber ? `Tracking Number: ${order.trackingNumber}` : ""}
               {items.map((item, index) => {
                 const itemTotal = (item.price || 0) * (item.quantity || 1);
                 return (
-                  <tr key={item.id || index} className="hover:bg-gray-50">
+                  <tr key={item.id || index} className="hover:bg-white hover:text-black">
                     <td className="px-4 py-3 text-sm text-gray-800">
                       {item.name || `Item ${index + 1}`}
                     </td>

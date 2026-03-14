@@ -126,8 +126,8 @@ const LocationSettings = () => {
                 </div>
 
                 {coordinates.latitude && coordinates.longitude && (
-                    <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <p className="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Preview</p>
+                    <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-2 uppercase font-bold ">Preview</p>
                         <div className="flex items-center gap-2 text-sm text-gray-700">
                             <span className="font-mono bg-white px-2 py-1 rounded border">{coordinates.latitude}</span>
                             <span className="text-gray-400">,</span>

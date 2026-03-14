@@ -148,7 +148,7 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice }) => {
                       ? "border-primary-600 bg-primary-50 text-primary-700"
                       : isAvailable
                       ? "border-gray-200 hover:border-primary-400 bg-white text-gray-700"
-                      : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50"
+                      : "border-gray-100 bg-white text-gray-400 cursor-not-allowed opacity-50"
                   }`}
                 >
                   {option}

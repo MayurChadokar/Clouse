@@ -37,16 +37,16 @@ const ReferPage = () => {
 
     return (
         <AccountLayout>
-            <div className="bg-[#fcfcfc] -m-6 md:-m-10 min-h-screen">
+            <div className="bg-white -m-6 md:-m-10 min-h-screen">
                 {/* Stats Dashboard */}
                 <div className="bg-white p-6 border-b border-gray-100 flex justify-center gap-16 md:gap-32">
                     <div className="text-center group cursor-default">
                         <p className="text-[13px] font-bold text-gray-400 mb-1">Total Earning</p>
-                        <p className="text-2xl font-black text-gray-900 group-hover:scale-110 transition-transform">₹0</p>
+                        <p className="text-2xl font-bold text-gray-900 group-hover:scale-110 transition-transform">₹0</p>
                     </div>
                     <div className="text-center group cursor-default">
                         <p className="text-[13px] font-bold text-gray-400 mb-1">Friend's Signup</p>
-                        <p className="text-2xl font-black text-gray-900 group-hover:scale-110 transition-transform">0</p>
+                        <p className="text-2xl font-bold text-gray-900 group-hover:scale-110 transition-transform">0</p>
                     </div>
                 </div>
 
@@ -56,7 +56,7 @@ const ReferPage = () => {
                             {/* Headline */}
                             <div className="flex items-center gap-2">
                                 <span className="text-xl">🔥</span>
-                                <h2 className="text-[19px] font-black text-gray-900">
+                                <h2 className="text-[19px] font-bold text-gray-900">
                                     Earn ₹250 for each friend you refer!!
                                 </h2>
                             </div>
@@ -66,7 +66,7 @@ const ReferPage = () => {
                                 <p>
                                     Refer your friends and enjoy exclusive rewards! Once your friend signs up using your referral code, they will receive a unique discount code. When they place their first order worth ₹999 or more (post-discount) using that code, your referral bonus gets activated.
                                 </p>
-                                <div className="flex items-start gap-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <div className="flex items-start gap-2 bg-white p-4 rounded-xl border border-gray-100">
                                     <span className="mt-0.5">🔒</span>
                                     <div>
                                         <p className="text-gray-900 font-bold mb-1">Important Note</p>
@@ -77,7 +77,7 @@ const ReferPage = () => {
 
                             {/* How it Works */}
                             <div className="space-y-8 pt-4">
-                                <h3 className="text-[14px] font-bold text-gray-400 uppercase tracking-widest">How It Works</h3>
+                                <h3 className="text-[14px] font-bold text-gray-400 uppercase ">How It Works</h3>
                                 <div className="space-y-10">
                                     {howItWorks.map((step) => (
                                         <div key={step.id} className="relative flex gap-6">
@@ -86,7 +86,7 @@ const ReferPage = () => {
                                             )}
                                             <div className="relative z-10 w-4 h-4 rounded-full bg-white border-2 border-gray-200 mt-1.5" />
                                             <div className="space-y-1">
-                                                <h4 className="text-[16px] font-black text-gray-900">
+                                                <h4 className="text-[16px] font-bold text-gray-900">
                                                     {step.id}. {step.title}
                                                 </h4>
                                                 <p className="text-[14px] text-gray-500 font-medium leading-relaxed">
@@ -101,7 +101,7 @@ const ReferPage = () => {
                             {/* Code & Action */}
                             <div className="pt-8 space-y-4">
                                 <div className="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-2xl group hover:border-[#a03040] transition-all">
-                                    <span className="text-xl font-bold tracking-[0.2em] text-gray-900 pl-2 uppercase">{referralCode}</span>
+                                    <span className="text-xl font-bold text-gray-900 pl-2 uppercase">{referralCode}</span>
                                     <button
                                         onClick={handleCopy}
                                         className="flex items-center gap-2 text-orange-400 font-bold px-4 py-1.5 rounded-lg hover:bg-orange-50 transition-all uppercase text-sm"

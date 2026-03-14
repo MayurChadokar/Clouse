@@ -43,7 +43,7 @@ const Refer = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-base font-black uppercase tracking-tight">Refer & Earn</h1>
+                <h1 className="text-base font-bold uppercase ">Refer & Earn</h1>
             </div>
 
             <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -51,11 +51,11 @@ const Refer = () => {
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-center gap-16 mb-6">
                     <div className="text-center">
                         <p className="text-[13px] font-bold text-gray-400 mb-1">Total Earning</p>
-                        <p className="text-2xl font-black text-gray-900">₹0</p>
+                        <p className="text-2xl font-bold text-gray-900">₹0</p>
                     </div>
                     <div className="text-center">
                         <p className="text-[13px] font-bold text-gray-400 mb-1">Friend's Signup</p>
-                        <p className="text-2xl font-black text-gray-900">0</p>
+                        <p className="text-2xl font-bold text-gray-900">0</p>
                     </div>
                 </div>
 
@@ -63,7 +63,7 @@ const Refer = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-8">
                     <div className="flex items-center gap-2">
                         <span className="text-xl">🔥</span>
-                        <h2 className="text-[19px] font-black text-gray-900">
+                        <h2 className="text-[19px] font-bold text-gray-900">
                             Earn ₹250 for each friend you refer!
                         </h2>
                     </div>
@@ -74,21 +74,21 @@ const Refer = () => {
                         your referral bonus gets activated.
                     </p>
 
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div className="bg-white p-4 rounded-xl border border-gray-100">
                         <p className="text-gray-900 font-bold text-[14px] mb-1">🔒 Important Note</p>
                         <p className="text-gray-500 text-[13px]">Referral rewards will not be granted if the order is cancelled.</p>
                     </div>
 
                     {/* How it works */}
                     <div className="space-y-6 pt-4">
-                        <h3 className="text-[14px] font-bold text-gray-400 uppercase tracking-widest">How It Works</h3>
+                        <h3 className="text-[14px] font-bold text-gray-400 uppercase ">How It Works</h3>
                         <div className="space-y-8">
                             {howItWorks.map(step => (
                                 <div key={step.id} className="relative flex gap-6">
                                     {step.id !== 4 && <div className="absolute left-[7px] top-5 w-[2px] h-[calc(100%+16px)] bg-gray-100" />}
                                     <div className="relative z-10 w-4 h-4 rounded-full bg-white border-2 border-gray-300 mt-1.5" />
                                     <div>
-                                        <h4 className="text-[15px] font-black text-gray-900">{step.id}. {step.title}</h4>
+                                        <h4 className="text-[15px] font-bold text-gray-900">{step.id}. {step.title}</h4>
                                         <p className="text-[13px] text-gray-500 font-medium">{step.desc}</p>
                                     </div>
                                 </div>
@@ -99,7 +99,7 @@ const Refer = () => {
                     {/* Referral Code & Actions */}
                     <div className="pt-6 space-y-4">
                         <div className="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-2xl hover:border-black transition-all">
-                            <span className="text-xl font-bold tracking-[0.2em] text-gray-900 pl-2 uppercase">{referralCode}</span>
+                            <span className="text-xl font-bold text-gray-900 pl-2 uppercase">{referralCode}</span>
                             <button onClick={handleCopy} className="flex items-center gap-2 text-blue-600 font-bold px-4 py-1.5 rounded-lg hover:bg-blue-50 transition-all uppercase text-sm">
                                 <Copy size={16} />
                                 {copied ? 'Copied!' : 'Copy'}

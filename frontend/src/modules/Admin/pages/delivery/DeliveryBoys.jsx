@@ -336,7 +336,7 @@ const DeliveryBoys = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, phone, email, or address..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -441,7 +441,7 @@ const DeliveryBoys = () => {
                   {editingBoy.id ? 'Edit Delivery Boy' : 'Add Delivery Boy'}
                 </h3>
                 {editingBoy.id && (
-                  <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
                     <p className="text-sm font-semibold text-gray-800 mb-2">Application Status</p>
                     <div className="flex items-center justify-between gap-2">
                       {renderApplicationBadge(editingBoy.applicationStatus)}

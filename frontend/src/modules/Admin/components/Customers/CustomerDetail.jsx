@@ -134,7 +134,7 @@ const CustomerDetail = ({ customer, onClose, onUpdate, startEditing = false }) =
 
         <div className="p-6 space-y-6">
           {/* Customer Info */}
-          <div className="bg-gray-50 rounded-xl p-6">
+          <div className="bg-white rounded-xl p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
                 {isEditing ? (
@@ -297,7 +297,7 @@ const CustomerDetail = ({ customer, onClose, onUpdate, startEditing = false }) =
                 {customer.activityHistory.slice(0, 10).map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                    className="flex items-start gap-3 p-3 bg-white rounded-lg"
                   >
                     <div className="w-2 h-2 bg-primary-600 rounded-full mt-2"></div>
                     <div className="flex-1">

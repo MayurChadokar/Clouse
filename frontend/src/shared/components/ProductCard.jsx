@@ -1,4 +1,4 @@
-import { FiHeart, FiShoppingBag, FiStar, FiTrash2 } from "react-icons/fi";
+import { FiHeart, FiShoppingBag, FiStar, FiTrash2, FiPlus, FiArrowRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore, useUIStore } from "../store/useStore";
@@ -12,93 +12,60 @@ import LongPressMenu from "../../modules/UserApp/components/Mobile/LongPressMenu
 import FlyingItem from "../../modules/UserApp/components/Mobile/FlyingItem";
 import { getVariantSignature } from "../utils/variant";
 
-
 const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
   const navigate = useNavigate();
   const productLink = `/product/${product.id}`;
   const { items, addItem, removeItem } = useCartStore();
-  const triggerCartAnimation = useUIStore(
-    (state) => state.triggerCartAnimation
-  );
-  const {
-    addItem: addToWishlist,
-    removeItem: removeFromWishlist,
-    isInWishlist,
-  } = useWishlistStore();
-  const hasNoVariant = (cartItem) => !getVariantSignature(cartItem?.variant || {});
+  const triggerCartAnimation = useUIStore((state) => state.triggerCartAnimation);
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
+  
   const isFavorite = isInWishlist(product.id);
-  const isInCart = items.some(
-    (item) => item.id === product.id && hasNoVariant(item)
-  );
   const [isAdding, setIsAdding] = useState(false);
   const [showLongPressMenu, setShowLongPressMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showFlyingItem, setShowFlyingItem] = useState(false);
-  const [flyingItemPos, setFlyingItemPos] = useState({
-    start: { x: 0, y: 0 },
-    end: { x: 0, y: 0 },
-  });
+  const [flyingItemPos, setFlyingItemPos] = useState({ start: { x: 0, y: 0 }, end: { x: 0, y: 0 } });
+  
   const buttonRef = useRef(null);
-  const cartIconRef = useRef(null);
+  const hasNoVariant = (cartItem) => !getVariantSignature(cartItem?.variant || {});
+  const isInCart = items.some((item) => item.id === product.id && hasNoVariant(item));
 
   const handleAddToCart = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    
+    // Check for variants
+    const hasVariants = 
+      (Array.isArray(product?.variants?.attributes) && product.variants.attributes.length > 0) || 
+      (Array.isArray(product?.variants?.sizes) && product.variants.sizes.length > 0) || 
+      (Array.isArray(product?.variants?.colors) && product.variants.colors.length > 0);
 
-    const hasDynamicAxes =
-      Array.isArray(product?.variants?.attributes) &&
-      product.variants.attributes.some((attr) => Array.isArray(attr?.values) && attr.values.length > 0);
-    const hasSizeVariants = Array.isArray(product?.variants?.sizes) && product.variants.sizes.length > 0;
-    const hasColorVariants = Array.isArray(product?.variants?.colors) && product.variants.colors.length > 0;
-    if (hasDynamicAxes || hasSizeVariants || hasColorVariants) {
-      toast.error("Please select variant on product page");
+    if (hasVariants) {
+      toast.error("Please select options on product page");
       navigate(productLink);
       return;
     }
 
-    const isLargeScreen = window.innerWidth >= 1024;
+    setIsAdding(true);
+    const buttonRect = buttonRef.current?.getBoundingClientRect();
+    const startX = buttonRect ? buttonRect.left + buttonRect.width / 2 : 0;
+    const startY = buttonRect ? buttonRect.top + buttonRect.height / 2 : 0;
 
-    if (!isLargeScreen) {
-      setIsAdding(true);
+    setTimeout(() => {
+      const cartBar = document.querySelector("[data-cart-bar]");
+      let endX = window.innerWidth / 2;
+      let endY = window.innerHeight - 100;
+      if (cartBar) {
+        const cartRect = cartBar.getBoundingClientRect();
+        endX = cartRect.left + cartRect.width / 2;
+        endY = cartRect.top + cartRect.height / 2;
+      }
+      setFlyingItemPos({ start: { x: startX, y: startY }, end: { x: endX, y: endY } });
+      setShowFlyingItem(true);
+    }, 50);
 
-      // Get button position
-      const buttonRect = buttonRef.current?.getBoundingClientRect();
-      const startX = buttonRect ? buttonRect.left + buttonRect.width / 2 : 0;
-      const startY = buttonRect ? buttonRect.top + buttonRect.height / 2 : 0;
+    setTimeout(() => setIsAdding(false), 600);
 
-      // Get cart bar position (prefer cart bar over header icon)
-      setTimeout(() => {
-        const cartBar = document.querySelector("[data-cart-bar]");
-        let endX = window.innerWidth / 2;
-        let endY = window.innerHeight - 100;
-
-        if (cartBar) {
-          const cartRect = cartBar.getBoundingClientRect();
-          endX = cartRect.left + cartRect.width / 2;
-          endY = cartRect.top + cartRect.height / 2;
-        } else {
-          // Fallback to cart icon in header
-          const cartIcon = document.querySelector("[data-cart-icon]");
-          if (cartIcon) {
-            const cartRect = cartIcon.getBoundingClientRect();
-            endX = cartRect.left + cartRect.width / 2;
-            endY = cartRect.top + cartRect.height / 2;
-          }
-        }
-
-        setFlyingItemPos({
-          start: { x: startX, y: startY },
-          end: { x: endX, y: endY },
-        });
-        setShowFlyingItem(true);
-      }, 50);
-
-      setTimeout(() => setIsAdding(false), 600);
-    }
-
-    const addedToCart = addItem({
+    addItem({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -108,43 +75,9 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
       vendorId: product.vendorId,
       vendorName: product.vendorName,
     });
-    if (!addedToCart) return;
     triggerCartAnimation();
     toast.success("Added to cart!");
   };
-
-  const handleRemoveFromCart = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    removeItem(product.id, {});
-    toast.success("Removed from cart!");
-  };
-
-  const handleLongPress = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMenuPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-    });
-    setShowLongPressMenu(true);
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product.name,
-        text: `Check out ${product.name}`,
-        url: window.location.origin + productLink,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.origin + productLink);
-      toast.success("Link copied to clipboard");
-    }
-  };
-
-  const longPressHandlers = useLongPress(handleLongPress, 500);
 
   const handleFavorite = (e) => {
     e.stopPropagation();
@@ -152,191 +85,96 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
       removeFromWishlist(product.id);
       toast.success("Removed from wishlist");
     } else {
-      const addedToWishlist = addToWishlist({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-      });
-      if (addedToWishlist) {
-        toast.success("Added to wishlist");
-      }
+      addToWishlist({ id: product.id, name: product.name, price: product.price, image: product.image });
+      toast.success("Added to wishlist");
     }
   };
 
-  // Calculate sold percentage for flash sale (mock logic)
-  const soldPercentage = product.stockQuantity ? Math.min(95, Math.floor(100 - (product.stockQuantity / 2))) : 75;
+  const handleLongPress = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    setShowLongPressMenu(true);
+  };
+
+  const longPressHandlers = useLongPress(handleLongPress, 500);
 
   return (
     <>
       <motion.div
         whileTap={{ scale: 0.98 }}
-        whileHover={{ y: -4 }}
-        style={{ willChange: "transform", transform: "translateZ(0)" }}
-        className={`glass-card rounded-xl overflow-hidden group cursor-pointer h-full flex flex-col hover:shadow-lg transition-all duration-300 ${isFlashSale ? "border border-red-100 bg-red-50/10" : ""
-          }`}
-        {...longPressHandlers}>
-        <div className="relative">
-          {/* Favorite Icon */}
-          <div className="absolute top-2 right-2 z-10">
+        className="flex flex-col w-full h-full group relative bg-white"
+        {...longPressHandlers}
+      >
+        {/* IMAGE AREA - Taller 3:4 ratio with matching rounded corners */}
+        <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[#F8F8F8]">
+          <Link to={productLink} className="block w-full h-full">
+            <LazyImage
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={(e) => { e.target.src = getPlaceholderImage(400, 533, "Product"); }}
+            />
+          </Link>
+
+          {/* Quick Add Overlay (from Image 1 style) - Premium Glassmorphism */}
+          <div className="absolute inset-x-0 bottom-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10 hidden md:block">
             <button
-              onClick={handleFavorite}
-              className="p-1.5 glass rounded-full shadow-lg transition-all duration-300 group hover:bg-white">
-              <FiHeart
-                className={`text-xs md:text-sm transition-all duration-300 ${isFavorite
-                  ? "text-red-500 fill-red-500 scale-110"
-                  : "text-gray-400 group-hover:text-gray-600"
-                  }`}
-              />
+               ref={buttonRef}
+               onClick={handleAddToCart}
+               className="w-full bg-black/90 backdrop-blur-md text-white py-2.5 rounded-lg text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-black transition-colors"
+            >
+               {isAdding ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><FiShoppingBag className="text-sm" /></motion.div> : "Quick Add"}
+               {!isAdding && <FiPlus className="text-sm" />}
             </button>
           </div>
 
-          {/* Product Image */}
-          <Link to={productLink} className="block">
-            <div className="w-full h-28 md:h-40 lg:h-36 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-200/50 transition-colors">
-              {product.originalPrice && (
-                <div className={`absolute top-0 left-0 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-br-lg z-10 shadow-sm ${isFlashSale ? "bg-gradient-to-r from-red-600 to-orange-500" : "bg-red-500"}`}>
-                  {Math.round(
-                    ((product.originalPrice - product.price) /
-                      product.originalPrice) *
-                    100
-                  )}% OFF
-                </div>
-              )}
-              {isFlashSale && (
-                <div className="absolute top-0 right-0 p-1">
-                  <div className="bg-yellow-400 text-gray-900 text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse uppercase tracking-tighter">
-                    Hot Deal
-                  </div>
-                </div>
-              )}
-              <LazyImage
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-contain p-2 md:p-4 group-hover:scale-110 transition-transform duration-500"
-                style={{ willChange: "transform", transform: "translateZ(0)" }}
-                onError={(e) => {
-                  e.target.src = getPlaceholderImage(300, 300, "Product Image");
-                }}
-              />
-            </div>
-          </Link>
+          {/* Mobile Cart Button (Compact) */}
+          <button
+            ref={buttonRef}
+            onClick={handleAddToCart}
+            className="md:hidden absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center text-black active:scale-90 transition-all z-10 border border-gray-100"
+          >
+            {isAdding ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><FiShoppingBag className="text-[10px]" /></motion.div> : <FiPlus className="text-[11px]" />}
+          </button>
+
+          {/* Wishlist Icon */}
+          <button
+            onClick={handleFavorite}
+            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center text-gray-800 shadow-sm transition-all hover:bg-white hover:text-red-500 z-10"
+          >
+            <FiHeart size={12} className={`${isFavorite ? 'fill-current text-red-500' : ''}`} />
+          </button>
         </div>
 
-        {/* Product Info */}
-        <div className="p-1.5 md:p-4 lg:p-3 flex-1 flex flex-col bg-white">
-          <Link to={productLink} className="block lg:h-6">
-            <h3 className="font-bold text-gray-800 mb-0 md:mb-1 lg:mb-0.5 line-clamp-2 md:line-clamp-1 text-[11px] md:text-sm transition-colors group-hover:text-primary-600 leading-tight">
+        {/* INFO AREA - Matching Image 2 Typography */}
+        <div className="pt-3 pb-1 flex flex-col">
+          <Link to={productLink} className="flex flex-col gap-0.5">
+            <span className="text-[#1A1A1A] text-[10px] md:text-[14px] font-black uppercase tracking-tight line-clamp-1">
+              {product.brandName || product.vendorName || "Premium"}
+            </span>
+            <h3 className="text-gray-500 text-[9px] md:text-[13px] font-medium line-clamp-1 leading-tight">
               {product.name}
             </h3>
           </Link>
-          <p className="text-[9px] md:text-xs text-gray-400 mb-0.5 md:mb-2 lg:mb-1 font-medium lg:h-4">
-            {product.unit}
-          </p>
-
-
-
-          {/* Rating */}
-          <div className="flex items-center justify-between mb-2">
-            {product.rating && !hideRating && (
-              <div className="flex items-center gap-1">
-                <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded-md border border-yellow-100">
-                  <span className="text-[9px] md:text-xs font-bold text-yellow-700 mr-0.5">{product.rating}</span>
-                  <FiStar className="text-[8px] md:text-[10px] text-yellow-500 fill-yellow-500" />
-                </div>
-                <span className="text-[9px] md:text-xs text-gray-400 font-medium hidden md:inline">
-                  ({product.reviewCount || 0})
+          
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+             <div className="flex items-center gap-1.5">
+                <span className="text-gray-900 text-[11px] md:text-[14px] font-bold">
+                  {formatPrice(product.price)}
                 </span>
-              </div>
-            )}
-            {isFlashSale && (
-              <span className="text-[9px] font-bold text-red-500 uppercase tracking-tighter hidden md:inline">
-                Ending Soon
-              </span>
-            )}
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-gray-400 text-[10px] md:text-[13px] line-through font-medium">
+                    {formatPrice(product.originalPrice)}
+                  </span>
+                )}
+             </div>
+             
+             {product.originalPrice && product.originalPrice > product.price && (
+                <div className="bg-[#D8FFBD] text-[#388E3C] text-[8px] md:text-[11px] font-bold px-1.5 md:px-2 py-0.5 rounded-sm">
+                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                </div>
+             )}
           </div>
-
-          {/* Flash Sale Progress Bar */}
-          {isFlashSale && (
-            <div className="mb-3 space-y-1">
-              <div className="flex justify-between text-[8px] md:text-[10px] font-bold">
-                <span className="text-gray-500 uppercase">Available</span>
-                <span className="text-orange-600">{soldPercentage}% Sold</span>
-              </div>
-              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${soldPercentage}%` }}
-                  transition={{ duration: 1, delay: 0.2 }}
-                  className="h-full bg-gradient-to-r from-red-500 to-orange-400"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Price */}
-          <div className="flex flex-col items-start gap-0 md:flex-row md:items-end md:gap-2 lg:gap-1.5 mb-1.5 md:mb-3 lg:mb-2 mt-auto">
-            <span className={`text-xs md:text-xl font-black ${isFlashSale ? "text-red-600" : "text-gray-900"}`}>
-              {formatPrice(product.price)}
-            </span>
-            {product.originalPrice && (
-              <span className="text-[9px] md:text-xs text-gray-400 line-through font-medium leading-none mb-0.5">
-                {formatPrice(product.originalPrice)}
-              </span>
-            )}
-          </div>
-
-          {/* Add/Remove Button */}
-          {isInCart ? (
-            <motion.button
-              type="button"
-              onClick={handleRemoveFromCart}
-              whileTap={{ scale: 0.95 }}
-              className="w-full py-1.5 md:py-2.5 lg:py-2 rounded-xl font-bold text-xs md:text-sm bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all duration-300 flex items-center justify-center gap-1.5">
-              <FiTrash2 className="text-xs md:text-base" />
-              <span>Remove</span>
-            </motion.button>
-          ) : (
-            <motion.button
-              ref={buttonRef}
-              type="button"
-              onClick={handleAddToCart}
-              disabled={product.stock === "out_of_stock" || isAdding}
-              whileTap={{ scale: 0.95 }}
-              animate={
-                isAdding
-                  ? {
-                    scale: [1, 1.1, 1],
-                  }
-                  : {}
-              }
-              style={{ willChange: "transform", transform: "translateZ(0)" }}
-              className={`w-full py-1 md:py-2.5 lg:py-2 rounded-xl font-bold text-[10px] md:text-sm transition-all duration-300 flex items-center justify-center gap-1.5 ${product.stock === "out_of_stock"
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                : isFlashSale
-                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:shadow-red-200 hover:-translate-y-0.5"
-                  : "gradient-green text-white shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                }`}>
-              <motion.div
-                animate={
-                  isAdding
-                    ? {
-                      rotate: [0, -10, 10, -10, 0],
-                    }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}>
-                <FiShoppingBag className="text-xs md:text-base transition-transform" />
-              </motion.div>
-              <span>
-                {product.stock === "out_of_stock"
-                  ? "Out of Stock"
-                  : isAdding
-                    ? "Adding..."
-                    : <><span className="md:hidden">Add</span><span className="hidden md:inline">Add to Cart</span></>}
-              </span>
-            </motion.button>
-          )}
         </div>
       </motion.div>
 
@@ -346,7 +184,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
         position={menuPosition}
         onAddToCart={handleAddToCart}
         onAddToWishlist={handleFavorite}
-        onShare={handleShare}
+        onShare={() => {}}
         isInWishlist={isFavorite}
       />
 

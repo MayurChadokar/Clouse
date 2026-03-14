@@ -85,7 +85,7 @@ const LanguageSettings = () => {
         {productTranslations.length > 0 ? (
           <div className="space-y-3">
             {productTranslations.map((translation) => (
-              <div key={translation.id} className="p-4 bg-gray-50 rounded-lg">
+              <div key={translation.id} className="p-4 bg-white rounded-lg">
                 <p className="font-semibold">{translation.productName}</p>
                 <p className="text-sm text-gray-600">{translation.language}</p>
               </div>

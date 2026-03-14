@@ -30,7 +30,7 @@ const TopProducts = ({ products }) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold flex-shrink-0">

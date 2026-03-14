@@ -221,7 +221,7 @@ const VendorHelp = () => {
                                         name="subject"
                                         value={formData.subject}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-colors"
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-colors"
                                         placeholder="e.g. Issue with payout"
                                         required
                                     />
@@ -236,7 +236,7 @@ const VendorHelp = () => {
                                         value={formData.message}
                                         onChange={handleChange}
                                         rows="6"
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-colors resize-none"
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-800 transition-colors resize-none"
                                         placeholder="Describe your issue..."
                                         required
                                     ></textarea>
@@ -268,7 +268,7 @@ const VendorHelp = () => {
                             </div>
 
                             {/* Chat Messages */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
                                 {selectedTicket.messages.map((msg, idx) => (
                                     <div key={idx} className={`flex flex-col ${msg.senderType === 'vendor' ? 'items-end' : 'items-start'}`}>
                                         <div className={`max-w-[80%] p-3 text-sm rounded-2xl ${msg.senderType === 'vendor'
@@ -293,7 +293,7 @@ const VendorHelp = () => {
                                         onChange={(e) => setReplyMessage(e.target.value)}
                                         placeholder={selectedTicket.status === 'closed' ? "This ticket is closed" : "Type your reply..."}
                                         disabled={selectedTicket.status === 'closed' || isSubmitting}
-                                        className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm disabled:cursor-not-allowed"
+                                        className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm disabled:cursor-not-allowed"
                                     />
                                     <button
                                         type="submit"
@@ -312,7 +312,7 @@ const VendorHelp = () => {
                                 <p className="text-gray-500 text-center py-8">Loading history...</p>
                             ) : tickets.length === 0 ? (
                                 <div className="text-center py-12">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
                                         <FiMessageSquare size={24} />
                                     </div>
                                     <h3 className="text-gray-900 font-semibold mb-1">No requests right now</h3>
@@ -324,7 +324,7 @@ const VendorHelp = () => {
                                         <div
                                             key={ticket._id}
                                             onClick={() => setSelectedTicket(ticket)}
-                                            className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 hover:border-primary-100 cursor-pointer transition"
+                                            className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-white hover:text-black hover:border-primary-100 cursor-pointer transition"
                                         >
                                             <div className="flex-1 min-w-0 pr-4">
                                                 <div className="flex items-center gap-2 mb-1">
@@ -351,14 +351,14 @@ const VendorHelp = () => {
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 className="font-bold text-gray-900 mb-4">Other Ways to Reach Us</h3>
                         <div className="space-y-4">
-                            <div className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 transition cursor-pointer">
+                            <div className="flex items-start gap-4 p-4 rounded-xl bg-white hover:bg-primary-50 transition cursor-pointer">
                                 <div className="mt-1 text-primary-600"><FiMail size={20} /></div>
                                 <div>
                                     <p className="text-sm font-bold text-gray-900">Email Support</p>
                                     <p className="text-sm text-gray-500 mt-1">vendorsupport@clouse.com</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 transition cursor-pointer">
+                            <div className="flex items-start gap-4 p-4 rounded-xl bg-white hover:bg-primary-50 transition cursor-pointer">
                                 <div className="mt-1 text-primary-600"><FiPhoneCall size={20} /></div>
                                 <div>
                                     <p className="text-sm font-bold text-gray-900">Partner Helpline</p>

@@ -503,7 +503,7 @@ const MobileHome = () => {
           <div className="px-4 py-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div
-                className="relative w-full h-48 md:h-80 lg:h-[400px] xl:h-[450px] rounded-xl md:rounded-2xl overflow-hidden lg:col-span-2"
+                className="relative w-full aspect-[2/1] md:aspect-[21/9] lg:h-[350px] xl:h-[400px] rounded-xl overflow-hidden lg:col-span-2"
                 data-carousel
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
@@ -562,7 +562,7 @@ const MobileHome = () => {
                       }}
                       className={`h-1.5 rounded-full transition-all pointer-events-auto ${index === currentSlide
                         ? "bg-white w-6"
-                        : "bg-white/50 w-1.5"
+                        : "bg-gray-500 w-1.5"
                         }`}
                     />
                   ))}
@@ -570,7 +570,7 @@ const MobileHome = () => {
               </div>
 
               {/* Side Banner for Large Screens */}
-              <div className="hidden lg:block lg:col-span-1 h-[400px] xl:h-[450px] rounded-2xl overflow-hidden relative bg-gray-900 group">
+              <div className="hidden lg:block lg:col-span-1 h-[350px] xl:h-[400px] rounded-xl overflow-hidden relative bg-gray-900 group">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10" />
                 <LazyImage
                   src={sideBanner?.image || stylishWatchImg}
@@ -581,7 +581,7 @@ const MobileHome = () => {
                   }}
                 />
                 <div className="absolute inset-x-0 bottom-0 p-8 z-20 flex flex-col items-center text-center">
-                  <span className="text-yellow-400 font-bold text-3xl mb-2 tracking-wider drop-shadow-lg">
+                  <span className="text-yellow-400 font-bold text-3xl mb-2  drop-shadow-lg">
                     {sideBanner?.title || "PREMIUM"}
                   </span>
                   <p className="text-gray-300 text-sm mb-6 font-medium">
@@ -590,7 +590,7 @@ const MobileHome = () => {
                   <button
                     type="button"
                     onClick={() => handleBannerNavigation(sideBanner?.link || "/offers")}
-                    className="bg-white text-gray-900 font-bold py-3.5 px-10 rounded-xl w-full hover:bg-gray-100 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-xl uppercase tracking-widest text-sm"
+                    className="bg-white text-gray-900 font-bold py-3.5 px-10 rounded-xl w-full hover:bg-gray-100 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-xl uppercase  text-sm"
                   >
                     Shop Now
                   </button>
@@ -626,11 +626,11 @@ const MobileHome = () => {
                 See All
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+            <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x scrollbar-hide">
               {computedMostPopular.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  className={index === 5 ? "xl:hidden" : ""}
+                  className="w-[140px] sm:w-[160px] md:w-[200px] flex-shrink-0 snap-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}>
@@ -661,11 +661,11 @@ const MobileHome = () => {
                   See All
                 </Link>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x scrollbar-hide">
                 {computedFlashSale.map((product, index) => (
                   <motion.div
                     key={product.id}
-                    className={index === 5 ? "xl:hidden" : ""}
+                    className="w-[140px] sm:w-[160px] md:w-[200px] flex-shrink-0 snap-center"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}>
@@ -686,11 +686,11 @@ const MobileHome = () => {
                 See All
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+            <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x scrollbar-hide">
               {computedTrending.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  className={index === 5 ? "hidden xl:block 2xl:hidden" : ""}
+                  className="w-[140px] sm:w-[160px] md:w-[200px] flex-shrink-0 snap-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}>
@@ -711,7 +711,7 @@ const MobileHome = () => {
             transition={{ duration: 0.6 }}
             className="px-4 py-12 text-left">
             <motion.h2
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-gray-400 leading-tight flex items-center justify-start gap-3 flex-wrap"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-400 leading-tight flex items-center justify-start gap-3 flex-wrap"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}

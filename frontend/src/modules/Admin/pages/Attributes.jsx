@@ -198,7 +198,7 @@ const Attributes = () => {
                 <div className="flex flex-wrap gap-1.5 max-w-[300px]">
                     {(values || []).map((v) => (
                         <div key={v._id} className="group relative">
-                            <span className={`px-2 py-1 rounded-md text-xs border flex items-center gap-1.5 ${row.type === 'color' ? 'bg-white' : 'bg-gray-50'}`}>
+                            <span className={`px-2 py-1 rounded-md text-xs border flex items-center gap-1.5 ${row.type === 'color' ? 'bg-white' : 'bg-white'}`}>
                                 {row.type === 'color' && v.colorCode && (
                                     <span className="w-2 h-2 rounded-full border border-gray-200" style={{ backgroundColor: v.colorCode }} />
                                 )}
@@ -245,7 +245,7 @@ const Attributes = () => {
         >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 mb-1 font-premium tracking-tight">Attribute Management</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1 font-premium ">Attribute Management</h1>
                     <p className="text-sm text-gray-500 font-medium whitespace-nowrap">Manage product attributes and organize them into sets.</p>
                 </div>
             </div>
@@ -298,7 +298,7 @@ const Attributes = () => {
                                             value={newSetName}
                                             onChange={(e) => setNewSetName(e.target.value)}
                                             placeholder="e.g. T-Shirt Set"
-                                            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -307,7 +307,7 @@ const Attributes = () => {
                                             value={newSetValues}
                                             onChange={(e) => setNewSetValues(e.target.value)}
                                             placeholder="e.g. Red, Blue, Green, Yellow"
-                                            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all min-h-[100px] resize-y"
+                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all min-h-[100px] resize-y"
                                         />
                                     </div>
                                     <button
@@ -369,7 +369,7 @@ const Attributes = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <span className={`text-[11px] px-2.5 py-1 rounded font-bold uppercase tracking-wider ${set.isActive !== false ? 'bg-[#cbf4c9] text-[#1c7430]' : 'bg-red-100 text-red-700'}`}>
+                                        <span className={`text-[11px] px-2.5 py-1 rounded font-bold uppercase  ${set.isActive !== false ? 'bg-[#cbf4c9] text-[#1c7430]' : 'bg-red-100 text-red-700'}`}>
                                             {set.isActive !== false ? 'active' : 'inactive'}
                                         </span>
                                     </div>
@@ -396,11 +396,11 @@ const Attributes = () => {
                         </div>
 
                         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                                <h2 className="font-black text-gray-800 flex items-center gap-2 uppercase tracking-widest text-xs">
+                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/50">
+                                <h2 className="font-bold text-gray-800 flex items-center gap-2 uppercase  text-xs">
                                     <FiList className="text-primary-500" /> Active Master Attributes
                                 </h2>
-                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Total {attributes.length} Configured</div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase er">Total {attributes.length} Configured</div>
                             </div>
                             <div className="p-2">
                                 <DataTable
@@ -422,27 +422,27 @@ const Attributes = () => {
                                 className="bg-white rounded-3xl p-6 border-2 border-primary-100 shadow-xl shadow-primary-50 space-y-4"
                             >
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-black text-gray-800 uppercase text-xs tracking-widest">Construct Axis</h3>
+                                    <h3 className="font-bold text-gray-800 uppercase text-xs ">Construct Axis</h3>
                                     <button onClick={() => setIsAddingAttr(false)} className="text-gray-400 hover:text-red-500"><FiX /></button>
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Internal Name</label>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ">Internal Name</label>
                                     <input
                                         type="text"
                                         value={newAttr.name}
                                         onChange={(e) => setNewAttr({ ...newAttr, name: e.target.value })}
                                         placeholder="e.g. Waist Size"
-                                        className="w-full p-3 bg-gray-50 rounded-xl border-transparent focus:bg-white focus:border-primary-500 outline-none text-sm font-bold transition-all"
+                                        className="w-full p-3 bg-white rounded-xl border-transparent focus:bg-white focus:border-primary-500 outline-none text-sm font-bold transition-all"
                                     />
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Category Type</label>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ">Category Type</label>
                                     <select
                                         value={newAttr.type}
                                         onChange={(e) => setNewAttr({ ...newAttr, type: e.target.value })}
-                                        className="w-full p-3 bg-gray-50 rounded-xl border-transparent focus:bg-white focus:border-primary-500 outline-none text-sm font-bold transition-all appearance-none"
+                                        className="w-full p-3 bg-white rounded-xl border-transparent focus:bg-white focus:border-primary-500 outline-none text-sm font-bold transition-all appearance-none"
                                     >
                                         <option value="custom">Custom Text</option>
                                         <option value="size">Size Scaling</option>
@@ -453,7 +453,7 @@ const Attributes = () => {
 
                                 <button
                                     onClick={handleCreateAttr}
-                                    className="w-full py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold text-xs uppercase  hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all flex items-center justify-center gap-2"
                                 >
                                     <FiCheck /> Deploy Attribute
                                 </button>
@@ -462,7 +462,7 @@ const Attributes = () => {
                             <div>
                                 <button
                                     onClick={() => setIsAddingAttr(true)}
-                                    className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-2xl hover:bg-primary-700 transition-all shadow-lg active:scale-95 text-sm font-black uppercase tracking-widest"
+                                    className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-2xl hover:bg-primary-700 transition-all shadow-lg active:scale-95 text-sm font-bold uppercase "
                                 >
                                     <FiPlus />
                                     New Attribute
@@ -470,15 +470,15 @@ const Attributes = () => {
                             </div>
                         )}
                         <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 mt-6">
-                            <h4 className="font-black text-amber-800 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <h4 className="font-bold text-amber-800 text-xs uppercase  mb-3 flex items-center gap-2">
                                 <FiList /> Quick Documentation
                             </h4>
                             <div className="space-y-3">
                                 <p className="text-xs text-amber-700/80 leading-relaxed">
-                                    <span className="font-black">Axis:</span> The variable name (e.g., "Color").
+                                    <span className="font-bold">Axis:</span> The variable name (e.g., "Color").
                                 </p>
                                 <p className="text-xs text-amber-700/80 leading-relaxed">
-                                    <span className="font-black">Values:</span> Specific options available (e.g., "Deep Maroon").
+                                    <span className="font-bold">Values:</span> Specific options available (e.g., "Deep Maroon").
                                 </p>
                             </div>
                         </div>

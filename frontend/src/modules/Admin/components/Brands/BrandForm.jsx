@@ -253,7 +253,7 @@ const BrandForm = ({ brand, onClose, onSave }) => {
                       <img
                         src={formData.logo}
                         alt="Preview"
-                        className="w-32 h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 p-2"
+                        className="w-32 h-32 object-contain rounded-lg border border-gray-200 bg-white p-2"
                         onError={(e) => {
                           e.target.style.display = "none";
                         }}

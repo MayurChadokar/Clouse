@@ -196,7 +196,7 @@ const DeliveryDashboard = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h1 className="text-2xl font-black text-gray-800">
+            <h1 className="text-2xl font-bold text-gray-800">
               Hi, {deliveryBoy?.name?.split(' ')[0] || 'Partner'}! <span className="inline-block hover:animate-bounce">👋</span>
             </h1>
             <p className="text-gray-500 text-sm mt-1">
@@ -224,7 +224,7 @@ const DeliveryDashboard = () => {
                 )}
               </div>
               <div>
-                <h2 className={`font-black tracking-tight ${isOnline ? 'text-green-900 text-lg' : 'text-gray-800 text-base'}`}>
+                <h2 className={`font-bold  ${isOnline ? 'text-green-900 text-lg' : 'text-gray-800 text-base'}`}>
                   Currently {isOnline ? 'Online' : 'Offline'}
                 </h2>
                 <p className={`text-xs mt-0.5 ${isOnline ? 'text-green-700 font-semibold' : 'text-gray-500'}`}>
@@ -245,7 +245,7 @@ const DeliveryDashboard = () => {
                   }`}
               />
               <span
-                className={`absolute inset-0 flex items-center justify-center text-[10px] font-black tracking-widest pointer-events-none ${isOnline ? 'text-white pr-6' : 'text-gray-500 pl-6'
+                className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold  pointer-events-none ${isOnline ? 'text-white pr-6' : 'text-gray-500 pl-6'
                   }`}
               >
                 {isOnline ? 'ON' : 'OFF'}
@@ -366,7 +366,7 @@ const DeliveryDashboard = () => {
               </div>
             )}
             {!isDashboardLoading && displayOrders.length === 0 && (
-              <div className="text-sm text-gray-500 py-6 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="text-sm text-gray-500 py-6 text-center bg-white rounded-xl border border-dashed border-gray-200">
                 You haven't accepted any orders yet.
                 <br />
                 Accept an order from the section above!
@@ -379,7 +379,7 @@ const DeliveryDashboard = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1 }}
                 onClick={() => navigate(`/delivery/orders/${order.id}`)}
-                className="border border-gray-100 bg-gray-50/50 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="border border-gray-100 bg-white/50 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>

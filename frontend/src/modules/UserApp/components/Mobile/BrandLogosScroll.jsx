@@ -27,7 +27,7 @@ const BrandLogosScroll = ({ brands = null }) => {
                             >
                                 <div
                                     onClick={() => navigate(`/brand/${brand.id}`)}
-                                    className="bg-gray-50 rounded-lg p-2 shadow-sm transition-all duration-300 flex items-center justify-center w-16 h-16 group cursor-pointer border border-gray-100 mb-2 hover:shadow-md hover:border-gray-200">
+                                    className="bg-white rounded-lg p-2 shadow-sm transition-all duration-300 flex items-center justify-center w-16 h-16 group cursor-pointer border border-gray-100 mb-2 hover:shadow-md hover:border-gray-200">
                                     <img
                                         src={brand.logo}
                                         alt={brand.name}

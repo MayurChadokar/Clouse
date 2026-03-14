@@ -276,7 +276,7 @@ const DeliveryOrderDetail = () => {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xl font-bold text-gray-800">#{order.id}</span>
               {order.orderType && order.orderType !== 'standard' && (
-                <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full border border-primary-200 uppercase tracking-wider">
+                <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full border border-primary-200 uppercase ">
                   {order.orderType.replace(/_/g, ' ')}
                 </span>
               )}
@@ -306,7 +306,7 @@ const DeliveryOrderDetail = () => {
                     <div className="p-1.5 bg-primary-100 text-primary-600 rounded-lg shrink-0">
                       <FiPhone size={14} />
                     </div>
-                    <a href={`tel:${order.phone}`} className="font-bold text-primary-700 hover:underline tracking-widest text-base">
+                    <a href={`tel:${order.phone}`} className="font-bold text-primary-700 hover:underline  text-base">
                       {order.phone}
                     </a>
                   </div>
@@ -316,16 +316,16 @@ const DeliveryOrderDetail = () => {
 
             <div className="pt-2 border-t border-gray-100">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-xs font-bold text-gray-500 uppercase  flex items-center gap-1">
                   <FiCreditCard /> Payment Mode:
                 </span>
 
                 {order.paymentMethod === 'cod' ? (
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full border border-purple-200 uppercase tracking-wider animate-pulse inline-flex items-center gap-1">
+                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full border border-purple-200 uppercase  animate-pulse inline-flex items-center gap-1">
                     Cash on Delivery (COD)
                   </span>
                 ) : (
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase  rounded-full border border-emerald-100">
                     Prepaid ({order.paymentMethod})
                   </span>
                 )}
@@ -341,7 +341,7 @@ const DeliveryOrderDetail = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-orange-500"
           >
-            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-gray-500 uppercase  mb-2 flex items-center gap-2">
               <FiPackage className="text-orange-500" />
               Pickup From (Vendor)
             </h2>
@@ -363,7 +363,7 @@ const DeliveryOrderDetail = () => {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl p-4 shadow-sm border-l-4 border-primary-500"
         >
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-gray-500 uppercase  mb-2 flex items-center gap-2">
             <FiUser className="text-primary-500" />
             Deliver To (Customer)
           </h2>
@@ -404,10 +404,10 @@ const DeliveryOrderDetail = () => {
                 <FiCheckCircle className="text-white text-xl" />
               </div>
               <div>
-                <h2 className="text-primary-900 font-black text-lg leading-tight uppercase tracking-tight">
+                <h2 className="text-primary-900 font-bold text-lg leading-tight uppercase ">
                   {order.orderType.replace(/_/g, ' ')} Mode
                 </h2>
-                <p className="text-primary-600 text-[10px] font-black uppercase tracking-widest italic">Special Handling Required</p>
+                <p className="text-primary-600 text-[10px] font-bold uppercase  italic">Special Handling Required</p>
               </div>
             </div>
 
@@ -461,7 +461,7 @@ const DeliveryOrderDetail = () => {
                 <FiMapPin className="text-primary-600" />
                 Live Tracking
               </h2>
-              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full animate-pulse border border-emerald-100 italic">
+              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase  rounded-full animate-pulse border border-emerald-100 italic">
                 Rider Signal: Active
               </span>
             </div>
@@ -482,7 +482,7 @@ const DeliveryOrderDetail = () => {
                     icon={riderIcon}
                   >
                     <Popup>
-                      <div className="text-[10px] font-black uppercase text-center">My Current Location</div>
+                      <div className="text-[10px] font-bold uppercase text-center">My Current Location</div>
                     </Popup>
                   </Marker>
                 )}
@@ -493,7 +493,7 @@ const DeliveryOrderDetail = () => {
                     <Popup>
                       <div className="text-center">
                         <p className="font-bold text-gray-900">{order.customer}</p>
-                        <p className="text-[10px] text-gray-400 font-black uppercase">Customer Destination</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">Customer Destination</p>
                       </div>
                     </Popup>
                   </Marker>
@@ -513,7 +513,7 @@ const DeliveryOrderDetail = () => {
               </button>
               <button
                 onClick={loadOrder}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 border border-gray-200 rounded-xl font-semibold text-sm hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-600 border border-gray-200 rounded-xl font-semibold text-sm hover:bg-gray-100 transition-colors"
               >
                 <FiClock />
                 Sync Status
@@ -611,11 +611,11 @@ const DeliveryOrderDetail = () => {
                 <div className="p-2 bg-orange-500 text-white rounded-lg">
                   <FiPackage />
                 </div>
-                <h3 className="font-black text-orange-900 uppercase italic">Confirm Pick-Up</h3>
+                <h3 className="font-bold text-orange-900 uppercase italic">Confirm Pick-Up</h3>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black text-orange-700 uppercase tracking-widest">Capture / Upload Pickup Photo (Mandatory)</label>
+                <label className="block text-xs font-bold text-orange-700 uppercase ">Capture / Upload Pickup Photo (Mandatory)</label>
                 <div className="flex items-center justify-center border-2 border-dashed border-orange-300 rounded-xl p-4 bg-white/50 cursor-pointer">
                   <input
                     type="file"
@@ -653,7 +653,7 @@ const DeliveryOrderDetail = () => {
             <button
               onClick={() => handleUpdateStatus('out_for_delivery', 'Order is now Out for Delivery!')}
               disabled={isUpdatingOrderStatus}
-              className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 uppercase tracking-tighter"
+              className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 uppercase er"
             >
               <FiNavigation className="animate-bounce" />
               {isUpdatingOrderStatus ? 'Starting Delivery...' : 'Start Out for Delivery'}
@@ -666,7 +666,7 @@ const DeliveryOrderDetail = () => {
                 <div className="p-2 bg-emerald-600 text-white rounded-lg">
                   <FiCheckCircle />
                 </div>
-                <h3 className="font-black text-emerald-900 uppercase italic tracking-tighter">Complete Delivery</h3>
+                <h3 className="font-bold text-emerald-900 uppercase italic er">Complete Delivery</h3>
               </div>
 
               {(order.paymentMethod === 'cod' || order.paymentMethod === 'cash') && (
@@ -677,14 +677,18 @@ const DeliveryOrderDetail = () => {
                 >
                   <div className="flex items-center gap-2 text-amber-900 font-extrabold uppercase text-sm tracking-tighter">
                     <IndianRupee size={20} className="font-bold" />
-                    Cash Collection Required
-                  </div>
-                  <p className="text-3xl font-black text-amber-900 leading-none">{formatPrice(order.total)}</p>
-                  <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest text-center mt-1">Collect physical cash (Indian Rupees) from customer before entering OTP</p>
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold uppercase text-sm er">
+                      <FiDollarSign className="text-xl" />
+                      Cash Collection Required
+                    </div>
+                    <p className="text-3xl font-black text-amber-900 leading-none">{formatPrice(order.total)}</p>
+                    <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest text-center mt-1">Collect physical cash (Indian Rupees) from customer before entering OTP</p>
+                    <p className="text-3xl font-bold text-amber-900 leading-none">{formatPrice(order.total)}</p>
+                    <p className="text-[10px] text-amber-700 font-bold uppercase  text-center mt-1">Collect physical cash from customer before entering OTP</p>
                 </motion.div>
               )}
 
-              <p className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-1 text-center">Enter 6-Digit Delivery OTP from Customer</p>
+              <p className="text-xs font-bold text-emerald-700 uppercase  mb-1 text-center">Enter 6-Digit Delivery OTP from Customer</p>
 
               <input
                 type="text"
@@ -693,11 +697,11 @@ const DeliveryOrderDetail = () => {
                 value={deliveryOtp}
                 onChange={(e) => setDeliveryOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="0 0 0 0 0 0"
-                className="w-full px-4 py-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none text-center text-3xl tracking-[0.4em] font-black bg-white shadow-inner uppercase"
+                className="w-full px-4 py-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none text-center text-3xl tracking-[0.4em] font-bold bg-white shadow-inner uppercase"
               />
 
               <div className="space-y-2 mt-4">
-                <label className="block text-xs font-black text-emerald-700 uppercase tracking-widest">Capture / Upload Delivery Photo (Mandatory)</label>
+                <label className="block text-xs font-bold text-emerald-700 uppercase ">Capture / Upload Delivery Photo (Mandatory)</label>
                 <div className="flex items-center justify-center border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white/50 cursor-pointer">
                   <input
                     type="file"
@@ -735,14 +739,14 @@ const DeliveryOrderDetail = () => {
                 <button
                   onClick={handleResendOtp}
                   disabled={isResendingOtp || isUpdatingOrderStatus}
-                  className="col-span-2 bg-white border border-emerald-200 text-emerald-700 py-4 rounded-xl font-bold text-xs hover:bg-emerald-50 disabled:opacity-60 transition-all uppercase tracking-widest"
+                  className="col-span-2 bg-white border border-emerald-200 text-emerald-700 py-4 rounded-xl font-bold text-xs hover:bg-emerald-50 disabled:opacity-60 transition-all uppercase "
                 >
                   {isResendingOtp ? '...' : 'Resend OTP'}
                 </button>
                 <button
                   onClick={handleCompleteOrder}
                   disabled={isUpdatingOrderStatus || deliveryOtp.length !== 6}
-                  className="col-span-3 gradient-green text-white py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-emerald-100 uppercase tracking-widest"
+                  className="col-span-3 gradient-green text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-emerald-100 uppercase "
                 >
                   {isUpdatingOrderStatus ? 'Hold on...' : 'Verify & Finish'}
                 </button>
@@ -753,7 +757,7 @@ const DeliveryOrderDetail = () => {
           {order.phone && (
             <button
               onClick={() => window.open(`tel:${order.phone}`, '_self')}
-              className="w-full bg-white border border-gray-200 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-gray-50 shadow-sm"
+              className="w-full bg-white border border-gray-200 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-white hover:text-black shadow-sm"
             >
               <FiPhone className="text-primary-600" />
               Call Customer

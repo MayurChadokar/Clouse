@@ -24,18 +24,18 @@ const EventsPage = () => {
                             className="w-full h-full object-cover filter brightness-[0.8] group-hover:scale-105 transition-transform duration-700"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-center items-center text-center px-6">
-                            <span className="bg-white/90 text-gray-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-widest mb-4">
+                            <span className="bg-white/90 text-gray-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase  mb-4">
                                 SHOP ABOVE ₹500 TO GET A FREE PASS
                             </span>
-                            <h3 className="text-white font-black text-5xl tracking-tighter italic">
+                            <h3 className="text-white font-bold text-5xl er italic">
                                 Pizza & <br /> Brew <span className="text-pink-300">Rave</span>
                             </h3>
-                            <p className="text-white/80 font-bold text-[13px] mt-4 uppercase tracking-widest">
+                            <p className="text-white/80 font-bold text-[13px] mt-4 uppercase ">
                                 Secret Story, Indirangar
                             </p>
                         </div>
                         <div className="absolute bottom-4 left-4">
-                            <span className="bg-white text-black font-black text-[11px] px-4 py-1.5 rounded-lg uppercase tracking-tight">
+                            <span className="bg-white text-black font-bold text-[11px] px-4 py-1.5 rounded-lg uppercase ">
                                 EVENT EXPIRED
                             </span>
                         </div>
@@ -47,7 +47,7 @@ const EventsPage = () => {
                             <p className="text-[13px] font-bold text-gray-300">
                                 Sunday, 15 Jun | 04:00 PM - 07:30 PM
                             </p>
-                            <h4 className="text-[18px] font-black tracking-tight">
+                            <h4 className="text-[18px] font-bold ">
                                 Pizza & Brew Rave
                             </h4>
                         </div>

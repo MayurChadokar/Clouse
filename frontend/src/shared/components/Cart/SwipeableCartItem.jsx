@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiTrash2, FiMinus, FiPlus, FiHeart, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
@@ -111,7 +111,7 @@ const SwipeableCartItem = ({ item, index }) => {
             onTouchStart={swipeHandlers.onTouchStart}
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}>
-            <div className="flex gap-4 p-4 bg-gray-50 rounded-xl relative">
+            <div className="flex gap-4 p-4 bg-white rounded-xl relative">
                 {/* Delete Background */}
                 {swipeOffset > 0 && (
                     <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end pr-4">
@@ -159,7 +159,7 @@ const SwipeableCartItem = ({ item, index }) => {
                                 e.stopPropagation();
                                 handleQuantityChange(item.id, item.quantity, -1, item.variant);
                             }}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-white hover:text-black transition-colors">
                             <FiMinus className="text-xs text-gray-600" />
                         </button>
                         <motion.span
@@ -181,7 +181,7 @@ const SwipeableCartItem = ({ item, index }) => {
                             disabled={isMaxQuantity(item.quantity)}
                             className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${isMaxQuantity(item.quantity)
                                 ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-50"
-                                : "bg-white border-gray-300 hover:bg-gray-50"
+                                : "bg-white border-gray-300 hover:bg-white hover:text-black"
                                 }`}>
                             <FiPlus className="text-xs text-gray-600" />
                         </button>

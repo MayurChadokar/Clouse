@@ -443,7 +443,7 @@ const GeneralSettings = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-white rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">Color Preview:</p>
                 <div className="flex gap-2">
                   <div

@@ -80,12 +80,12 @@ const ImageGallery = ({ images, productName = "Product", children }) => {
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 lg:hidden">
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white hover:text-black hover:scale-110 lg:hidden">
                 <FiChevronLeft className="text-gray-800 text-xl" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 lg:hidden">
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white hover:text-black hover:scale-110 lg:hidden">
                 <FiChevronRight className="text-gray-800 text-xl" />
               </button>
             </>

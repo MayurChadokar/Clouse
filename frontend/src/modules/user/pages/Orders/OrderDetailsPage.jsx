@@ -207,7 +207,7 @@ const OrderDetailsPage = () => {
             <AccountLayout hideHeader={true}>
                 <div className="flex flex-col items-center justify-center min-h-[400px]">
                     <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin mb-4" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Fetching Details...</p>
+                    <p className="text-[10px] font-bold uppercase  text-gray-400">Fetching Details...</p>
                 </div>
             </AccountLayout>
         );
@@ -236,12 +236,12 @@ const OrderDetailsPage = () => {
                 <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-6 pt-2">
                     <button
                         onClick={() => navigate('/orders')}
-                        className="p-2 hover:bg-gray-50 rounded-full transition-colors order-1"
+                        className="p-2 hover:bg-white hover:text-black rounded-full transition-colors order-1"
                     >
                         <ArrowLeft size={20} />
                     </button>
                     <div className="flex-1 order-2 min-w-[150px]">
-                        <h2 className="text-lg md:text-xl font-black uppercase tracking-tight">Order Details</h2>
+                        <h2 className="text-lg md:text-xl font-bold uppercase ">Order Details</h2>
                         <p className="text-[10px] md:text-xs text-gray-500 font-bold">#{order.id}</p>
                     </div>
                     <div className="flex items-center gap-2 order-3 w-full sm:w-auto sm:order-2 justify-between sm:justify-end">
@@ -250,9 +250,9 @@ const OrderDetailsPage = () => {
                             className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-black rounded-xl transition-colors"
                         >
                             <Printer size={16} />
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden xs:inline">Invoice</span>
+                            <span className="text-[10px] font-bold uppercase  hidden xs:inline">Invoice</span>
                         </button>
-                        <span className="text-[9px] md:text-[10px] font-black bg-black text-white px-3 py-1.5 rounded-full uppercase tracking-wider">
+                        <span className="text-[9px] md:text-[10px] font-bold bg-black text-white px-3 py-1.5 rounded-full uppercase ">
                             {order.status}
                         </span>
                     </div>
@@ -261,29 +261,29 @@ const OrderDetailsPage = () => {
                 <div className="space-y-4 md:space-y-6">
                     {/* Items Section */}
                     <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-4 md:p-6 shadow-sm font-bold">
-                        <h3 className="text-[11px] md:text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-gray-400">
+                        <h3 className="text-[11px] md:text-sm font-bold uppercase  mb-4 flex items-center gap-2 text-gray-400">
                             <Package size={16} /> Items in Order
                         </h3>
                         <div className="space-y-4 md:space-y-6">
                             {order.items.map((item, idx) => (
                                 <div key={idx} className="flex gap-3 md:gap-4 border-b border-gray-50 last:border-0 pb-4 last:pb-0">
-                                    <div className="w-16 h-20 md:w-20 md:h-24 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100">
+                                    <div className="w-16 h-20 md:w-20 md:h-24 bg-white rounded-xl overflow-hidden shrink-0 border border-gray-100">
                                         <img src={item.image} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1 min-w-0 py-0.5 md:py-1">
                                         <h4 className="text-[13px] md:text-sm font-bold text-gray-900 line-clamp-1">{item.name}</h4>
-                                        <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mt-0.5 md:mt-1">
+                                        <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase mt-0.5 md:mt-1">
                                             {item.brand}
                                         </p>
                                         <div className="flex flex-wrap gap-2 md:gap-4 mt-1.5 md:mt-2">
-                                            <div className="bg-gray-50 px-2 py-0.5 md:py-1 rounded text-[9px] md:text-[10px] font-bold text-gray-600 uppercase">
+                                            <div className="bg-white px-2 py-0.5 md:py-1 rounded text-[9px] md:text-[10px] font-bold text-gray-600 uppercase">
                                                 Size: {item.selectedSize}
                                             </div>
-                                            <div className="bg-gray-50 px-2 py-0.5 md:py-1 rounded text-[9px] md:text-[10px] font-bold text-gray-600 uppercase">
+                                            <div className="bg-white px-2 py-0.5 md:py-1 rounded text-[9px] md:text-[10px] font-bold text-gray-600 uppercase">
                                                 Qty: {item.quantity}
                                             </div>
                                         </div>
-                                        <p className="text-[13px] md:text-sm font-black text-black mt-1.5 md:mt-2">₹{item.discountedPrice}</p>
+                                        <p className="text-[13px] md:text-sm font-bold text-black mt-1.5 md:mt-2">₹{item.discountedPrice}</p>
                                     </div>
                                 </div>
                             ))}
@@ -294,7 +294,7 @@ const OrderDetailsPage = () => {
                     <div className="grid md:grid-cols-2 gap-4 md:gap-6 font-bold">
                         {/* Delivery Address */}
                         <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-4 md:p-6 shadow-sm">
-                            <h3 className="text-[11px] md:text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-gray-400">
+                            <h3 className="text-[11px] md:text-sm font-bold uppercase  mb-4 flex items-center gap-2 text-gray-400">
                                 <MapPin size={16} /> Delivery Address
                             </h3>
                             {order.address ? (
@@ -319,7 +319,7 @@ const OrderDetailsPage = () => {
 
                         {/* Payment Info */}
                         <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-4 md:p-6 shadow-sm">
-                            <h3 className="text-[11px] md:text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-gray-400">
+                            <h3 className="text-[11px] md:text-sm font-bold uppercase  mb-4 flex items-center gap-2 text-gray-400">
                                 <CreditCard size={16} /> Payment Summary
                             </h3>
                             <div className="space-y-2.5 md:space-y-3">
@@ -331,13 +331,13 @@ const OrderDetailsPage = () => {
                                     <span>Shipping</span>
                                     <span className="text-green-600">FREE</span>
                                 </div>
-                                <div className="flex justify-between text-[13px] md:text-sm font-black text-black pt-2 md:pt-3 border-t border-gray-50">
+                                <div className="flex justify-between text-[13px] md:text-sm font-bold text-black pt-2 md:pt-3 border-t border-gray-50">
                                     <span>Total Amount</span>
                                     <span>₹{order.total}</span>
                                 </div>
-                                <div className="mt-3 md:mt-4 bg-gray-50 p-2.5 md:p-3 rounded-xl flex items-center justify-between">
-                                    <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment Method</span>
-                                    <span className="text-[11px] md:text-xs font-black text-gray-900 uppercase">
+                                <div className="mt-3 md:mt-4 bg-white p-2.5 md:p-3 rounded-xl flex items-center justify-between">
+                                    <span className="text-[9px] md:text-[10px] font-bold uppercase  text-gray-400">Payment Method</span>
+                                    <span className="text-[11px] md:text-xs font-bold text-gray-900 uppercase">
                                         {order.paymentMethod || 'Pay on Delivery'}
                                     </span>
                                 </div>
@@ -347,7 +347,7 @@ const OrderDetailsPage = () => {
 
                     {/* Order Timeline */}
                     <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-4 md:p-6 shadow-sm font-bold">
-                        <h3 className="text-[11px] md:text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2 text-gray-400">
+                        <h3 className="text-[11px] md:text-sm font-bold uppercase  mb-6 flex items-center gap-2 text-gray-400">
                             <Clock size={16} /> Order Status
                         </h3>
 
@@ -364,7 +364,7 @@ const OrderDetailsPage = () => {
                                 <div className="px-2">
                                     {isCancelled ? (
                                         <div className="text-center py-4">
-                                            <p className="text-red-500 font-bold uppercase tracking-widest">Order Cancelled</p>
+                                            <p className="text-red-500 font-bold uppercase ">Order Cancelled</p>
                                         </div>
                                     ) : (
                                         <>
@@ -400,7 +400,7 @@ const OrderDetailsPage = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 overflow-hidden">
+                                            <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase  mt-2 overflow-hidden">
                                                 <span className={step >= 1 ? 'text-green-600' : ''}>Ordered</span>
                                                 <span className={step >= 2 ? 'text-green-600 text-center' : 'text-center'}>Shipped</span>
                                                 <span className={step >= 3 ? 'text-green-600 text-right' : 'text-right'}>Delivered</span>
@@ -412,22 +412,22 @@ const OrderDetailsPage = () => {
                         })()}
 
                         {(order.orderType || order.deliveryType) && (
-                            <div className="flex items-center justify-center gap-2 mt-4 px-3 py-1.5 bg-gray-50 rounded-full w-fit mx-auto border border-gray-100">
+                            <div className="flex items-center justify-center gap-2 mt-4 px-3 py-1.5 bg-white rounded-full w-fit mx-auto border border-gray-100">
                                 <ShieldCheck size={14} className="text-black" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                                <span className="text-[10px] font-bold uppercase  text-black">
                                     Delivery Type: <span className="text-[#ffcc00]">{(order.orderType || order.deliveryType).replace(/_/g, ' ')}</span>
                                 </span>
                             </div>
                         )}
 
                         <p className="text-[11px] md:text-xs font-bold text-gray-500 mt-6 text-center">
-                            Fast Delivery: <span className="text-emerald-600 font-black">Instant Delivery (60 Mins)</span>
+                            Fast Delivery: <span className="text-emerald-600 font-bold">Instant Delivery (60 Mins)</span>
                         </p>
 
                         {order.deliveryOtpDebug && user && (
                             <div className="mt-6 p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 border-dashed text-center">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Share this OTP with delivery partner</p>
-                                <p className="text-2xl font-black text-emerald-700 tracking-[0.2em]">{order.deliveryOtpDebug}</p>
+                                <p className="text-[10px] font-bold uppercase  text-emerald-600 mb-1">Share this OTP with delivery partner</p>
+                                <p className="text-2xl font-bold text-emerald-700">{order.deliveryOtpDebug}</p>
                             </div>
                         )}
                     </div>
@@ -436,7 +436,7 @@ const OrderDetailsPage = () => {
                     <div className="flex flex-col sm:flex-row gap-3 mt-6">
                         <button
                             onClick={() => navigate(`/track-order/${orderId}`)}
-                            className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 shadow-md shadow-emerald-200"
+                            className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-[11px] uppercase hover:bg-gray-800 transition-all active:scale-95 shadow-md shadow-gray-200"
                         >
                             Track Order
                         </button>
@@ -444,7 +444,7 @@ const OrderDetailsPage = () => {
                         {(order.status?.toLowerCase() === 'delivered') && (
                             <button
                                 onClick={() => setShowReturnModal(true)}
-                                className="flex-1 py-3 bg-white text-black border-2 border-black rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                className="flex-1 py-3 bg-white text-black border-2 border-black rounded-xl font-bold text-[11px] uppercase  hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
                                 <RefreshCcw size={14} />
                                 Return Items
@@ -452,7 +452,7 @@ const OrderDetailsPage = () => {
                         )}
 
                         {order.status?.toLowerCase() === 'return requested' && (
-                            <div className="flex-1 py-3 bg-amber-50 text-amber-700 rounded-xl font-black text-[11px] uppercase tracking-widest border border-amber-200 flex items-center justify-center gap-2">
+                            <div className="flex-1 py-3 bg-amber-50 text-amber-700 rounded-xl font-bold text-[11px] uppercase  border border-amber-200 flex items-center justify-center gap-2">
                                 <Clock size={14} />
                                 Return Under Review
                             </div>
@@ -470,7 +470,7 @@ const OrderDetailsPage = () => {
                                 <div className="p-2 bg-amber-100 text-amber-600 rounded-xl">
                                     <AlertTriangle size={20} />
                                 </div>
-                                <h3 className="text-lg font-black uppercase tracking-tight">Return Request</h3>
+                                <h3 className="text-lg font-bold uppercase ">Return Request</h3>
                             </div>
                             <button
                                 onClick={() => setShowReturnModal(false)}
@@ -489,7 +489,7 @@ const OrderDetailsPage = () => {
                                 {RETURN_REASONS.map((reason, idx) => (
                                     <label
                                         key={idx}
-                                        className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${returnReason === reason ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-200'}`}
+                                        className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${returnReason === reason ? 'border-black bg-white' : 'border-gray-100 hover:border-gray-200'}`}
                                     >
                                         <input
                                             type="radio"
@@ -507,14 +507,14 @@ const OrderDetailsPage = () => {
                             <div className="pt-4 flex gap-3">
                                 <button
                                     onClick={() => setShowReturnModal(false)}
-                                    className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-all font-bold"
+                                    className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-[11px] uppercase  hover:bg-gray-200 transition-all font-bold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleReturnSubmit}
                                     disabled={!returnReason || isSubmitting}
-                                    className={`flex-1 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg ${!returnReason || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 shadow-gray-200'}`}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-[11px] uppercase  transition-all shadow-lg ${!returnReason || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 shadow-gray-200'}`}
                                 >
                                     {isSubmitting ? 'Submitting...' : 'Submit Request'}
                                 </button>

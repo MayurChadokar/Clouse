@@ -257,7 +257,7 @@ const PaymentPage = () => {
     const PaymentOption = ({ id, icon: Icon, title, subtitle, offers, children }) => (
         <div className="border-b border-gray-100 last:border-0">
             <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-white hover:text-black transition-colors"
                 onClick={() => toggleOption(id)}
             >
                 <div className="flex items-center gap-4">
@@ -268,7 +268,7 @@ const PaymentPage = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {offers && <span className="text-[10px] font-black text-emerald-600 uppercase">{offers}</span>}
+                    {offers && <span className="text-[10px] font-bold text-emerald-600 uppercase">{offers}</span>}
                     {expandedOption === id ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
                 </div>
             </div>
@@ -281,15 +281,15 @@ const PaymentPage = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24 md:pb-12">
+        <div className="min-h-screen bg-white pb-24 md:pb-12">
             {/* Header */}
             <header className="bg-white sticky top-0 z-50 border-b border-gray-100 px-4 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-white hover:text-black rounded-full transition-colors">
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h1 className="text-lg font-black uppercase tracking-tight leading-tight">Review Order</h1>
+                        <h1 className="text-lg font-bold uppercase leading-tight">Review Order</h1>
                         {totalDiscount > 0 && (
                             <p className="text-[11px] font-bold text-emerald-600">You're saving ₹{totalDiscount}</p>
                         )}
@@ -297,7 +297,7 @@ const PaymentPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-green-500" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">100% Secure</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase ">100% Secure</span>
                 </div>
             </header>
 
@@ -306,17 +306,17 @@ const PaymentPage = () => {
                 <div className="flex items-center justify-center max-w-sm mx-auto">
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full mb-1"></div>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Bag</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase ">Bag</span>
                     </div>
                     <div className="flex-1 h-0.5 bg-emerald-500 mx-2 mb-4"></div>
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full mb-1"></div>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Address</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase ">Address</span>
                     </div>
                     <div className="flex-1 h-0.5 bg-black mx-2 mb-4"></div>
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-white border-2 border-black rounded-full mb-1"></div>
-                        <span className="text-[10px] font-black text-black uppercase tracking-widest">Payment</span>
+                        <span className="text-[10px] font-bold text-black uppercase">Payment</span>
                     </div>
                 </div>
             </div>
@@ -328,14 +328,14 @@ const PaymentPage = () => {
                     {/* Delivery Details Header */}
                     <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-50">
                         <MapPin size={16} className="text-gray-700" />
-                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">Delivery Details</span>
+                        <span className="text-[13px] font-bold text-gray-900 uppercase ">Delivery Details</span>
                     </div>
 
                     {/* Address Display */}
                     {currentAddress ? (
                         <div className="px-4 py-4">
                             <div className="mb-1">
-                                <span className="text-[14px] font-black text-gray-900">{currentAddress.name}</span>
+                                <span className="text-[14px] font-bold text-gray-900">{currentAddress.name}</span>
                                 <span className="text-[13px] text-gray-600 font-medium ml-1.5">
                                     {currentAddress.address}
                                     {currentAddress.locality ? `, ${currentAddress.locality}` : ''}
@@ -401,7 +401,7 @@ const PaymentPage = () => {
                 <div className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
                     <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-50">
                         <Package size={16} className="text-gray-700" />
-                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">Delivery Type</span>
+                        <span className="text-[13px] font-bold text-gray-900 uppercase ">Delivery Type</span>
                     </div>
                     <div className="p-4 grid grid-cols-1 gap-3">
                         {[
@@ -410,7 +410,7 @@ const PaymentPage = () => {
                         ].map((type) => (
                             <label
                                 key={type.id}
-                                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${deliveryType === type.id ? 'border-black bg-black/5' : 'border-gray-50 bg-gray-50/50 hover:bg-gray-50'
+                                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${deliveryType === type.id ? 'border-black bg-black/5' : 'border-gray-50 bg-gray-500 hover:bg-white hover:text-black'
                                     }`}
                                 onClick={() => setDeliveryType(type.id)}
                             >
@@ -427,7 +427,7 @@ const PaymentPage = () => {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
                                         <type.icon size={16} className={deliveryType === type.id ? 'text-black' : 'text-gray-400'} />
-                                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">{type.title}</span>
+                                        <span className="text-[13px] font-bold text-gray-900 uppercase ">{type.title}</span>
                                     </div>
                                     <p className="text-[10px] font-bold text-gray-400 mt-0.5">{type.desc}</p>
                                 </div>
@@ -443,7 +443,7 @@ const PaymentPage = () => {
                 <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                         <Tag size={16} className="text-gray-700" />
-                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">Apply Promo Code</span>
+                        <span className="text-[13px] font-bold text-gray-900 uppercase ">Apply Promo Code</span>
                     </div>
 
                     {!appliedPromo ? (
@@ -454,12 +454,12 @@ const PaymentPage = () => {
                                     placeholder="Enter code (e.g. SAVE20)"
                                     value={promoCode}
                                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:bg-white focus:border-black outline-none transition-all uppercase"
+                                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:bg-white focus:border-black outline-none transition-all uppercase"
                                 />
                                 <button
                                     onClick={handleApplyPromo}
                                     disabled={isApplyingPromo}
-                                    className="px-6 py-2 bg-black text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-md active:scale-95"
+                                    className="px-6 py-2 bg-black text-white text-xs font-bold uppercase  rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-md active:scale-95"
                                 >
                                     {isApplyingPromo ? '...' : 'Apply'}
                                 </button>
@@ -476,8 +476,8 @@ const PaymentPage = () => {
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[12px] font-black text-gray-900 uppercase tracking-wider">{appliedPromo.code}</span>
-                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Applied</span>
+                                        <span className="text-[12px] font-bold text-gray-900 uppercase ">{appliedPromo.code}</span>
+                                        <span className="text-[10px] font-bold text-emerald-600 uppercase ">Applied</span>
                                     </div>
                                     <p className="text-[10px] font-bold text-emerald-600">You saved ₹{promoDiscount.toFixed(0)} additional!</p>
                                 </div>
@@ -495,12 +495,12 @@ const PaymentPage = () => {
                 {/* Coupons & Bank Offers */}
                 <div
                     onClick={() => navigate('/offers', { state: { from: 'payment', selectedAddress: currentAddress } })}
-                    className="bg-white rounded-xl p-4 mb-4 shadow-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group"
+                    className="bg-white rounded-xl p-4 mb-4 shadow-sm flex items-center justify-between cursor-pointer hover:bg-white hover:text-black transition-colors group"
                 >
                     <div className="flex items-center gap-3">
                         <Percent size={18} className="text-gray-700" />
                         <div>
-                            <h3 className="text-[13px] font-black uppercase tracking-tight text-gray-900 mb-0.5">Available Offers</h3>
+                            <h3 className="text-[13px] font-bold uppercase  text-gray-900 mb-0.5">Available Offers</h3>
                             <p className="text-[10px] font-bold text-gray-400">Tap to see coupons for you</p>
                         </div>
                     </div>
@@ -511,9 +511,9 @@ const PaymentPage = () => {
 
                 {/* Recommended Payment Options */}
                 <div className="mb-4">
-                    <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-3 ml-2">Recommended Payment Options</h2>
+                    <h2 className="text-[11px] font-bold uppercase  text-gray-500 mb-3 ml-2">Recommended Payment Options</h2>
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <label className="flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-white hover:text-black transition-colors">
                             <div className="flex items-center gap-4">
                                 <input
                                     type="radio"
@@ -530,7 +530,7 @@ const PaymentPage = () => {
                             <Banknote size={20} className="text-gray-400" />
                         </label>
 
-                        <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white hover:text-black transition-colors">
                             <div className="flex items-center gap-4">
                                 <input
                                     type="radio"
@@ -544,14 +544,14 @@ const PaymentPage = () => {
                                     <span className="text-[13px] font-bold text-gray-900">Amazon Pay UPI</span>
                                 </div>
                             </div>
-                            <div className="px-2 py-1 bg-gray-100 rounded text-[10px] font-black uppercase tracking-wider text-gray-600">PAY</div>
+                            <div className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold uppercase  text-gray-600">PAY</div>
                         </label>
                     </div>
                 </div>
 
                 {/* Online Payment Options */}
                 <div className="mb-4">
-                    <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-3 ml-2">Online Payment Options</h2>
+                    <h2 className="text-[11px] font-bold uppercase  text-gray-500 mb-3 ml-2">Online Payment Options</h2>
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                         <PaymentOption id="upi" icon={Smartphone} title="UPI (Pay via any App)" offers="6 Offers">
                             <div className="space-y-3 pl-9">
@@ -572,7 +572,7 @@ const PaymentPage = () => {
                                     <input
                                         type="text"
                                         placeholder="Enter UPI ID"
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-black outline-none transition-colors"
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:bg-white focus:border-black outline-none transition-colors"
                                     />
                                     <button className="mt-2 w-full py-2 bg-gray-900 text-white text-xs font-bold uppercase rounded-lg">Verify & Pay</button>
                                 </div>
@@ -581,7 +581,7 @@ const PaymentPage = () => {
 
                         <PaymentOption id="card" icon={CreditCard} title="Credit/Debit Card" offers="4 Offers">
                             <div className="pl-9 pt-2">
-                                <button className="text-xs font-black uppercase text-[#ffcc00] hover:text-black transition-colors flex items-center gap-1">
+                                <button className="text-xs font-bold uppercase text-[#ffcc00] hover:text-black transition-colors flex items-center gap-1">
                                     <Plus size={14} /> Add New Card
                                 </button>
                             </div>
@@ -633,9 +633,9 @@ const PaymentPage = () => {
 
                 {/* Pay on Delivery Option */}
                 <div className="mb-6">
-                    <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-3 ml-2">Pay on Delivery Option</h2>
+                    <h2 className="text-[11px] font-bold uppercase  text-gray-500 mb-3 ml-2">Pay on Delivery Option</h2>
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white hover:text-black transition-colors">
                             <div className="flex items-center gap-4">
                                 <input
                                     type="radio"
@@ -660,14 +660,14 @@ const PaymentPage = () => {
                         <Gift size={20} className="text-gray-900" />
                         <span className="text-[13px] font-bold text-gray-900">Have a Gift Card?</span>
                     </div>
-                    <button className="text-[11px] font-black text-red-500 uppercase hover:text-red-600 transition-colors">
+                    <button className="text-[11px] font-bold text-red-500 uppercase hover:text-red-600 transition-colors">
                         Apply
                     </button>
                 </div>
 
                 {/* Price Details */}
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-24">
-                    <h3 className="text-[13px] font-black uppercase tracking-widest text-gray-900 mb-4 pb-4 border-b border-gray-100">
+                    <h3 className="text-[13px] font-bold uppercase  text-gray-900 mb-4 pb-4 border-b border-gray-100">
                         Price Details ({cart.length} Items)
                     </h3>
                     <div className="space-y-3 mb-4">
@@ -682,7 +682,7 @@ const PaymentPage = () => {
                         {appliedPromo && (
                             <div className="flex justify-between text-[13px] animate-fadeInUp">
                                 <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                                    Coupon <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">{appliedPromo.code}</span>
+                                    Coupon <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ">{appliedPromo.code}</span>
                                 </span>
                                 <span className="text-emerald-600 font-bold">-₹{promoDiscount.toFixed(0)}</span>
                             </div>
@@ -697,8 +697,8 @@ const PaymentPage = () => {
                         </div>
                     </div>
                     <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
-                        <span className="text-[14px] font-black text-gray-900 uppercase tracking-tight">Total Amount</span>
-                        <span className="text-[16px] font-black text-gray-900">₹{finalTotal}</span>
+                        <span className="text-[14px] font-bold text-gray-900 uppercase ">Total Amount</span>
+                        <span className="text-[16px] font-bold text-gray-900">₹{finalTotal}</span>
                     </div>
                 </div>
 
@@ -706,13 +706,13 @@ const PaymentPage = () => {
                 <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 z-50">
                     <div className="flex items-center justify-between container mx-auto max-w-2xl">
                         <div className="flex flex-col">
-                            <span className="text-[16px] font-black text-gray-900">₹{finalTotal}</span>
-                            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide cursor-pointer">View Details</span>
+                            <span className="text-[16px] font-bold text-gray-900">₹{finalTotal}</span>
+                            <span className="text-[10px] font-bold text-emerald-600 uppercase cursor-pointer">View Details</span>
                         </div>
                         <button
                             onClick={handlePlaceOrder}
                             disabled={isProcessing || !currentAddress}
-                            className="bg-[#d32f2f] text-white px-8 py-3 rounded-lg text-[12px] font-black uppercase tracking-widest hover:bg-[#b71c1c] active:scale-95 transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="bg-black text-white px-8 py-3 rounded-lg text-[12px] font-bold uppercase hover:bg-gray-800 active:scale-95 transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {isProcessing ? 'Placing Order...' : `Place Order`}
                         </button>
@@ -927,7 +927,7 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
 
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                    <h2 className="text-[16px] font-black text-gray-900">Select Delivery Location</h2>
+                    <h2 className="text-[16px] font-bold text-gray-900">Select Delivery Location</h2>
                     <button
                         onClick={handleClose}
                         className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -944,12 +944,12 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                             placeholder="Enter Pincode"
                             value={pincode}
                             onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-[14px] font-medium outline-none focus:border-black transition-colors bg-gray-50 focus:bg-white"
+                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-[14px] font-medium outline-none focus:border-black transition-colors bg-white focus:bg-white"
                         />
                         <button
                             onClick={handleCheckPincode}
                             disabled={isCheckingPincode}
-                            className={`px-5 py-3 text-[12px] font-bold text-[#e53e70] uppercase tracking-wide hover:bg-pink-50 rounded-xl transition-colors whitespace-nowrap ${isCheckingPincode ? 'opacity-50' : ''}`}
+                            className={`px-5 py-3 text-[12px] font-bold text-[#e53e70] uppercase hover:bg-pink-50 rounded-xl transition-colors whitespace-nowrap ${isCheckingPincode ? 'opacity-50' : ''}`}
                         >
                             {isCheckingPincode ? 'Checking...' : 'Check Pincode'}
                         </button>
@@ -960,7 +960,7 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                 <div className="px-5 py-3 space-y-1 border-b border-gray-100">
                     <button
                         onClick={onOpenLocationModal}
-                        className="w-full flex items-center gap-3 py-3 hover:bg-gray-50 rounded-xl px-2 transition-colors"
+                        className="w-full flex items-center gap-3 py-3 hover:bg-white hover:text-black rounded-xl px-2 transition-colors"
                     >
                         <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
                             <LocateFixed size={16} className="text-emerald-600" />
@@ -971,7 +971,7 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
 
                     <button
                         onClick={onOpenLocationModal}
-                        className="w-full flex items-center gap-3 py-3 hover:bg-gray-50 rounded-xl px-2 transition-colors"
+                        className="w-full flex items-center gap-3 py-3 hover:bg-white hover:text-black rounded-xl px-2 transition-colors"
                     >
                         <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
                             <Search size={16} className="text-blue-600" />
@@ -991,7 +991,7 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                 {/* Select Saved Address */}
                 <div className="px-5 pb-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[14px] font-black text-gray-900">Select Saved Address</h3>
+                        <h3 className="text-[14px] font-bold text-gray-900">Select Saved Address</h3>
                         <button
                             onClick={() => {
                                 setEditingAddress(null);
@@ -1006,8 +1006,8 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
 
                     {/* Add/Edit Address Form (Inline) */}
                     {showAddForm && (
-                        <div className="mb-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-fadeInUp">
-                            <h4 className="text-[12px] font-black text-gray-900 uppercase tracking-widest mb-3">
+                        <div className="mb-4 p-4 bg-white rounded-2xl border border-gray-100 animate-fadeInUp">
+                            <h4 className="text-[12px] font-bold text-gray-900 uppercase  mb-3">
                                 {editingAddress ? 'Edit Address' : 'New Address'}
                             </h4>
                             <form onSubmit={handleSaveNewAddress} className="space-y-3">
@@ -1087,14 +1087,14 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                                             setShowAddForm(false);
                                             setEditingAddress(null);
                                         }}
-                                        className="flex-1 py-2.5 text-[11px] font-black uppercase rounded-xl hover:bg-gray-200 transition-colors border border-gray-200"
+                                        className="flex-1 py-2.5 text-[11px] font-bold uppercase rounded-xl hover:bg-gray-200 transition-colors border border-gray-200"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isSaving}
-                                        className="flex-1 py-2.5 bg-black text-white text-[11px] font-black uppercase rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                        className="flex-1 py-2.5 bg-black text-white text-[11px] font-bold uppercase rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
                                     >
                                         {isSaving ? 'Saving...' : editingAddress ? 'Update & Deliver' : 'Save & Deliver'}
                                     </button>
@@ -1125,13 +1125,13 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                                         onClick={() => onSelectAddress(addr)}
                                         className={`p-4 rounded-2xl border-2 cursor-pointer transition-all relative ${isSelected
                                             ? 'border-[#e53e70] bg-pink-50/40'
-                                            : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                                            : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-white hover:text-black'
                                             }`}
                                     >
                                         {/* Currently Selected Badge */}
                                         {isSelected && (
                                             <div className="mb-2">
-                                                <span className="text-[9px] font-black bg-[#e53e70] text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                                                <span className="text-[9px] font-bold bg-[#e53e70] text-white px-2 py-0.5 rounded uppercase ">
                                                     Currently Selected
                                                 </span>
                                             </div>
@@ -1142,9 +1142,9 @@ const AddressBottomSheet = ({ isOpen, onClose, addresses, currentAddress, onSele
                                                 <MapPin size={14} className={`mt-0.5 flex-shrink-0 ${isSelected ? 'text-[#e53e70]' : 'text-gray-400'}`} />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                        <span className="text-[13px] font-black text-gray-900">{addr.name}{(addr.zipCode || addr.pincode) ? `, ${addr.zipCode || addr.pincode}` : ''}</span>
+                                                        <span className="text-[13px] font-bold text-gray-900">{addr.name}{(addr.zipCode || addr.pincode) ? `, ${addr.zipCode || addr.pincode}` : ''}</span>
                                                         {addr.type && (
-                                                            <span className="text-[9px] font-black bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter border border-gray-200">
+                                                            <span className="text-[9px] font-bold bg-gray-100 px-2 py-0.5 rounded uppercase er border border-gray-200">
                                                                 {addr.type}
                                                             </span>
                                                         )}

@@ -38,8 +38,8 @@ const Events = () => {
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 className="text-base font-black uppercase tracking-tight">Events</h1>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Upcoming Events & Sales</p>
+                    <h1 className="text-base font-bold uppercase ">Events</h1>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase ">Upcoming Events & Sales</p>
                 </div>
             </div>
 
@@ -55,14 +55,14 @@ const Events = () => {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                 <div className="absolute top-3 left-3">
-                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
+                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase  ${
                                         event.status === 'upcoming' ? 'bg-amber-400 text-black' : 'bg-gray-600 text-white'
                                     }`}>
                                         {event.badge}
                                     </span>
                                 </div>
                                 <div className="absolute bottom-4 left-4 right-4">
-                                    <h3 className="text-white font-black text-xl tracking-tight mb-1">{event.title}</h3>
+                                    <h3 className="text-white font-bold text-xl  mb-1">{event.title}</h3>
                                     <p className="text-white/80 text-[12px] font-medium">{event.description}</p>
                                 </div>
                             </div>
@@ -88,7 +88,7 @@ const Events = () => {
                 {events.length === 0 && (
                     <div className="py-24 text-center">
                         <Calendar size={48} className="text-gray-200 mx-auto mb-6" />
-                        <h3 className="text-xl font-black uppercase tracking-tight mb-2">No Events Yet</h3>
+                        <h3 className="text-xl font-bold uppercase  mb-2">No Events Yet</h3>
                         <p className="text-gray-400 text-sm">Stay tuned for exciting upcoming events!</p>
                     </div>
                 )}

@@ -4,9 +4,9 @@ import PageTransition from "../../../shared/components/PageTransition";
 const ComingSoon = () => {
   return (
     <PageTransition>
-      <main className="min-h-screen w-full bg-gray-50 flex items-center justify-center px-4">
+      <main className="min-h-screen w-full bg-white flex items-center justify-center px-4">
         <div className="w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
-          <p className="text-xs font-semibold tracking-[0.18em] text-gray-500 uppercase mb-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
             NowAdial
           </p>
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">

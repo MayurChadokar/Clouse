@@ -151,14 +151,14 @@ const OrderItemsDropdown = ({ items, orderTotal }) => {
             style={{
               transformOrigin: openUpward ? "bottom left" : "top left",
             }}>
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <div className="p-4 border-b border-gray-200 bg-white">
               <h3 className="font-semibold text-gray-800 text-sm">
                 Order Items
               </h3>
             </div>
             <div className="overflow-y-auto overflow-x-auto max-h-[320px] scrollbar-admin">
               <table className="w-full min-w-[600px] sm:min-w-0">
-                <thead className="bg-gray-50 sticky top-0">
+                <thead className="bg-white sticky top-0">
                   <tr>
                     <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
                       Item ID
@@ -183,7 +183,7 @@ const OrderItemsDropdown = ({ items, orderTotal }) => {
                     const itemId =
                       item.id || item.itemId || `ITEM-${index + 1}`;
                     return (
-                      <tr key={item.id || index} className="hover:bg-gray-50">
+                      <tr key={item.id || index} className="hover:bg-white hover:text-black">
                         <td className="px-2 sm:px-4 py-2 text-sm text-gray-800 font-medium whitespace-nowrap">
                           {itemId}
                         </td>
@@ -642,7 +642,7 @@ const AllOrders = () => {
       label: "Order Type",
       sortable: true,
       render: (value) => (
-        <span className={`px-2 py-0.5 ${value === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-black rounded-lg border uppercase tracking-tighter font-sans`}>
+        <span className={`px-2 py-0.5 ${value === 'try_and_buy' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'} text-[10px] font-bold rounded-lg border uppercase er font-sans`}>
           {value?.replace(/_/g, ' ') || 'STANDARD'}
         </span>
       ),
@@ -785,7 +785,7 @@ const AllOrders = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by ID, name, or email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
             />
           </div>
 
@@ -816,7 +816,7 @@ const AllOrders = () => {
                     setDateRange({ ...dateRange, startDate: e.target.value })
                   }
                   max={dateRange.endDate || undefined}
-                  className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
+                  className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
                   placeholder="Start Date"
                 />
               </div>
@@ -829,7 +829,7 @@ const AllOrders = () => {
                     setDateRange({ ...dateRange, endDate: e.target.value })
                   }
                   min={dateRange.startDate || undefined}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
+                  className="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base min-w-[140px]"
                   placeholder="End Date"
                 />
               </div>

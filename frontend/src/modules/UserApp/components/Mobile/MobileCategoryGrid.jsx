@@ -47,8 +47,8 @@ const MobileCategoryGrid = () => {
             className="flex-shrink-0">
             <Link
               to={`/category/${category.id}`}
-              className="flex flex-col items-center gap-2 w-20">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 ring-2 ring-gray-200">
+              className="flex flex-col items-center gap-1.5 w-16">
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 ring-1 ring-gray-200">
                 <LazyImage
                   src={category.image}
                   alt={category.name}

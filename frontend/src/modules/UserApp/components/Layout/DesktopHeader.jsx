@@ -116,7 +116,7 @@ const DesktopHeader = () => {
                         <div ref={userMenuRef} className="relative">
                             <button
                                 onClick={() => setShowUserMenu(!showUserMenu)}
-                                className="flex items-center gap-2 p-1 lg:p-1.5 hover:bg-gray-50 rounded-full transition-all border border-transparent hover:border-gray-200"
+                                className="flex items-center gap-2 p-1 lg:p-1.5 hover:bg-white hover:text-black rounded-full transition-all border border-transparent hover:border-gray-200"
                             >
                                 {user?.avatar ? (
                                     <img
@@ -149,7 +149,7 @@ const DesktopHeader = () => {
                                         <Link
                                             to="/profile"
                                             onClick={() => setShowUserMenu(false)}
-                                            className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors text-left w-full"
+                                            className="flex items-center gap-3 px-3 py-2 hover:bg-white hover:text-black rounded-lg transition-colors text-left w-full"
                                         >
                                             <FiUser className="text-gray-500" />
                                             <span className="text-gray-700 text-sm">Profile</span>
@@ -157,7 +157,7 @@ const DesktopHeader = () => {
                                         <Link
                                             to="/orders"
                                             onClick={() => setShowUserMenu(false)}
-                                            className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors text-left w-full"
+                                            className="flex items-center gap-3 px-3 py-2 hover:bg-white hover:text-black rounded-lg transition-colors text-left w-full"
                                         >
                                             <FiShoppingBag className="text-gray-500" />
                                             <span className="text-gray-700 text-sm">Orders</span>

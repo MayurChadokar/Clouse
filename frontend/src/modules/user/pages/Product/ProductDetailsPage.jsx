@@ -86,20 +86,20 @@ const ProductDetailsPage = () => {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[#111111]">
-            <div className="w-16 h-16 border-4 border-white/10 border-t-[#D4AF37] rounded-full animate-spin transition-all" />
-            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#D4AF37] animate-pulse">Loading Premium Piece...</p>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-[#D4AF37] rounded-full animate-spin transition-all" />
+            <p className="mt-4 text-[10px] font-bold uppercase  text-black animate-pulse">Loading Premium Piece...</p>
         </div>
     );
 
     if (!product) return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[#111111] px-6 text-center">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                <X size={32} className="text-white/40" />
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white px-6 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <X size={32} className="text-gray-400" />
             </div>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-2 text-[#FAFAFA]">Product Not Found</h2>
-            <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-8">This collection might have moved or ended.</p>
-            <button onClick={() => navigate('/shop')} className="px-8 py-4 bg-[#D4AF37] text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl active:scale-95 transition-all">Go to Shop</button>
+            <h2 className="text-xl font-bold uppercase  mb-2 text-gray-900">Product Not Found</h2>
+            <p className="text-xs font-semibold text-gray-600 uppercase  mb-8">This collection might have moved or ended.</p>
+            <button onClick={() => navigate('/shop')} className="px-8 py-4 bg-black text-white text-[11px] font-bold uppercase  rounded-2xl shadow-xl active:scale-95 transition-all">Go to Shop</button>
         </div>
     );
 
@@ -139,27 +139,27 @@ const ProductDetailsPage = () => {
     const cartCount = getCartCount();
 
     return (
-        <div className="bg-[#111111] text-[#FAFAFA] min-h-screen pb-20 overflow-x-hidden">
+        <div className="bg-white text-gray-900 min-h-screen pb-20 overflow-x-hidden">
             {/* Universal Header - Mimics Mobile View for consistency */}
-            <div className="md:hidden sticky top-0 bg-[#111111]/95 backdrop-blur-md z-[100] border-b border-white/10 shadow-sm">
+            <div className="md:hidden sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-gray-200 shadow-sm">
                 <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors shrink-0">
-                        <ChevronLeft size={24} className="text-[#FAFAFA]" />
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors shrink-0">
+                        <ChevronLeft size={24} className="text-gray-900" />
                     </button>
                     <div className="flex-1 flex justify-center">
-                        <h1 className="text-sm font-black uppercase tracking-widest truncate max-w-[150px]">{product.brand}</h1>
+                        <h1 className="text-sm font-bold uppercase  truncate max-w-[150px]">{product.brand}</h1>
                     </div>
                     <div className="flex items-center gap-3 md:gap-4 shrink-0">
                         <button
                             onClick={() => toggleWishlist(product)}
                             className="relative transition-colors p-1"
                         >
-                            <Heart size={20} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-[#D4AF37]' : 'text-[#FAFAFA]'} />
+                            <Heart size={20} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-black' : 'text-gray-900'} />
                         </button>
                         <Link to="/cart" className="relative p-1">
-                            <ShoppingCart size={20} className="text-[#FAFAFA]" />
+                            <ShoppingCart size={20} className="text-gray-900" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-[#111111]">
+                                <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-[#111111]">
                                     {cartCount}
                                 </span>
                             )}
@@ -167,28 +167,28 @@ const ProductDetailsPage = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-white/10">
+                <div className="border-t border-gray-200">
                     <div
                         onClick={() => setIsLocationModalOpen(true)}
-                        className="container mx-auto flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-white/5 transition-all font-bold"
+                        className="container mx-auto flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-all font-bold"
                     >
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                <MapPin size={14} className="text-[#FAFAFA]" />
+                            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                                <MapPin size={14} className="text-gray-900" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[11px] font-black leading-tight flex items-center gap-2 text-[#FAFAFA] uppercase tracking-tight">
+                                <span className="text-[11px] font-bold leading-tight flex items-center gap-2 text-gray-900 uppercase ">
                                     {activeAddress ? activeAddress.name : 'Select Location'}
                                     {activeAddress?.type && (
-                                        <span className="text-[8px] font-black bg-[#D4AF37] text-black px-1.5 py-0.5 rounded uppercase tracking-tighter">{activeAddress.type}</span>
+                                        <span className="text-[8px] font-bold bg-black text-white px-1.5 py-0.5 rounded uppercase er">{activeAddress.type}</span>
                                     )}
                                 </span>
-                                <span className="text-[10px] font-bold truncate max-w-[200px] md:max-w-none text-white/50">
+                                <span className="text-[10px] font-bold truncate max-w-[200px] md:max-w-none text-gray-500">
                                     {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
                                 </span>
                             </div>
                         </div>
-                        <ChevronDown size={14} className="text-white/40" />
+                        <ChevronDown size={14} className="text-gray-400" />
                     </div>
                 </div>
             </div>
@@ -211,89 +211,104 @@ const ProductDetailsPage = () => {
                 <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
 
                     {/* Left: Image Gallery */}
-                    <div className="flex-1 lg:flex-[1.2] w-full flex flex-col gap-6 lg:sticky lg:top-28">
+                    <div className="flex-1 lg:flex-[1.2] w-full flex flex-col gap-3 md:gap-6 lg:sticky lg:top-28">
                         {/* Thumbnails - Desktop */}
                         <div className="hidden md:flex flex-row gap-4 w-full overflow-x-auto py-2">
                             {productImages.map((img, idx) => (
                                 <div
                                     key={idx}
                                     onClick={() => setActiveImg(idx)}
-                                    className={`w-24 aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer transition-all border-2 shrink-0 ${activeImg === idx ? 'border-[#D4AF37] shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                    className={`w-24 aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer transition-all border-2 shrink-0 ${activeImg === idx ? 'border-black shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                 >
                                     <img src={img} alt="" className="w-full h-full object-cover" />
                                 </div>
                             ))}
                         </div>
 
-                        {/* Main Image */}
-                        <div className="flex-1 relative aspect-[3/4] lg:aspect-[4/5] lg:max-h-[600px] lg:max-w-[480px] lg:mx-auto w-full rounded-[32px] md:rounded-[40px] overflow-hidden bg-[#1a1a1a] shadow-2xl group border border-white/10">
+                        {/* Main Image - Compact on Mobile */}
+                        <div className="relative aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] lg:max-h-[600px] lg:max-w-[480px] lg:mx-auto w-full rounded-xl md:rounded-[40px] overflow-hidden bg-gray-50 shadow-sm md:shadow-2xl group border border-gray-100 md:border-gray-200">
                             <img src={productImages[activeImg]} alt={product.name} className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
 
-                            {/* Tags/Badges */}
-                            <div className="absolute top-6 left-6 flex flex-col gap-2">
-                                <div className="bg-[#111111] text-[#FAFAFA] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl border border-[#D4AF37]/30">
+                            {/* Tags/Badges - Smaller on Mobile */}
+                            <div className="absolute top-3 left-3 md:top-6 md:left-6 flex flex-col gap-1.5 md:gap-2">
+                                <div className="bg-white text-gray-900 text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase shadow-md border border-gray-200">
                                     New Arrival
                                 </div>
-                                <div className="bg-[#D4AF37] text-black text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
+                                <div className="bg-black text-white text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase shadow-md">
                                     Top Rated
                                 </div>
                             </div>
 
-                            {/* Wishlist Mobile */}
+                            {/* Wishlist Mobile - Smaller */}
                             <button
                                 onClick={() => toggleWishlist(product)}
-                                className="absolute top-6 right-6 w-12 h-12 bg-[#111111]/90 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-xl md:hidden border border-white/10"
+                                className="absolute top-3 right-3 md:top-6 md:right-6 w-9 h-9 md:w-12 md:h-12 bg-white/90 backdrop-blur-md rounded-xl md:rounded-2xl flex items-center justify-center shadow-md md:shadow-xl md:hidden border border-gray-200"
                             >
-                                <Heart size={24} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-[#D4AF37]' : 'text-[#FAFAFA]'} />
+                                <Heart size={18} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-black' : 'text-gray-900'} />
                             </button>
 
-                            {/* Rating Badge */}
-                            <div className="absolute bottom-6 left-6 bg-[#111111]/90 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 shadow-xl border border-white/10">
+                            {/* Rating Badge - Compact on Mobile */}
+                            <div className="absolute bottom-3 left-3 md:bottom-6 md:left-6 bg-white/90 backdrop-blur-md px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-1.5 md:gap-2 shadow-md md:shadow-xl border border-gray-200">
                                 <div className="flex items-center gap-1">
-                                    <span className="text-[15px] font-black text-[#FAFAFA]">4.5</span>
-                                    <Star size={14} className="fill-[#D4AF37] text-[#D4AF37]" />
+                                    <span className="text-[12px] md:text-[15px] font-bold text-gray-900">4.5</span>
+                                    <Star size={11} className="fill-[#D4AF37] text-black md:w-[14px] md:h-[14px]" />
                                 </div>
-                                <div className="w-[1px] h-3 bg-white/20" />
-                                <span className="text-[13px] font-bold text-white/60">1.2k Reviews</span>
+                                <div className="w-[1px] h-2.5 md:h-3 bg-gray-200" />
+                                <span className="text-[10px] md:text-[13px] font-bold text-gray-600">1.2k</span>
                             </div>
                         </div>
+
+                        {/* Mobile Thumbnail Strip */}
+                        {productImages.length > 1 && (
+                            <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar py-1">
+                                {productImages.map((img, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => setActiveImg(idx)}
+                                        className={`w-14 h-14 rounded-lg overflow-hidden cursor-pointer transition-all border-2 shrink-0 ${activeImg === idx ? 'border-black shadow-sm scale-105' : 'border-transparent opacity-50'}`}
+                                    >
+                                        <img src={img} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Product Info */}
                     <div className="flex-1 w-full max-w-2xl">
                         <div className="mb-6">
                             <div className="flex items-center justify-between mb-1.5">
-                                <h2 className="text-[13px] font-black text-[#D4AF37] uppercase tracking-[0.2em]">{product.brand}</h2>
+                                <h2 className="text-[13px] font-bold text-black uppercase ">{product.brand}</h2>
                                 <div className="hidden md:flex items-center gap-4">
-                                    <button className="p-2 hover:bg-white/10 rounded-full transition-colors"><Share2 size={20} className="text-[#FAFAFA]" /></button>
+                                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors"><Share2 size={20} className="text-gray-900" /></button>
                                     <button
                                         onClick={() => toggleWishlist(product)}
-                                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                                     >
-                                        <Heart size={22} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-[#D4AF37] border-none' : 'text-[#FAFAFA]'} />
+                                        <Heart size={22} className={isInWishlist(product?.id) ? 'fill-[#D4AF37] text-black border-none' : 'text-gray-900'} />
                                     </button>
                                 </div>
                             </div>
-                            <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-[#FAFAFA] leading-tight mb-4 uppercase tracking-tight">{product.name}</h1>
+                            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-4 uppercase ">{product.name}</h1>
 
                             <div className="flex items-center gap-4 mb-2">
-                                <span className="text-3xl font-black text-[#FAFAFA]">
+                                <span className="text-3xl font-bold text-gray-900">
                                     ₹{product.discountedPrice !== undefined ? product.discountedPrice : product.price}
                                 </span>
                                 <div className="flex flex-col">
                                     {(product.originalPrice || product.price) && (
                                         <div className="flex items-center gap-2">
                                             {product.originalPrice && (
-                                                <span className="text-lg text-white/40 line-through">₹{product.originalPrice}</span>
+                                                <span className="text-lg text-gray-400 line-through">₹{product.originalPrice}</span>
                                             )}
                                             {(product.discount || (product.originalPrice && (product.discountedPrice || product.price) && product.originalPrice > (product.discountedPrice || product.price))) && (
-                                                <span className="text-emerald-400 font-black text-sm bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                                                <span className="text-emerald-400 font-bold text-sm bg-emerald-500/10 px-2.5 py-1 rounded-lg">
                                                     {product.discount || `${Math.round(((product.originalPrice - (product.discountedPrice || product.price)) / product.originalPrice) * 100)}% OFF`}
                                                 </span>
                                             )}
                                         </div>
                                     )}
-                                    <p className="text-[11px] font-bold text-white/50 mt-1 uppercase tracking-wider italic">inclusive of all taxes</p>
+                                    <p className="text-[11px] font-semibold text-gray-500 mt-1 uppercase  italic">inclusive of all taxes</p>
                                 </div>
                             </div>
                         </div>
@@ -301,12 +316,12 @@ const ProductDetailsPage = () => {
                         {/* Size Selection */}
                         <div className="mb-8">
                             <div className="flex justify-between items-end mb-5">
-                                <h3 className="text-[12px] font-black uppercase tracking-widest text-[#FAFAFA] flex items-center gap-2">
-                                    Select Size <Info size={14} className="text-[#D4AF37]" />
+                                <h3 className="text-[12px] font-bold uppercase  text-gray-900 flex items-center gap-2">
+                                    Select Size <Info size={14} className="text-black" />
                                 </h3>
                                 <button
                                     onClick={() => setIsSizeChartOpen(true)}
-                                    className="text-[11px] font-black text-[#D4AF37] uppercase tracking-widest border-b border-[#D4AF37] pb-0.5 hover:text-[#fae588] transition-colors"
+                                    className="text-[11px] font-bold text-black uppercase  border-b border-black pb-0.5 hover:text-[#fae588] transition-colors"
                                 >
                                     Size Chart
                                 </button>
@@ -316,14 +331,14 @@ const ProductDetailsPage = () => {
                                     <button
                                         key={size}
                                         onClick={() => setSelectedSize(size)}
-                                        className={`min-w-[56px] h-14 md:min-w-[64px] rounded-2xl flex items-center justify-center font-black text-[15px] transition-all relative ${selectedSize === size
-                                            ? 'bg-[#D4AF37] text-black shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-110'
-                                            : 'bg-[#1a1a1a] border border-white/10 text-[#FAFAFA] hover:border-[#D4AF37]'
+                                        className={`min-w-[56px] h-14 md:min-w-[64px] rounded-2xl flex items-center justify-center font-bold text-[15px] transition-all relative ${selectedSize === size
+                                            ? 'bg-black text-white shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-110'
+                                            : 'bg-gray-50 border border-gray-200 text-gray-900 hover:border-black'
                                             }`}
                                     >
                                         {size}
                                         {selectedSize === size && (
-                                            <div className="absolute -top-1 -right-1 bg-[#111111] text-[#D4AF37] rounded-full p-0.5 border-2 border-[#111111]">
+                                            <div className="absolute -top-1 -right-1 bg-white text-black rounded-full p-0.5 border-2 border-[#111111]">
                                                 <Check size={10} strokeWidth={4} />
                                             </div>
                                         )}
@@ -341,16 +356,16 @@ const ProductDetailsPage = () => {
                         <div className="flex gap-4 mb-6">
                             <button
                                 onClick={handleAddToCart}
-                                className="flex-[3] h-16 bg-[#D4AF37] text-black rounded-[20px] font-black text-[14px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.2)] hover:bg-[#c39e2e]"
+                                className="flex-[3] h-16 bg-black text-white rounded-[20px] font-bold text-[14px] uppercase  flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.2)] hover:bg-[#c39e2e]"
                             >
                                 <ShoppingCart size={20} />
                                 Add to Cart
                             </button>
                             <button
                                 onClick={() => toggleWishlist(product)}
-                                className={`flex-1 h-16 rounded-[20px] font-black text-[14px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${isInWishlist(product?.id)
-                                    ? 'bg-[#D4AF37]/10 border-[#D4AF37] text-[#D4AF37]'
-                                    : 'bg-[#1a1a1a] border-white/10 text-[#FAFAFA] hover:border-[#D4AF37]'
+                                className={`flex-1 h-16 rounded-[20px] font-bold text-[14px] uppercase  flex items-center justify-center gap-2 transition-all border ${isInWishlist(product?.id)
+                                    ? 'bg-black/10 border-black text-black'
+                                    : 'bg-gray-50 border-gray-200 text-gray-900 hover:border-black'
                                     }`}
                             >
                                 <Heart size={20} className={isInWishlist(product?.id) ? 'fill-[#D4AF37]' : ''} />
@@ -360,38 +375,38 @@ const ProductDetailsPage = () => {
 
                         {/* Vendor Info Section */}
                         {product.vendorId && (
-                            <div className="mb-8 p-5 bg-[#1a1a1a] rounded-3xl border border-white/10 shadow-sm flex items-center justify-between hover:border-[#D4AF37] transition-all group">
+                            <div className="mb-8 p-5 bg-gray-50 rounded-3xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-black transition-all group">
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
                                         {product.vendorId.storeLogo ? (
                                             <img
                                                 src={product.vendorId.storeLogo}
                                                 alt={product.vendorId.storeName}
-                                                className="w-14 h-14 rounded-2xl object-cover border-2 border-white/5 shadow-sm"
+                                                className="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100 shadow-sm"
                                             />
                                         ) : (
-                                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/40">
+                                            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400">
                                                 <ShoppingCart size={24} />
                                             </div>
                                         )}
-                                        <div className="absolute -bottom-1 -right-1 bg-[#D4AF37] w-4 h-4 rounded-full border-2 border-[#1a1a1a] shadow-sm" />
+                                        <div className="absolute -bottom-1 -right-1 bg-black w-4 h-4 rounded-full border-2 border-[#1a1a1a] shadow-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Sold By</p>
-                                        <h4 className="text-[16px] font-black text-[#FAFAFA] group-hover:text-[#D4AF37] transition-colors">{product.vendorId.storeName}</h4>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Sold By</p>
+                                        <h4 className="text-[16px] font-bold text-gray-900 group-hover:text-black transition-colors">{product.vendorId.storeName}</h4>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <MapPin size={10} className="text-[#D4AF37]" />
-                                            <p className="text-[11px] font-bold text-white/50 uppercase tracking-tight">
+                                            <MapPin size={10} className="text-black" />
+                                            <p className="text-[11px] font-bold text-gray-500 uppercase ">
                                                 {product.vendorId.address?.city ? `${product.vendorId.address.city}, ${product.vendorId.address.state}` : 'Verified Vendor'}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <div className="flex items-center gap-1 bg-[#D4AF37] text-black px-2.5 py-1 rounded-xl text-[12px] font-black shadow-lg">
+                                    <div className="flex items-center gap-1 bg-black text-white px-2.5 py-1 rounded-xl text-[12px] font-bold shadow-lg">
                                         {product.vendorId.rating || '4.5'} <Star size={10} className="fill-black" />
                                     </div>
-                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-tighter">Store Rating</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase er">Store Rating</p>
                                 </div>
                             </div>
                         )}
@@ -399,18 +414,18 @@ const ProductDetailsPage = () => {
 
                         {/* USP Features */}
                         <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="flex items-start gap-3 p-4 bg-[#1a1a1a] rounded-2xl border border-white/10">
-                                <Truck className="text-[#D4AF37] shrink-0" size={24} />
+                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                                <Truck className="text-black shrink-0" size={24} />
                                 <div>
-                                    <h4 className="text-[12px] font-black uppercase tracking-tight text-[#FAFAFA]">Free Delivery</h4>
-                                    <p className="text-[10px] font-bold text-white/50">On all orders above ₹999</p>
+                                    <h4 className="text-[12px] font-bold uppercase  text-gray-900">Free Delivery</h4>
+                                    <p className="text-[10px] font-bold text-gray-500">On all orders above ₹999</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-4 bg-[#1a1a1a] rounded-2xl border border-white/10">
-                                <RotateCcw className="text-[#D4AF37] shrink-0" size={24} />
+                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                                <RotateCcw className="text-black shrink-0" size={24} />
                                 <div>
-                                    <h4 className="text-[12px] font-black uppercase tracking-tight text-[#FAFAFA]">Easy Returns</h4>
-                                    <p className="text-[10px] font-bold text-white/50">14 days exchange policy</p>
+                                    <h4 className="text-[12px] font-bold uppercase  text-gray-900">Easy Returns</h4>
+                                    <p className="text-[10px] font-bold text-gray-500">14 days exchange policy</p>
                                 </div>
                             </div>
                         </div>
@@ -419,7 +434,7 @@ const ProductDetailsPage = () => {
                         {promoCodes.length > 0 && (
                             <div className="mb-10 animate-fadeIn overflow-hidden">
                                 <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-[12px] font-black uppercase tracking-widest text-black flex items-center gap-2">
+                                    <h3 className="text-[12px] font-bold uppercase  text-black flex items-center gap-2">
                                         Available Offers <Ticket size={14} className="text-emerald-500" />
                                     </h3>
                                 </div>
@@ -427,32 +442,32 @@ const ProductDetailsPage = () => {
                                     {promoCodes.map((promo) => (
                                         <div
                                             key={promo.id}
-                                            className="min-w-[240px] bg-[#1a1a1a] border border-white/10 rounded-[24px] p-5 snap-start relative overflow-hidden group hover:shadow-xl transition-all duration-500 border-l-4 border-l-[#D4AF37]"
+                                            className="min-w-[240px] bg-gray-50 border border-gray-200 rounded-[24px] p-5 snap-start relative overflow-hidden group hover:shadow-xl transition-all duration-500 border-l-4 border-l-[#D4AF37]"
                                         >
                                             {/* Decorative Background Element */}
-                                            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-[#D4AF37]/10 rounded-full group-hover:scale-150 transition-transform duration-700 -z-0" />
+                                            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-black/10 rounded-full group-hover:scale-150 transition-transform duration-700 -z-0" />
 
                                             <div className="relative z-10">
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    <Tag size={12} className="text-[#D4AF37]" />
-                                                    <span className="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest">
+                                                    <Tag size={12} className="text-black" />
+                                                    <span className="text-[10px] font-bold text-black uppercase ">
                                                         {promo.type === 'percentage' ? `${promo.value}% Savings` : `₹${promo.value} Discount`}
                                                     </span>
                                                 </div>
 
-                                                <h4 className="text-[16px] font-black text-[#FAFAFA] mb-1 flex items-center gap-2">
+                                                <h4 className="text-[16px] font-bold text-gray-900 mb-1 flex items-center gap-2">
                                                     {promo.code}
                                                 </h4>
 
-                                                <p className="text-[11px] font-bold text-white/50 mb-4 line-clamp-1">
+                                                <p className="text-[11px] font-bold text-gray-500 mb-4 line-clamp-1">
                                                     Valid on orders above ₹{promo.minPurchase}
                                                 </p>
 
                                                 <button
                                                     onClick={() => copyCode(promo.code)}
-                                                    className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${copiedCode === promo.code
-                                                        ? 'bg-[#D4AF37] text-black border-[#D4AF37]'
-                                                        : 'bg-white/10 text-[#FAFAFA] hover:bg-white/20 shadow-lg'
+                                                    className={`w-full py-2.5 rounded-xl text-[10px] font-bold uppercase  transition-all flex items-center justify-center gap-2 ${copiedCode === promo.code
+                                                        ? 'bg-black text-white border-black'
+                                                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 shadow-lg'
                                                         }`}
                                                 >
                                                     {copiedCode === promo.code ? (
@@ -467,8 +482,8 @@ const ProductDetailsPage = () => {
                                             </div>
 
                                             {/* Ticket Holes */}
-                                            <div className="absolute top-1/2 -left-2 w-4 h-4 bg-[#111111] rounded-full border border-white/10 -translate-y-1/2" />
-                                            <div className="absolute top-1/2 -right-2 w-4 h-4 bg-[#111111] rounded-full border border-white/10 -translate-y-1/2" />
+                                            <div className="absolute top-1/2 -left-2 w-4 h-4 bg-white rounded-full border border-gray-200 -translate-y-1/2" />
+                                            <div className="absolute top-1/2 -right-2 w-4 h-4 bg-white rounded-full border border-gray-200 -translate-y-1/2" />
                                         </div>
                                     ))}
                                 </div>
@@ -481,14 +496,14 @@ const ProductDetailsPage = () => {
                                 {
                                     id: 'description', title: 'Product Details', content: (
                                         <div className="space-y-4">
-                                            <p className="text-[14px] text-white/60 leading-relaxed font-medium">
+                                            <p className="text-[14px] text-gray-600 leading-relaxed font-medium">
                                                 This premium piece from {product.brand} showcases exceptional craftsmanship and timeless style.
                                                 Designed for the modern individual who values both comfort and aesthetics.
                                             </p>
                                             <ul className="grid grid-cols-2 gap-y-3 gap-x-6">
                                                 {['Cotton Blend', 'Regular Fit', 'Machine Washable', 'Breathable Fabric', 'Eco-friendly', 'Premium Quality'].map(item => (
-                                                    <li key={item} className="flex items-center gap-2 text-[13px] font-bold text-white/60">
-                                                        <div className="w-1 h-1 bg-[#D4AF37] rounded-full" /> {item}
+                                                    <li key={item} className="flex items-center gap-2 text-[13px] font-bold text-gray-600">
+                                                        <div className="w-1 h-1 bg-black rounded-full" /> {item}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -499,40 +514,40 @@ const ProductDetailsPage = () => {
                                     id: 'specifications', title: 'Specifications', content: (
                                         <div className="grid grid-cols-2 gap-y-4">
                                             <div>
-                                                <h5 className="text-[11px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Occasion</h5>
-                                                <p className="text-[14px] font-bold text-[#FAFAFA]">Casual / Streetwear</p>
+                                                <h5 className="text-[11px] font-bold text-black uppercase  mb-1">Occasion</h5>
+                                                <p className="text-[14px] font-bold text-gray-900">Casual / Streetwear</p>
                                             </div>
                                             <div>
-                                                <h5 className="text-[11px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Pattern</h5>
-                                                <p className="text-[14px] font-bold text-[#FAFAFA]">Solid / Graphic</p>
+                                                <h5 className="text-[11px] font-bold text-black uppercase  mb-1">Pattern</h5>
+                                                <p className="text-[14px] font-bold text-gray-900">Solid / Graphic</p>
                                             </div>
                                             <div>
-                                                <h5 className="text-[11px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Fabric Type</h5>
-                                                <p className="text-[14px] font-bold text-[#FAFAFA]">Woven</p>
+                                                <h5 className="text-[11px] font-bold text-black uppercase  mb-1">Fabric Type</h5>
+                                                <p className="text-[14px] font-bold text-gray-900">Woven</p>
                                             </div>
                                             <div>
-                                                <h5 className="text-[11px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Country of Origin</h5>
-                                                <p className="text-[14px] font-bold text-[#FAFAFA]">India</p>
+                                                <h5 className="text-[11px] font-bold text-black uppercase  mb-1">Country of Origin</h5>
+                                                <p className="text-[14px] font-bold text-gray-900">India</p>
                                             </div>
                                         </div>
                                     )
                                 },
                                 {
                                     id: 'shipping', title: 'Shipping & Returns', content: (
-                                        <div className="space-y-4 text-[13px] font-middle text-white/60 leading-relaxed">
-                                            <p><span className="text-[#D4AF37] font-black uppercase tracking-widest text-[11px]">Instant Delivery:</span> Your order will be delivered within 60 minutes. Order now for the fastest service.</p>
+                                        <div className="space-y-4 text-[13px] font-middle text-gray-600 leading-relaxed">
+                                            <p><span className="text-black font-bold uppercase  text-[11px]">Instant Delivery:</span> Your order will be delivered within 60 minutes. Order now for the fastest service.</p>
                                             <p>You can return or exchange this item within 14 days of delivery. The item must be unused with all original tags intact.</p>
                                         </div>
                                     )
                                 }
                             ].map(section => (
-                                <div key={section.id} className="border-b border-white/10">
+                                <div key={section.id} className="border-b border-gray-200">
                                     <button
                                         onClick={() => toggleAccordion(section.id)}
-                                        className="w-full flex items-center justify-between py-6 text-[14px] font-black text-[#FAFAFA] uppercase tracking-widest"
+                                        className="w-full flex items-center justify-between py-6 text-[14px] font-bold text-gray-900 uppercase "
                                     >
                                         {section.title}
-                                        {openAccordion === section.id ? <ChevronUp size={18} className="text-[#D4AF37]" /> : <ChevronDown size={18} className="text-white/40" />}
+                                        {openAccordion === section.id ? <ChevronUp size={18} className="text-black" /> : <ChevronDown size={18} className="text-gray-400" />}
                                     </button>
                                     <div className={`overflow-hidden transition-all duration-300 ${openAccordion === section.id ? 'max-h-96 pb-8' : 'max-h-0'}`}>
                                         {section.content}
@@ -553,17 +568,17 @@ const ProductDetailsPage = () => {
             {/* Added to Cart Success Popup */}
             {showAddedToast && createPortal(
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10001] w-[90%] max-w-[400px] animate-fadeInUp">
-                    <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#D4AF37]/30 p-4 rounded-[24px] shadow-2xl flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#D4AF37] rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+                    <div className="bg-gray-50/95 backdrop-blur-xl border border-black/30 p-4 rounded-[24px] shadow-2xl flex items-center gap-4">
+                        <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                             <CheckCircle2 size={24} className="text-black" />
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-[#FAFAFA] text-[14px] font-black uppercase tracking-tight">Success!</h4>
-                            <p className="text-white/60 text-[11px] font-bold">Your product has been added to cart</p>
+                            <h4 className="text-gray-900 text-[14px] font-bold uppercase ">Success!</h4>
+                            <p className="text-gray-600 text-[11px] font-bold">Your product has been added to cart</p>
                         </div>
-                        <Link
+                         <Link
                             to="/cart"
-                            className="bg-[#D4AF37] text-black px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-colors no-underline"
+                            className="bg-black text-white px-4 py-2 rounded-xl text-[11px] font-bold uppercase  hover:bg-white hover:text-black transition-colors no-underline"
                         >
                             View Cart
                         </Link>
@@ -589,60 +604,60 @@ const SizeChartModal = ({ isOpen, onClose }) => {
 
     return createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[5px] animate-fadeIn">
-            <div className="bg-[#111111] border border-white/10 w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden relative animate-scaleIn">
+            <div className="bg-white border border-gray-200 w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden relative animate-scaleIn">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
-                        <h2 className="text-lg font-black uppercase tracking-tight text-[#FAFAFA]">Size Guide</h2>
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Measurements in inches</p>
+                        <h2 className="text-lg font-bold uppercase  text-gray-900">Size Guide</h2>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase ">Measurements in inches</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all active:scale-95"
+                        className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all active:scale-95"
                     >
-                        <X size={20} className="text-[#FAFAFA]" />
+                        <X size={20} className="text-gray-900" />
                     </button>
                 </div>
 
                 {/* Table Content */}
                 <div className="p-6">
-                    <div className="overflow-hidden border border-white/10 rounded-[20px] shadow-sm">
+                    <div className="overflow-hidden border border-gray-200 rounded-[20px] shadow-sm">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-white/5">
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#D4AF37] border-b border-white/10 italic">Size</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/10">Chest</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/10">Length</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/10">Shoulder</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/10">Sleeves</th>
+                                <tr className="bg-gray-50">
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase  text-black border-b border-gray-200 italic">Size</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase  text-gray-500 border-b border-gray-200">Chest</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase  text-gray-500 border-b border-gray-200">Length</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase  text-gray-500 border-b border-gray-200">Shoulder</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase  text-gray-500 border-b border-gray-200">Sleeves</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10">
                                 {sizeData.map((row) => (
-                                    <tr key={row.size} className="hover:bg-white/5 transition-colors">
-                                        <td className="px-4 py-4 text-[12px] font-black text-[#FAFAFA] italic bg-white/5">{row.size}</td>
-                                        <td className="px-4 py-4 text-[13px] font-bold text-white/60">{row.chest}</td>
-                                        <td className="px-4 py-4 text-[13px] font-bold text-white/60">{row.length}</td>
-                                        <td className="px-4 py-4 text-[13px] font-bold text-white/60">{row.shoulder}</td>
-                                        <td className="px-4 py-4 text-[13px] font-bold text-white/60">{row.sleeves}</td>
+                                    <tr key={row.size} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-4 py-4 text-[12px] font-bold text-gray-900 italic bg-gray-50">{row.size}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.chest}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.length}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.shoulder}</td>
+                                        <td className="px-4 py-4 text-[13px] font-bold text-gray-600">{row.sleeves}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
 
-                    <div className="mt-6 p-4 bg-[#1a1a1a] border border-white/10 rounded-2xl">
-                        <p className="text-[10px] font-bold text-white/40 italic leading-relaxed">
+                    <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-2xl">
+                        <p className="text-[10px] font-bold text-gray-400 italic leading-relaxed">
                             * These are product measurements. For the perfect fit, we recommend comparing these measurements with a similar item you already own.
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 bg-[#111111] border-t border-white/10">
+                <div className="p-4 bg-white border-t border-gray-200">
                     <button
                         onClick={onClose}
-                        className="w-full py-4 bg-[#D4AF37] text-black rounded-[20px] font-black text-[12px] uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(212,175,55,0.2)] active:scale-95 transition-all"
+                        className="w-full py-4 bg-black text-white rounded-[20px] font-bold text-[12px] uppercase  shadow-[0_0_15px_rgba(212,175,55,0.2)] active:scale-95 transition-all"
                     >
                         Got It
                     </button>

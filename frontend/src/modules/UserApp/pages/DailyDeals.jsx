@@ -224,7 +224,7 @@ const MobileDailyDeals = () => {
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-1.5 glass-card rounded-lg hover:bg-white/80 transition-colors ${showFilters ? "bg-white/80" : ""}`}
+                    className={`p-1.5 glass-card rounded-lg hover:bg-white hover:text-black/80 transition-colors ${showFilters ? "bg-white/80" : ""}`}
                   >
                     <FiFilter className={`text-sm transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"}`} />
                   </button>
@@ -246,7 +246,7 @@ const MobileDailyDeals = () => {
                           className="filter-dropdown absolute right-0 top-full w-56 bg-white rounded-xl shadow-2xl border border-gray-200 z-[10001] overflow-hidden"
                           style={{ marginTop: "-50px" }}
                         >
-                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-white">
                             <h3 className="text-sm font-bold text-gray-800">Filters</h3>
                             <button onClick={() => setShowFilters(false)} className="p-0.5 hover:bg-gray-200 rounded-full">
                               <FiX className="text-sm text-gray-600" />
@@ -276,7 +276,7 @@ const MobileDailyDeals = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="border-t border-gray-200 p-2 bg-gray-50 space-y-1.5">
+                          <div className="border-t border-gray-200 p-2 bg-white space-y-1.5">
                             <button onClick={clearFilters} className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300">Clear All</button>
                             <button onClick={() => setShowFilters(false)} className="w-full py-1.5 gradient-green text-white rounded-md font-semibold text-xs">Apply Filters</button>
                           </div>

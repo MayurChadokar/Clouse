@@ -909,7 +909,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       {/* Tier 1: MRP */}
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="bg-white p-4 rounded-lg border border-gray-200">
                         <label className="block text-sm font-bold text-gray-700 mb-2">
                           Original Price (MRP)
                         </label>
@@ -983,23 +983,23 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                       </div>
 
                       {formData.price && formData.vendorPrice && parseFloat(formData.vendorPrice) > 0 && (
-                        <div className="md:col-span-4 bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between items-center">
+                        <div className="md:col-span-4 bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center">
                           <div className="flex gap-4">
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Net Profit</span>
-                              <span className={`text-sm font-black ${parseFloat(formData.price) - parseFloat(formData.vendorPrice) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <span className="text-[10px] uppercase font-bold text-gray-500 ">Net Profit</span>
+                              <span className={`text-sm font-bold ${parseFloat(formData.price) - parseFloat(formData.vendorPrice) >= 0 ? "text-green-600" : "text-red-600"}`}>
                                 {formatPrice(parseFloat(formData.price) - parseFloat(formData.vendorPrice))}
                               </span>
                             </div>
                             <div className="flex flex-col border-l pl-4 border-gray-300">
-                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Markup %</span>
-                              <span className={`text-sm font-black ${marginPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <span className="text-[10px] uppercase font-bold text-gray-500 ">Markup %</span>
+                              <span className={`text-sm font-bold ${marginPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                                 {marginPercent.toFixed(2)}%
                               </span>
                             </div>
                             <div className="flex flex-col border-l pl-4 border-gray-300">
-                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Total Customer Discount</span>
-                              <span className="text-sm font-black text-orange-600">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 ">Total Customer Discount</span>
+                              <span className="text-sm font-bold text-orange-600">
                                 {formData.originalPrice && parseFloat(formData.originalPrice) > parseFloat(formData.price)
                                   ? formatPrice(parseFloat(formData.originalPrice) - parseFloat(formData.price))
                                   : "No Discount"}
@@ -1008,8 +1008,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           </div>
                           <div className="text-right">
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Listing Price</span>
-                              <span className="text-xl font-black text-gray-900 leading-tight">
+                              <span className="text-[10px] uppercase font-bold text-gray-500 ">Listing Price</span>
+                              <span className="text-xl font-bold text-gray-900 leading-tight">
                                 {formatPrice(parseFloat(formData.price))}
                               </span>
                             </div>
@@ -1306,7 +1306,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                             <button
                               type="button"
                               onClick={() => addVariantAxisValues("sizes", variantAxisInput.sizes)}
-                              className="px-3 py-2 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                              className="px-3 py-2 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-white hover:text-black"
                             >
                               Add
                             </button>
@@ -1350,7 +1350,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                             <button
                               type="button"
                               onClick={() => addVariantAxisValues("colors", variantAxisInput.colors)}
-                              className="px-3 py-2 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                              className="px-3 py-2 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-white hover:text-black"
                             >
                               Add
                             </button>
@@ -1365,7 +1365,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           <button
                             type="button"
                             onClick={addAttributeRow}
-                            className="px-2 py-1 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                            className="px-2 py-1 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-white hover:text-black"
                           >
                             Add Attribute
                           </button>
@@ -1390,7 +1390,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                               <button
                                 type="button"
                                 onClick={() => removeAttributeRow(index)}
-                                className="md:col-span-1 px-2 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+                                className="md:col-span-1 px-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:text-black text-gray-600"
                                 aria-label="Remove attribute"
                               >
                                 <FiX className="w-4 h-4 mx-auto" />
@@ -1400,7 +1400,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                         </div>
                       </div>
                       {variantCombinations.length > 0 && (
-                        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="border border-gray-200 rounded-lg p-3 bg-white">
                           <p className="text-xs font-semibold text-gray-700 mb-2">
                             Variant Price / Stock / Image
                           </p>
@@ -1522,7 +1522,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                     </div>
                     <div className="space-y-3">
                       {(formData.faqs || []).map((faq, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2">
+                        <div key={index} className="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-semibold text-gray-600">FAQ #{index + 1}</p>
                             <button

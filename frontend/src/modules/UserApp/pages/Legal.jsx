@@ -80,7 +80,7 @@ const Legal = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-base font-black uppercase tracking-tight">Legal & Policies</h1>
+                <h1 className="text-base font-bold uppercase ">Legal & Policies</h1>
             </div>
 
             <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -92,13 +92,13 @@ const Legal = () => {
                             <div key={section.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                                 <button
                                     onClick={() => setOpenSection(isOpen ? '' : section.id)}
-                                    className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors"
+                                    className="w-full flex items-center justify-between p-5 hover:bg-white hover:text-black transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
                                             <Icon size={18} className="text-gray-600" />
                                         </div>
-                                        <span className="text-[14px] font-black text-gray-900 uppercase tracking-tight">{section.title}</span>
+                                        <span className="text-[14px] font-bold text-gray-900 uppercase ">{section.title}</span>
                                     </div>
                                     {isOpen ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
                                 </button>

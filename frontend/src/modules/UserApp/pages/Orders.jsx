@@ -92,7 +92,7 @@ const MobileOrders = () => {
                 </div>
                 <button
                   onClick={() => setShowFilter(!showFilter)}
-                  className="p-2 glass-card rounded-xl hover:bg-white/80 transition-colors"
+                  className="p-2 glass-card rounded-xl hover:bg-white hover:text-black/80 transition-colors"
                 >
                   <FiFilter className="text-gray-600 text-lg" />
                 </button>
@@ -169,7 +169,7 @@ const MobileOrders = () => {
                       <button
                         onClick={handleLoadMore}
                         disabled={isLoadingMore}
-                        className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                        className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-white hover:text-black transition-colors disabled:opacity-60"
                       >
                         {isLoadingMore ? 'Loading...' : 'Load More Orders'}
                       </button>

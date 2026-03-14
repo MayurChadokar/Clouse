@@ -264,7 +264,7 @@ const Earnings = () => {
                     {filteredCommissions.map((commission) => (
                       <div
                         key={commission._id ?? commission.id}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold text-gray-800">

@@ -275,7 +275,7 @@ const CategoryForm = ({ category, parentId, onClose, onSave }) => {
                       Parent Category
                     </label>
                     {isSubcategory ? (
-                      <div className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg">
+                      <div className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-700 font-medium">
                             {parentCategory ? parentCategory.name : "None"}

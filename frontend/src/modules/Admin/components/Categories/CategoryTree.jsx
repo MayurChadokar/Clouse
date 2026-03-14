@@ -140,7 +140,7 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
 
         {/* Desktop Design */}
         <div
-          className={`hidden sm:flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors ${
+          className={`hidden sm:flex items-center gap-2 p-3 rounded-lg hover:bg-white hover:text-black transition-colors ${
             level > 0 ? 'ml-6' : ''
           }`}
         >

@@ -86,7 +86,7 @@ const MobileOrderConfirmation = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+        <div className="w-full min-h-screen flex items-center justify-center px-4 py-8 bg-white">
           <div className="w-full max-w-md lg:max-w-lg">
             {/* Success Animation */}
             <motion.div
@@ -195,7 +195,7 @@ const MobileOrderConfirmation = () => {
               </Link>
               <button
                 onClick={() => navigate('/home')}
-                className="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                className="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-white hover:text-black transition-colors"
               >
                 Continue Shopping
               </button>

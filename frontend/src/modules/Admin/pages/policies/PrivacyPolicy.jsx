@@ -34,7 +34,7 @@ const PrivacyPolicy = () => {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-gray-400 font-bold uppercase tracking-widest animate-pulse">Loading Policy...</div>;
+    return <div className="p-8 text-center text-gray-400 font-bold uppercase  animate-pulse">Loading Policy...</div>;
   }
 
   return (

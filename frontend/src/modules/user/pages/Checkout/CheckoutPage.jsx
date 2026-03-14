@@ -107,14 +107,14 @@ const CheckoutPage = () => {
     if (cart.length === 0) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6">
                     <ShoppingCart size={40} className="text-gray-200" />
                 </div>
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Your Bag is Empty</h2>
-                <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-8">Looks like you haven't added anything yet</p>
+                <h2 className="text-2xl font-bold uppercase  mb-2">Your Bag is Empty</h2>
+                <p className="text-gray-400 font-bold text-xs uppercase  mb-8">Looks like you haven't added anything yet</p>
                 <button
                     onClick={() => navigate('/shop')}
-                    className="bg-black text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                    className="bg-black text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase  shadow-xl active:scale-95 transition-all"
                 >
                     Start Shopping
                 </button>
@@ -123,14 +123,14 @@ const CheckoutPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F3F4F6] pb-[180px] md:pb-[100px]">
+        <div className="min-h-screen bg-white pb-[180px] md:pb-[100px]">
             {/* Minimal App-style Header */}
             <header className="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-50 border-b border-gray-100 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-1 hover:bg-gray-50 rounded-full">
+                    <button onClick={() => navigate(-1)} className="p-1 hover:bg-white hover:text-black rounded-full">
                         <ArrowLeft size={24} strokeWidth={2.5} />
                     </button>
-                    <h1 className="text-xl font-black text-[#1F2937] tracking-tight">Checkout</h1>
+                    <h1 className="text-xl font-bold text-[#1F2937] ">Checkout</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <button onClick={handleClearCart} className="text-[#9CA3AF] hover:text-[#EF4444]">
@@ -154,13 +154,13 @@ const CheckoutPage = () => {
                                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
                                     <MapPin size={20} className="text-[#9F1239]" />
                                 </div>
-                                <span className="text-[#9F1239] font-black text-xs uppercase tracking-widest">
+                                <span className="text-[#9F1239] font-bold text-xs uppercase ">
                                     Add address to continue
                                 </span>
                             </div>
                             <button
                                 onClick={() => setIsLocationModalOpen(true)}
-                                className="bg-[#9F1239] text-white px-5 py-2 rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-transform"
+                                className="bg-[#9F1239] text-white px-5 py-2 rounded-xl font-bold text-xs uppercase  shadow-md hover:scale-105 transition-transform"
                             >
                                 Add
                             </button>
@@ -176,7 +176,7 @@ const CheckoutPage = () => {
                             >
                                 {/* Removed/Wishlist buttons Overlay */}
                                 <div className="absolute top-2 right-2 flex gap-2 z-10">
-                                    <button className="p-1.5 bg-gray-50 rounded-full text-gray-400 hover:text-black">
+                                    <button className="p-1.5 bg-white rounded-full text-gray-400 hover:text-black">
                                         <div className="relative">
                                             <Heart size={16} />
                                             <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-black rounded-full" />
@@ -184,7 +184,7 @@ const CheckoutPage = () => {
                                     </button>
                                     <button
                                         onClick={() => removeFromCart(item.id)}
-                                        className="p-1.5 bg-gray-50 rounded-full text-gray-400 hover:text-[#EF4444]"
+                                        className="p-1.5 bg-white rounded-full text-gray-400 hover:text-[#EF4444]"
                                     >
                                         <X size={16} />
                                     </button>
@@ -196,7 +196,7 @@ const CheckoutPage = () => {
                                     <img src={item.image} alt="" className="w-full h-full object-cover" />
                                     {item.tryAndBuy && (
                                         <div className="absolute left-0 top-0 bottom-0 w-8 bg-black/90 flex items-center justify-center">
-                                            <span className="text-white text-[9px] font-black uppercase tracking-[0.2em] [writing-mode:vertical-lr] rotate-180">
+                                            <span className="text-white text-[9px] font-bold uppercase [writing-mode:vertical-lr] rotate-180">
                                                 Try & Buy
                                             </span>
                                         </div>
@@ -205,7 +205,7 @@ const CheckoutPage = () => {
 
                                 {/* Details */}
                                 <div className="flex-1 py-1 pr-8">
-                                    <h4 className="text-[12px] font-black uppercase tracking-tight text-gray-400 mb-0.5">
+                                    <h4 className="text-[12px] font-bold uppercase  text-gray-400 mb-0.5">
                                         {item.brand}
                                     </h4>
                                     <h3 className="text-sm font-bold text-gray-800 line-clamp-1 mb-3">
@@ -215,32 +215,32 @@ const CheckoutPage = () => {
                                     {/* Selection Controls */}
                                     <div className="flex gap-2 mb-4">
                                         <div className="flex items-center gap-1.5 bg-[#F3F4F6] px-3 py-1.5 rounded-xl hover:bg-gray-200 transition-colors">
-                                            <span className="text-[10px] font-black uppercase text-gray-600">Size:</span>
-                                            <span className="text-[10px] font-black text-black">{item.selectedSize || 'XL'}</span>
+                                            <span className="text-[10px] font-bold uppercase text-gray-600">Size:</span>
+                                            <span className="text-[10px] font-bold text-black">{item.selectedSize || 'XL'}</span>
                                             <ChevronDown size={14} className="text-gray-400" />
                                         </div>
                                         <div className="flex items-center gap-2 bg-[#F3F4F6] px-2 py-1.5 rounded-xl">
                                             <button
                                                 onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                                                className="w-5 h-5 flex items-center justify-center hover:bg-white rounded-md transition-colors"
+                                                className="w-5 h-5 flex items-center justify-center hover:bg-white hover:text-black rounded-md transition-colors"
                                             >
-                                                <span className="text-xs font-black">-</span>
+                                                <span className="text-xs font-bold">-</span>
                                             </button>
-                                            <span className="text-[11px] font-black text-black min-w-[12px] text-center">{item.quantity}</span>
+                                            <span className="text-[11px] font-bold text-black min-w-[12px] text-center">{item.quantity}</span>
                                             <button
                                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="w-5 h-5 flex items-center justify-center hover:bg-white rounded-md transition-colors"
+                                                className="w-5 h-5 flex items-center justify-center hover:bg-white hover:text-black rounded-md transition-colors"
                                             >
-                                                <span className="text-xs font-black">+</span>
+                                                <span className="text-xs font-bold">+</span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Price */}
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-base font-black text-black">₹{item.price}</span>
+                                        <span className="text-base font-bold text-black">₹{item.price}</span>
                                         <span className="text-[11px] text-gray-400 line-through font-bold">₹{item.originalPrice}</span>
-                                        <span className="text-[11px] font-black text-[#F97316] uppercase tracking-tighter">
+                                        <span className="text-[11px] font-bold text-[#F97316] uppercase er">
                                             {item.discount || '65% Off'}
                                         </span>
                                     </div>
@@ -252,8 +252,8 @@ const CheckoutPage = () => {
                     {/* Service Selection: Try & Buy / Check & Buy */}
                     <div className="bg-white rounded-[24px] p-4 space-y-3 border border-gray-50 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400">Choose Service</h3>
-                            <button className="text-[10px] font-black text-[#9F1239] uppercase tracking-tight">Know More</button>
+                            <h3 className="text-[11px] font-bold uppercase  text-gray-400">Choose Service</h3>
+                            <button className="text-[10px] font-bold text-[#9F1239] uppercase ">Know More</button>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <label className="relative cursor-pointer">
@@ -264,8 +264,8 @@ const CheckoutPage = () => {
                                     checked={deliveryType === 'try_and_buy'}
                                     onChange={() => setDeliveryType('try_and_buy')}
                                 />
-                                <div className="p-2 rounded-xl border-2 border-gray-100 peer-checked:border-black peer-checked:bg-gray-50 transition-all h-full text-center">
-                                    <span className="text-[9px] font-black uppercase block mb-1 text-[#9F1239]">Try & Buy</span>
+                                <div className="p-2 rounded-xl border-2 border-gray-100 peer-checked:border-black peer-checked:bg-white transition-all h-full text-center">
+                                    <span className="text-[9px] font-bold uppercase block mb-1 text-[#9F1239]">Try & Buy</span>
                                     <p className="text-[7px] font-bold text-gray-400 leading-tight">Try at door</p>
                                 </div>
                             </label>
@@ -277,8 +277,8 @@ const CheckoutPage = () => {
                                     checked={deliveryType === 'check_and_buy'}
                                     onChange={() => setDeliveryType('check_and_buy')}
                                 />
-                                <div className="p-2 rounded-xl border-2 border-gray-100 peer-checked:border-black peer-checked:bg-gray-50 transition-all h-full text-center">
-                                    <span className="text-[9px] font-black uppercase block mb-1 text-emerald-600">Check & Buy</span>
+                                <div className="p-2 rounded-xl border-2 border-gray-100 peer-checked:border-black peer-checked:bg-white transition-all h-full text-center">
+                                    <span className="text-[9px] font-bold uppercase block mb-1 text-emerald-600">Check & Buy</span>
                                     <p className="text-[7px] font-bold text-gray-400 leading-tight">Verify first</p>
                                 </div>
                             </label>
@@ -295,10 +295,10 @@ const CheckoutPage = () => {
                                 <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                                     <Tag size={18} className="text-white" />
                                 </div>
-                                <span className="text-sm font-black uppercase tracking-tight">Apply Coupon</span>
+                                <span className="text-sm font-bold uppercase ">Apply Coupon</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-black uppercase text-[#9CA3AF] hover:text-black">view all</span>
+                                <span className="text-[11px] font-bold uppercase text-[#9CA3AF] hover:text-black">view all</span>
                                 <ChevronRight size={18} className={`text-gray-400 transition-transform ${isCouponOpen ? 'rotate-90' : ''}`} />
                             </div>
                         </div>
@@ -311,12 +311,12 @@ const CheckoutPage = () => {
                                         value={couponCode}
                                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                                         placeholder="Enter coupon code"
-                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold uppercase tracking-widest outline-none focus:border-[#9F1239] transition-colors"
+                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold uppercase  outline-none focus:border-[#9F1239] transition-colors"
                                     />
                                     <button
                                         onClick={() => handleApplyCoupon(couponCode)}
                                         disabled={isApplyingCoupon || !couponCode.trim()}
-                                        className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-[#FAFAFA] transition-all shadow-md ${isApplyingCoupon || !couponCode.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#9F1239] hover:bg-[#880d31] active:scale-95'}`}
+                                        className={`px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase  text-gray-900 transition-all shadow-md ${isApplyingCoupon || !couponCode.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#9F1239] hover:bg-[#880d31] active:scale-95'}`}
                                     >
                                         {isApplyingCoupon ? 'Applying...' : 'Apply'}
                                     </button>
@@ -325,7 +325,7 @@ const CheckoutPage = () => {
                                 {appliedCoupon && (
                                     <div className="border-[1.5px] border-dashed border-[#10B981] bg-[#ECFDF5] rounded-xl p-4 relative group transition-colors">
                                         <div className="flex justify-between items-start mb-2">
-                                            <div className="px-3 py-1 rounded-lg text-xs font-black tracking-widest uppercase bg-[#10B981] text-white">
+                                            <div className="px-3 py-1 rounded-lg text-xs font-bold  uppercase bg-[#10B981] text-white">
                                                 {appliedCoupon.code}
                                             </div>
                                             <button
@@ -333,20 +333,20 @@ const CheckoutPage = () => {
                                                     setAppliedCoupon(null);
                                                     setCouponCode('');
                                                 }}
-                                                className="text-[11px] font-black uppercase transition-transform text-gray-400 hover:text-gray-600"
+                                                className="text-[11px] font-bold uppercase transition-transform text-gray-400 hover:text-gray-600"
                                             >
                                                 Remove
                                             </button>
                                         </div>
                                         <div className="flex items-center gap-2 text-[#10B981] mt-2">
                                             <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full animate-ping" />
-                                            <span className="text-[12px] font-black uppercase tracking-tight">Applied Successfully! Saved ₹{appliedCoupon.discount}</span>
+                                            <span className="text-[12px] font-bold uppercase ">Applied Successfully! Saved ₹{appliedCoupon.discount}</span>
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="flex items-center justify-center gap-1 cursor-pointer pt-2">
-                                    <span className="text-[10px] font-black uppercase text-gray-400">Terms And Conditions</span>
+                                    <span className="text-[10px] font-bold uppercase text-gray-400">Terms And Conditions</span>
                                     <ChevronDown size={14} className="text-gray-400" />
                                 </div>
                             </div>
@@ -359,12 +359,12 @@ const CheckoutPage = () => {
                             <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                                 <Truck size={18} className="text-blue-600" />
                             </div>
-                            <span className="text-sm font-black uppercase tracking-tight">Delivery Estimate</span>
+                            <span className="text-sm font-bold uppercase ">Delivery Estimate</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="bg-gray-50 px-4 py-2 rounded-xl text-center">
+                            <div className="bg-white px-4 py-2 rounded-xl text-center">
                                 <p className="text-[10px] font-bold text-gray-400 uppercase">Instant</p>
-                                <p className="text-xs font-black">60 Mins</p>
+                                <p className="text-xs font-bold">60 Mins</p>
                             </div>
                             <p className="text-xs font-bold text-gray-500 flex-1">
                                 Delivery within <span className="text-black">{getDeliveryDateInfo()}</span>
@@ -374,28 +374,28 @@ const CheckoutPage = () => {
 
                     {/* Price Summary / Bill Details */}
                     <div className="bg-white rounded-[24px] p-5 space-y-4 border border-gray-50 shadow-sm">
-                        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <h3 className="text-sm font-bold uppercase  flex items-center gap-2">
                             Bill Details
                         </h3>
 
                         <div className="space-y-3">
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Bag Total</span>
                                 <span className="text-black">₹{totalPrice}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Bag Discount</span>
                                 <span className="text-[#10B981]">-₹0</span>
                             </div>
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Coupon Discount</span>
                                 <span className="text-[#10B981]">{appliedCoupon ? `-₹${couponDiscount}` : '₹0'}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Shipping Fee</span>
                                 <span>{shipping === 0 ? <span className="text-[#10B981]">FREE</span> : `₹${shipping}`}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>GST (5%)</span>
                                 <span className="text-black">₹{tax}</span>
                             </div>
@@ -403,9 +403,9 @@ const CheckoutPage = () => {
 
                         <div className="h-px bg-gray-100" />
 
-                        <div className="flex justify-between items-center bg-gray-50 -mx-5 px-5 py-3 mt-2">
-                            <span className="text-sm font-black uppercase tracking-widest">Order Total</span>
-                            <span className="text-lg font-black italic tracking-tighter text-[#9F1239]">₹{finalTotal}</span>
+                        <div className="flex justify-between items-center bg-white -mx-5 px-5 py-3 mt-2">
+                            <span className="text-sm font-bold uppercase ">Order Total</span>
+                            <span className="text-lg font-bold italic er text-[#9F1239]">₹{finalTotal}</span>
                         </div>
                     </div>
 
@@ -414,8 +414,8 @@ const CheckoutPage = () => {
                         <div className="flex items-center justify-center gap-3">
                             <div className="h-px bg-gray-200 flex-1" />
                             <div className="text-center px-2">
-                                <h2 className="text-xl font-display font-black tracking-widest uppercase italic leading-none">One Last <span className="font-serif">Touch</span></h2>
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Add accessories before checkout</p>
+                                <h2 className="text-xl font-bold uppercase italic leading-none">One Last Touch</h2>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">Add accessories before checkout</p>
                             </div>
                             <div className="h-px bg-gray-200 flex-1" />
                         </div>
@@ -439,9 +439,9 @@ const CheckoutPage = () => {
                                         </div>
                                     </div>
                                     <div className="p-2.5">
-                                        <p className="text-[10px] font-black uppercase text-gray-400 mb-0.5">{item.brand}</p>
+                                        <p className="text-[10px] font-bold uppercase text-gray-400 mb-0.5">{item.brand}</p>
                                         <p className="text-[11px] font-bold text-gray-800 line-clamp-1">{item.name}</p>
-                                        <p className="text-xs font-black mt-1">₹{item.price}</p>
+                                        <p className="text-xs font-bold mt-1">₹{item.price}</p>
                                     </div>
                                 </div>
                             ))}
@@ -455,11 +455,11 @@ const CheckoutPage = () => {
                 <div className="max-w-[500px] mx-auto space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase ">
                                 {activeAddress ? 'Deliver to' : 'No address selected'}
                             </span>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-black text-black truncate max-w-[200px]">
+                                <span className="text-xs font-bold text-black truncate max-w-[200px]">
                                     {activeAddress ? [activeAddress.name || activeAddress.locality, activeAddress.city].filter(Boolean).join(', ') : 'Add address to continue'}
                                 </span>
                                 <ChevronUp size={14} className="text-gray-400" />
@@ -467,7 +467,7 @@ const CheckoutPage = () => {
                         </div>
                         <button
                             onClick={() => setIsLocationModalOpen(true)}
-                            className="text-[11px] font-black uppercase text-[#9F1239] hover:underline"
+                            className="text-[11px] font-bold uppercase text-[#9F1239] hover:underline"
                         >
                             {activeAddress ? 'Change' : 'Add'}
                         </button>
@@ -475,7 +475,7 @@ const CheckoutPage = () => {
 
                     <button
                         onClick={() => activeAddress ? navigate('/payment', { state: { deliveryType } }) : setIsLocationModalOpen(true)}
-                        className={`w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 ${activeAddress
+                        className={`w-full py-4 rounded-[20px] font-bold text-xs uppercase shadow-lg transition-all active:scale-95 ${activeAddress
                             ? 'bg-black text-white hover:bg-gray-800'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}

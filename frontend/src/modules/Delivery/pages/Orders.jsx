@@ -254,16 +254,16 @@ const DeliveryOrders = () => {
                       )}
                       <div className="flex items-center gap-2 flex-wrap mt-0.5">
                         {order.paymentMethod === 'cod' ? (
-                          <span className="flex items-center gap-1 text-[10px] font-black uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
                             <FiCreditCard size={10} /> Cash on Delivery (COD)
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                             <FiCreditCard size={10} /> Prepaid
                           </span>
                         )}
                         {order.deliveryType && order.deliveryType !== 'standard' && (
-                          <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-black rounded border border-primary-100 uppercase tracking-tighter">
+                          <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded border border-primary-100 uppercase er">
                             {order.deliveryType.replace(/_/g, ' ')}
                           </span>
                         )}
@@ -280,7 +280,7 @@ const DeliveryOrders = () => {
                 </div>
 
                 {/* Address */}
-                <div className="flex items-start gap-2 mb-3 p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-start gap-2 mb-3 p-3 bg-white rounded-xl">
                   <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-gray-700">{order.address || 'Address unavailable'}</p>
                 </div>

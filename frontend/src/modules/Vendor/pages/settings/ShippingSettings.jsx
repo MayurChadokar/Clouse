@@ -213,7 +213,7 @@ const ShippingSettings = () => {
                   <div className="border-t border-gray-200 pt-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Shipping Methods</h3>
                     <div className="space-y-3">
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                         <input
                           type="checkbox"
                           checked={formData.shippingMethods?.includes('standard') || false}
@@ -225,7 +225,7 @@ const ShippingSettings = () => {
                           <p className="text-xs text-gray-500 mt-1">5-7 business days</p>
                         </div>
                       </label>
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                         <input
                           type="checkbox"
                           checked={formData.shippingMethods?.includes('express') || false}
@@ -237,7 +237,7 @@ const ShippingSettings = () => {
                           <p className="text-xs text-gray-500 mt-1">2-3 business days</p>
                         </div>
                       </label>
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white hover:text-black">
                         <input
                           type="checkbox"
                           checked={formData.shippingMethods?.includes('overnight') || false}

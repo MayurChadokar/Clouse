@@ -259,7 +259,7 @@ const ReturnRequestDetail = () => {
             </h2>
             <div className="space-y-2">
               {returnRequest.items.map((item, index) => (
-                <div key={item.id || index} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg">
+                <div key={item.id || index} className="flex items-center gap-3 p-2.5 bg-white rounded-lg">
                   {item.image && (
                     <img
                       src={item.image}
@@ -305,7 +305,7 @@ const ReturnRequestDetail = () => {
               {returnRequest.description && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Description</p>
-                  <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{returnRequest.description}</p>
+                  <p className="text-sm text-gray-700 bg-white p-3 rounded-lg">{returnRequest.description}</p>
                 </div>
               )}
               {returnRequest.rejectionReason && (
@@ -451,7 +451,7 @@ const ReturnRequestDetail = () => {
               </Link>
               <button
                 onClick={() => window.location.href = `mailto:${returnRequest.customer.email}`}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
               >
                 <FiMail className="text-sm" />
                 Email Customer
@@ -459,7 +459,7 @@ const ReturnRequestDetail = () => {
               {returnRequest.customer.phone && (
                 <button
                   onClick={() => window.location.href = `tel:${returnRequest.customer.phone}`}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-semibold"
                 >
                   <FiPhone className="text-sm" />
                   Call Customer

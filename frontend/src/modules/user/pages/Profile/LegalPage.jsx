@@ -11,9 +11,9 @@ const DEFAULT_LEGAL_DATA = {
             <div class="space-y-4">
                 <p class="text-gray-600 leading-relaxed font-medium">Welcome to Clothify, your number one source for all things fashion. We're dedicated to giving you the very best of clothing, with a focus on dependability, customer service and uniqueness.</p>
                 <p class="text-gray-600 leading-relaxed font-medium">Founded in 2024, Clothify has come a long way from its beginnings. When we first started out, our passion for fashion-forward clothing drove us to do intense research so that Clothify can offer you the world's most stylish and premium apparel.</p>
-                <div class="mt-8 p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                    <h3 class="font-black text-black uppercase tracking-tight text-lg mb-2">Our Mission</h3>
-                    <p class="text-gray-500 font-bold text-[11px] uppercase tracking-widest">To empower people through fashion and quality.</p>
+                <div class="mt-8 p-6 bg-white rounded-2xl border border-gray-100">
+                    <h3 class="font-bold text-black uppercase  text-lg mb-2">Our Mission</h3>
+                    <p class="text-gray-500 font-bold text-[11px] uppercase ">To empower people through fashion and quality.</p>
                 </div>
             </div>
         `
@@ -23,7 +23,7 @@ const DEFAULT_LEGAL_DATA = {
         content: `
             <div class="space-y-4">
                 <p class="text-gray-600 leading-relaxed font-medium">By accessing this website, you are agreeing to be bound by these website Terms and Conditions of Use, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws.</p>
-                <h3 class="font-black text-black uppercase tracking-tight text-lg mt-6">Use License</h3>
+                <h3 class="font-bold text-black uppercase  text-lg mt-6">Use License</h3>
                 <p class="text-gray-600 leading-relaxed font-medium">Permission is granted to temporarily download one copy of the materials (information or software) on Clothify's website for personal, non-commercial transitory viewing only.</p>
             </div>
         `
@@ -51,17 +51,17 @@ const DEFAULT_LEGAL_DATA = {
         content: `
             <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                        <span class="block font-black text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2">Email Us</span>
-                        <p class="font-black text-black">support@clothify.com</p>
+                    <div class="p-6 bg-white rounded-2xl border border-gray-100">
+                        <span class="block font-bold text-[10px] uppercase text-gray-400 mb-2">Email Us</span>
+                        <p class="font-bold text-black">support@clothify.com</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                        <span class="block font-black text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2">Call Us</span>
-                        <p class="font-black text-black">+91 96690 02380</p>
+                    <div class="p-6 bg-white rounded-2xl border border-gray-100">
+                        <span class="block font-bold text-[10px] uppercase text-gray-400 mb-2">Call Us</span>
+                        <p class="font-bold text-black">+91 96690 02380</p>
                     </div>
                 </div>
                 <div class="p-6 bg-black text-white rounded-2xl">
-                    <h3 class="font-black text-[13px] uppercase tracking-widest mb-2 text-[#ffcc00]">Headquarters</h3>
+                    <h3 class="font-bold text-[13px] uppercase  mb-2 text-[#ffcc00]">Headquarters</h3>
                     <p class="text-[11px] font-bold opacity-80 leading-relaxed">Slikksync Technologies,<br/>Fashion Hub, Street 12,<br/>Mumbai, Maharashtra, India</p>
                 </div>
             </div>
@@ -101,13 +101,13 @@ const LegalPage = () => {
                 // Fallback to default bundled data
                 setPageContent(DEFAULT_LEGAL_DATA[pageId] || {
                     title: 'Information',
-                    content: '<p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Coming soon...</p>'
+                    content: '<p class="text-gray-500 font-bold uppercase text-[10px] ">Coming soon...</p>'
                 });
             } catch (err) {
                 console.error('Error fetching legal content:', err);
                 setPageContent(DEFAULT_LEGAL_DATA[pageId] || {
                     title: 'Information',
-                    content: '<p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Coming soon...</p>'
+                    content: '<p class="text-gray-500 font-bold uppercase text-[10px] ">Coming soon...</p>'
                 });
             } finally {
                 setIsLoading(false);
@@ -117,14 +117,14 @@ const LegalPage = () => {
         fetchContent();
     }, [pageId]);
 
-    if (isLoading) return <div className="p-20 text-center text-gray-400 font-bold uppercase tracking-widest animate-pulse">Loading...</div>;
+    if (isLoading) return <div className="p-20 text-center text-gray-400 font-bold uppercase  animate-pulse">Loading...</div>;
     if (!pageContent) return null;
 
     return (
         <AccountLayout>
             <div className="max-w-[800px] mx-auto animate-fadeInUp">
                 <div className="mb-10">
-                    <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black mb-2">
+                    <h1 className="text-3xl md:text-4xl font-bold uppercase  text-black mb-2">
                         {pageContent.title}
                     </h1>
                     <div className="h-1.5 w-20 bg-[#ffcc00] rounded-full"></div>

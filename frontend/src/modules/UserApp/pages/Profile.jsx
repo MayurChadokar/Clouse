@@ -152,7 +152,7 @@ const MobileProfile = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={true} showCartBar={true}>
-          <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-gray-50">
+          <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-white">
             {/* Desktop Header */}
             <div className="hidden lg:block px-4 py-8">
               <div className="flex items-center gap-4">
@@ -192,7 +192,7 @@ const MobileProfile = () => {
                       onClick={() => setActiveTab('personal')}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${activeTab === 'personal'
                         ? 'bg-primary-50 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        : 'text-gray-600 hover:bg-white hover:text-black'
                         }`}
                     >
                       <FiUser className="text-lg" />
@@ -202,7 +202,7 @@ const MobileProfile = () => {
                       onClick={() => setActiveTab('password')}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${activeTab === 'password'
                         ? 'bg-primary-50 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        : 'text-gray-600 hover:bg-white hover:text-black'
                         }`}
                     >
                       <FiLock className="text-lg" />
@@ -248,14 +248,14 @@ const MobileProfile = () => {
 
                     {/* Menu Options */}
                     <div className="space-y-3">
-                      <p className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Account Settings</p>
+                      <p className="px-2 text-xs font-bold text-gray-400 uppercase ">Account Settings</p>
                       <div className="glass-card rounded-2xl overflow-hidden divide-y divide-gray-50 shadow-sm border border-gray-100">
                         {menuOptions.map((option) => (
                           option.link ? (
                             <Link
                               key={option.id}
                               to={option.link}
-                              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors bg-white"
+                              className="w-full flex items-center justify-between p-4 hover:bg-white hover:text-black transition-colors bg-white"
                             >
                               <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl ${option.bg} ${option.color} flex items-center justify-center`}>
@@ -276,7 +276,7 @@ const MobileProfile = () => {
                             <button
                               key={option.id}
                               onClick={() => setActiveTab(option.id)}
-                              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors bg-white"
+                              className="w-full flex items-center justify-between p-4 hover:bg-white hover:text-black transition-colors bg-white"
                             >
                               <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl ${option.bg} ${option.color} flex items-center justify-center`}>
@@ -408,7 +408,7 @@ const MobileProfile = () => {
                             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${personalErrors.email
                               ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-200 focus:border-primary-500'
-                              } focus:outline-none transition-colors text-base bg-gray-50 text-gray-500 cursor-not-allowed`}
+                              } focus:outline-none transition-colors text-base bg-white text-gray-500 cursor-not-allowed`}
                             placeholder="your.email@example.com"
                           />
                         </div>

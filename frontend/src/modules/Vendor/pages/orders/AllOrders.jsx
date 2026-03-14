@@ -177,7 +177,7 @@ const AllOrders = () => {
       label: 'Type',
       sortable: true,
       render: (value) => (
-        <span className={`px-2 py-0.5 ${value === 'try_and_buy' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-blue-100 text-blue-700 border-blue-200'} text-[10px] font-black rounded-lg border uppercase tracking-tighter shadow-sm animate-pulse`}>
+        <span className={`px-2 py-0.5 ${value === 'try_and_buy' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-blue-100 text-blue-700 border-blue-200'} text-[10px] font-bold rounded-lg border uppercase  shadow-sm animate-pulse`}>
           {value?.replace(/_/g, ' ') || 'STANDARD'}
         </span>
       ),
@@ -231,7 +231,7 @@ const AllOrders = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by Order ID..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
               />
             </div>
 

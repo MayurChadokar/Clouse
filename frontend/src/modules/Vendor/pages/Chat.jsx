@@ -192,7 +192,7 @@ const Chat = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search chats..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="flex gap-2">
@@ -228,7 +228,7 @@ const Chat = () => {
                   <div
                     key={chat._id}
                     onClick={() => handleSelectChat(chat)}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    className={`p-4 cursor-pointer hover:bg-white hover:text-black transition-colors ${
                       selectedChat?._id === chat._id
                         ? "bg-primary-50 border-l-4 border-primary-600"
                         : ""

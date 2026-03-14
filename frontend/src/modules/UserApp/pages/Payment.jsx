@@ -112,7 +112,7 @@ const PaymentPage = () => {
 
     const PaymentOption = ({ id, icon: Icon, title, subtitle, offers, children }) => (
         <div className="border-b border-gray-100 last:border-0">
-            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => toggleOption(id)}>
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white hover:text-black transition-colors" onClick={() => toggleOption(id)}>
                 <div className="flex items-center gap-4">
                     <Icon size={20} className="text-gray-600" />
                     <div>
@@ -121,7 +121,7 @@ const PaymentPage = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {offers && <span className="text-[10px] font-black text-emerald-600 uppercase">{offers}</span>}
+                    {offers && <span className="text-[10px] font-bold text-emerald-600 uppercase">{offers}</span>}
                     {expandedOption === id ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
                 </div>
             </div>
@@ -132,19 +132,19 @@ const PaymentPage = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24">
+        <div className="min-h-screen bg-white pb-24">
             {/* Header */}
             <header className="bg-white sticky top-0 z-50 border-b border-gray-100 px-4 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><ArrowLeft size={20} /></button>
+                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-white hover:text-black rounded-full transition-colors"><ArrowLeft size={20} /></button>
                     <div>
-                        <h1 className="text-lg font-black uppercase tracking-tight leading-tight">Review Order</h1>
+                        <h1 className="text-lg font-bold uppercase  leading-tight">Review Order</h1>
                         {totalDiscount > 0 && <p className="text-[11px] font-bold text-emerald-600">You're saving ₹{totalDiscount.toFixed(0)}</p>}
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-green-500" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">100% Secure</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase ">100% Secure</span>
                 </div>
             </header>
 
@@ -153,17 +153,17 @@ const PaymentPage = () => {
                 <div className="flex items-center justify-center max-w-sm mx-auto">
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full mb-1"></div>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Bag</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase ">Bag</span>
                     </div>
                     <div className="flex-1 h-0.5 bg-emerald-500 mx-2 mb-4"></div>
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full mb-1"></div>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Address</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase ">Address</span>
                     </div>
                     <div className="flex-1 h-0.5 bg-black mx-2 mb-4"></div>
                     <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-white border-2 border-black rounded-full mb-1"></div>
-                        <span className="text-[10px] font-black text-black uppercase tracking-widest">Payment</span>
+                        <span className="text-[10px] font-bold text-black uppercase ">Payment</span>
                     </div>
                 </div>
             </div>
@@ -173,13 +173,13 @@ const PaymentPage = () => {
                 <div className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
                     <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-50">
                         <MapPin size={16} className="text-gray-700" />
-                        <span className="text-[13px] font-black text-gray-900 uppercase tracking-tight">Delivery Details</span>
+                        <span className="text-[13px] font-bold text-gray-900 uppercase ">Delivery Details</span>
                     </div>
 
                     {currentAddress ? (
                         <div className="px-4 py-4">
                             <div className="mb-1">
-                                <span className="text-[14px] font-black text-gray-900">{currentAddress.name || currentAddress.fullName}</span>
+                                <span className="text-[14px] font-bold text-gray-900">{currentAddress.name || currentAddress.fullName}</span>
                                 <span className="text-[13px] text-gray-600 font-medium ml-1.5">
                                     {currentAddress.address}{currentAddress.city ? `, ${currentAddress.city}` : ''}{currentAddress.state ? `, ${currentAddress.state}` : ''}{currentAddress.zipCode ? ` - ${currentAddress.zipCode}` : ''}
                                 </span>
@@ -225,9 +225,9 @@ const PaymentPage = () => {
 
                 {/* Recommended Payment */}
                 <div className="mb-4">
-                    <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-3 ml-2">Payment Options</h2>
+                    <h2 className="text-[11px] font-bold uppercase  text-gray-500 mb-3 ml-2">Payment Options</h2>
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <label className="flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-white hover:text-black transition-colors">
                             <div className="flex items-center gap-4">
                                 <input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-black w-4 h-4" />
                                 <div className="flex flex-col">
@@ -265,7 +265,7 @@ const PaymentPage = () => {
 
                 {/* Price Details */}
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-24">
-                    <h3 className="text-[13px] font-black uppercase tracking-widest text-gray-900 mb-4 pb-4 border-b border-gray-100">
+                    <h3 className="text-[13px] font-bold uppercase  text-gray-900 mb-4 pb-4 border-b border-gray-100">
                         Price Details ({cart.length} Items)
                     </h3>
                     <div className="space-y-3 mb-4">
@@ -285,8 +285,8 @@ const PaymentPage = () => {
                         </div>
                     </div>
                     <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
-                        <span className="text-[14px] font-black text-gray-900 uppercase tracking-tight">Total Amount</span>
-                        <span className="text-[16px] font-black text-gray-900">₹{finalTotal.toFixed(0)}</span>
+                        <span className="text-[14px] font-bold text-gray-900 uppercase ">Total Amount</span>
+                        <span className="text-[16px] font-bold text-gray-900">₹{finalTotal.toFixed(0)}</span>
                     </div>
                 </div>
             </div>
@@ -295,13 +295,13 @@ const PaymentPage = () => {
             <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 z-50">
                 <div className="flex items-center justify-between container mx-auto max-w-2xl">
                     <div className="flex flex-col">
-                        <span className="text-[16px] font-black text-gray-900">₹{finalTotal.toFixed(0)}</span>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">{cart.length} item(s)</span>
+                        <span className="text-[16px] font-bold text-gray-900">₹{finalTotal.toFixed(0)}</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase">{cart.length} item(s)</span>
                     </div>
                     <button
                         onClick={handlePlaceOrder}
                         disabled={isProcessing || isOrderLoading || !currentAddress}
-                        className="bg-black text-white px-8 py-3 rounded-lg text-[12px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="bg-black text-white px-8 py-3 rounded-lg text-[12px] font-bold uppercase  hover:bg-gray-800 active:scale-95 transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {isProcessing || isOrderLoading ? 'Placing Order...' : 'Place Order'}
                     </button>
@@ -315,7 +315,7 @@ const PaymentPage = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[20px] max-h-[80vh] overflow-y-auto">
                         <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-gray-300 rounded-full" /></div>
                         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                            <h2 className="text-[16px] font-black text-gray-900">Select Address</h2>
+                            <h2 className="text-[16px] font-bold text-gray-900">Select Address</h2>
                             <button onClick={() => setShowAddressSheet(false)} className="p-2 rounded-full hover:bg-gray-100"><X size={20} className="text-gray-500" /></button>
                         </div>
                         <div className="p-4 space-y-3">
@@ -323,11 +323,11 @@ const PaymentPage = () => {
                                 <button
                                     key={addr.id}
                                     onClick={() => { setCurrentAddress(addr); setShowAddressSheet(false); }}
-                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${currentAddress?.id === addr.id ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
+                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${currentAddress?.id === addr.id ? 'border-black bg-white' : 'border-gray-100 hover:border-gray-300'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[13px] font-black text-gray-900">{addr.name || addr.fullName}</span>
-                                        {addr.isDefault && <span className="text-[9px] font-black bg-black text-white px-1.5 py-0.5 rounded uppercase">Default</span>}
+                                        <span className="text-[13px] font-bold text-gray-900">{addr.name || addr.fullName}</span>
+                                        {addr.isDefault && <span className="text-[9px] font-bold bg-black text-white px-1.5 py-0.5 rounded uppercase">Default</span>}
                                     </div>
                                     <p className="text-[12px] text-gray-500">{addr.address}, {addr.city}, {addr.state} - {addr.zipCode}</p>
                                     {addr.phone && <p className="text-[11px] text-gray-400 mt-1">Phone: {addr.phone}</p>}

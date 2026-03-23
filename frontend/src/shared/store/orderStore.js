@@ -117,9 +117,9 @@ export const useOrderStore = create(
               "x-idempotency-key": idempotencyKey,
             },
           });
-          const data = response?.data ?? response;
-          const createdOrderId = data?.orderId;
-
+          const payloadData = response?.data ?? response;
+          const createdOrderId = payloadData?.orderId;
+          
           if (!createdOrderId) {
             throw new Error('Invalid order creation response from server.');
           }
@@ -132,10 +132,10 @@ export const useOrderStore = create(
           set({ isLoading: false, lastError: null });
           return createdOrder;
         } catch (error) {
-          const detail = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message;
+          const errorMessage = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message;
           console.error("Order Creation Error Detail:", error.response?.data);
-          set({ isLoading: false, lastError: detail || 'Failed to place order.' });
-          throw new Error(detail);
+          set({ isLoading: false, lastError: errorMessage || 'Failed to place order.' });
+          throw new Error(errorMessage || 'Failed to place order.');
         }
       },
 

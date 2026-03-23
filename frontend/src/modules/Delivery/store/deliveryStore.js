@@ -260,6 +260,28 @@ export const useDeliveryAuthStore = create(
         }
       },
 
+      updateLocation: async (latitude, longitude) => {
+        const current = get().deliveryBoy;
+        if (!current || current.status === 'offline') return;
+
+        try {
+          // GeoJSON expects [longitude, latitude]
+          const response = await api.put('/delivery/auth/profile', {
+            currentLocation: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+          });
+          const payload = response?.data ?? response;
+          set({
+            deliveryBoy: normalizeDeliveryBoy({ ...current, ...payload }),
+          });
+        } catch (error) {
+          console.error("Store Location Update Error:", error);
+          // Don't throw here to avoid breaking the background watch task
+        }
+      },
+
       fetchDashboardSummary: async () => {
         const response = await api.get('/delivery/orders/dashboard-summary');
         const payload = response?.data ?? response ?? {};

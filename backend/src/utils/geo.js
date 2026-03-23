@@ -26,7 +26,8 @@ export const calculateDistance = (coords1, coords2) => {
         Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return parseFloat(d.toFixed(2));
+    const distance = R * c;
+    return parseFloat(distance.toFixed(2));
 };
 
 /**

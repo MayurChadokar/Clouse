@@ -223,8 +223,9 @@ const PaymentPage = () => {
                 navigate(`/order-success/${response.id}`);
             }
         } catch (error) {
-            console.error("Order placement failed:", error);
-            toast.error(error.message || 'Failed to place order. Please try again.');
+            console.error("PaymentPage handlePlaceOrder Error - Complete Trace:", error);
+            console.error("PaymentPage handlePlaceOrder Error - Message:", error?.message);
+            toast.error(error?.message || 'Failed to place order. Please check your connection.');
         } finally {
             setIsProcessing(false);
         }

@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LocationModal from '../../components/Header/LocationModal';
-import CouponsModal from '../../components/Checkout/CouponsModal';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
@@ -31,13 +30,8 @@ const CheckoutPage = () => {
     const { activeAddress } = useUserLocation();
     const { fetchAddresses } = useAddressStore();
 
-    const [isCouponOpen, setIsCouponOpen] = useState(true);
-    const [couponCode, setCouponCode] = useState('');
-    const [appliedCoupon, setAppliedCoupon] = useState(null);
-    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [showSizeModal, setShowSizeModal] = useState(null); // productId for which to show modal
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-    const [isCouponsModalOpen, setIsCouponsModalOpen] = useState(false);
     const [deliveryType, setDeliveryType] = useState('check_and_buy');
 
     useEffect(() => {
@@ -50,8 +44,7 @@ const CheckoutPage = () => {
     const totalPrice = getCartTotal();
     const shipping = totalPrice > 500 ? 0 : 40;
     const tax = Math.round(totalPrice * 0.05); // 5% GST
-    const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0;
-    const finalTotal = totalPrice + shipping + tax - couponDiscount;
+    const finalTotal = totalPrice + shipping + tax;
 
     // Fixed delivery date calculation
     const getDeliveryDateInfo = () => {
@@ -61,39 +54,6 @@ const CheckoutPage = () => {
     const handleClearCart = () => {
         if (window.confirm("Are you sure you want to clear your bag?")) {
             clearCart();
-        }
-    };
-
-    const handleApplyCoupon = async (code) => {
-        if (!code) {
-            toast.error('Please enter a coupon code.');
-            return;
-        }
-        setIsApplyingCoupon(true);
-        try {
-            const response = await api.post('/coupons/validate', {
-                code,
-                cartTotal: totalPrice
-            });
-            const data = response.data?.data || response.data;
-            if (data?.discount !== undefined) {
-                setAppliedCoupon({ code: data.coupon.code, discount: data.discount });
-                toast.success(`Coupon Applied! You saved ₹${data.discount}`, {
-                    style: {
-                        borderRadius: '16px',
-                        background: '#10B981',
-                        color: '#fff',
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                        fontSize: '11px',
-                        letterSpacing: '0.1em'
-                    }
-                });
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || error.message || 'Invalid Coupon Code');
-        } finally {
-            setIsApplyingCoupon(false);
         }
     };
 
@@ -287,81 +247,6 @@ const CheckoutPage = () => {
                         </div>
                     </div>
 
-                    {/* Apply Coupon Section */}
-                    <div className="bg-white rounded-[24px] overflow-hidden shadow-sm border border-gray-50">
-                        <div
-                            onClick={() => setIsCouponOpen(!isCouponOpen)}
-                            className="p-4 flex items-center justify-between cursor-pointer"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                                    <Tag size={18} className="text-white" />
-                                </div>
-                                <span className="text-sm font-bold uppercase ">Apply Coupon</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsCouponsModalOpen(true);
-                                    }}
-                                    className="text-[11px] font-bold uppercase text-[#9CA3AF] hover:text-[#9F1239] transition-colors"
-                                >
-                                    view all
-                                </button>
-                                <ChevronRight size={18} className={`text-gray-400 transition-transform ${isCouponOpen ? 'rotate-90' : ''}`} />
-                            </div>
-                        </div>
-
-                        {isCouponOpen && (
-                            <div className="px-4 pb-5 space-y-4 animate-fadeIn">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <input
-                                        type="text"
-                                        value={couponCode}
-                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                        placeholder="Enter coupon code"
-                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold uppercase  outline-none focus:border-[#9F1239] transition-colors"
-                                    />
-                                    <button
-                                        onClick={() => handleApplyCoupon(couponCode)}
-                                        disabled={isApplyingCoupon || !couponCode.trim()}
-                                        className={`px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase  text-gray-900 transition-all shadow-md ${isApplyingCoupon || !couponCode.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#9F1239] hover:bg-[#880d31] active:scale-95'}`}
-                                    >
-                                        {isApplyingCoupon ? 'Applying...' : 'Apply'}
-                                    </button>
-                                </div>
-
-                                {appliedCoupon && (
-                                    <div className="border-[1.5px] border-dashed border-[#10B981] bg-[#ECFDF5] rounded-xl p-4 relative group transition-colors">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="px-3 py-1 rounded-lg text-xs font-bold  uppercase bg-[#10B981] text-white">
-                                                {appliedCoupon.code}
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    setAppliedCoupon(null);
-                                                    setCouponCode('');
-                                                }}
-                                                className="text-[11px] font-bold uppercase transition-transform text-gray-400 hover:text-gray-600"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-[#10B981] mt-2">
-                                            <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full animate-ping" />
-                                            <span className="text-[12px] font-bold uppercase ">Applied Successfully! Saved ₹{appliedCoupon.discount}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="flex items-center justify-center gap-1 cursor-pointer pt-2">
-                                    <span className="text-[10px] font-bold uppercase text-gray-400">Terms And Conditions</span>
-                                    <ChevronDown size={14} className="text-gray-400" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
                     {/* Delivery Estimation */}
                     <div className="bg-white rounded-[24px] p-4 border border-gray-50 shadow-sm">
@@ -396,10 +281,6 @@ const CheckoutPage = () => {
                             <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Bag Discount</span>
                                 <span className="text-[#10B981]">-₹0</span>
-                            </div>
-                            <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
-                                <span>Coupon Discount</span>
-                                <span className="text-[#10B981]">{appliedCoupon ? `-₹${couponDiscount}` : '₹0'}</span>
                             </div>
                             <div className="flex justify-between text-xs font-bold text-gray-500 uppercase ">
                                 <span>Shipping Fee</span>
@@ -500,19 +381,7 @@ const CheckoutPage = () => {
                 isOpen={isLocationModalOpen}
                 onClose={() => setIsLocationModalOpen(false)}
             />
-
-            {/* Available Coupons Modal */}
-            <CouponsModal
-                isOpen={isCouponsModalOpen}
-                onClose={() => setIsCouponsModalOpen(false)}
-                onApply={(code) => {
-                    setCouponCode(code);
-                    handleApplyCoupon(code);
-                    setIsCouponsModalOpen(false);
-                }}
-                cartTotal={totalPrice}
-            />
-
+    
             {/* Global Custom Styles */}
             <style dangerouslySetInnerHTML={{
                 __html: `

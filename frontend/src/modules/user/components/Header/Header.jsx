@@ -76,7 +76,7 @@ const Header = ({ variant = 'default' }) => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
             // Only apply on mobile where sticky real estate matters, and after 100px of scrolling
-            if (window.innerWidth < 768 && currentScrollY > 100) {
+            if (currentScrollY > 60) {
                 if (currentScrollY > lastScrollY) {
                     setIsHeaderVisible(false); // Scrolling down - hide
                 } else {

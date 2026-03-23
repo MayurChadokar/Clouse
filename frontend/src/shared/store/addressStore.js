@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import { useAuthStore } from './authStore';
 
 const normalizeAddress = (address) => ({
   ...address,

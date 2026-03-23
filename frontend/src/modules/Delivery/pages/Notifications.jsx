@@ -41,7 +41,7 @@ const DeliveryNotifications = () => {
 
   return (
     <PageTransition>
-      <div className="px-4 py-6 space-y-4">
+      <div className="px-4 pt-28 pb-6 space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiPackage, FiMapPin, FiClock, FiCheckCircle, FiXCircle, FiNavigation, FiPhone, FiCreditCard } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FiPackage, 
+  FiMapPin, 
+  FiClock, 
+  FiCheckCircle, 
+  FiXCircle, 
+  FiNavigation, 
+  FiPhone, 
+  FiCreditCard,
+  FiChevronRight,
+  FiSearch,
+  FiFilter,
+  FiActivity
+} from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
@@ -21,16 +34,15 @@ const DeliveryOrders = () => {
     completeOrder,
     deliveryBoy,
   } = useDeliveryAuthStore();
+  
   const isOnline = deliveryBoy?.status === 'available';
-  const [filter, setFilter] = useState(isOnline ? 'available' : 'pending'); // available, pending(open), in-transit(shipped), completed(delivered)
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [filter, setFilter] = useState(isOnline ? 'available' : 'pending');
   const [currentPage, setCurrentPage] = useState(1);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [selectedNewOrder, setSelectedNewOrder] = useState(null);
   const PAGE_SIZE = 20;
 
   const getBackendStatusFilter = (value) => {
-    if (value === 'all') return undefined; // No 'all' anymore, using available as default
     if (value === 'pending') return 'open';
     if (value === 'in-transit') return 'shipped';
     if (value === 'delivered') return 'delivered';
@@ -39,13 +51,9 @@ const DeliveryOrders = () => {
 
   const loadOrders = async (page = currentPage, activeFilter = filter) => {
     try {
-      setLoadFailed(false);
       if (activeFilter === 'available') {
         const { fetchAvailableOrders } = useDeliveryAuthStore.getState();
-        await fetchAvailableOrders({
-          page,
-          limit: PAGE_SIZE,
-        });
+        await fetchAvailableOrders({ page, limit: PAGE_SIZE });
       } else {
         await fetchOrders({
           page,
@@ -53,18 +61,15 @@ const DeliveryOrders = () => {
           status: getBackendStatusFilter(activeFilter),
         });
       }
-    } catch {
-      setLoadFailed(true);
-      // Error toast handled by API interceptor.
+    } catch (err) {
+      console.error("Order Load Error:", err);
     }
   };
 
   useEffect(() => {
     loadOrders(currentPage, filter);
-    // Refresh interval for available orders
     const interval = filter === 'available' ? setInterval(() => loadOrders(currentPage, filter), 30000) : null;
 
-    // Real-time socket updates
     socketService.connect();
     socketService.joinRoom('delivery_partners');
 
@@ -72,333 +77,181 @@ const DeliveryOrders = () => {
       const currentStatus = useDeliveryAuthStore.getState().deliveryBoy?.status;
       if (filter === 'available' && currentStatus === 'available') loadOrders(currentPage, filter);
     });
-    socketService.on('order_taken', () => {
-      const currentStatus = useDeliveryAuthStore.getState().deliveryBoy?.status;
-      if (filter === 'available' && currentStatus === 'available') loadOrders(currentPage, filter);
-    });
 
     return () => {
       if (interval) clearInterval(interval);
       socketService.off('order_ready_for_pickup');
-      socketService.off('order_taken');
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, filter]);
 
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'in-transit':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'delivered':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pending':
-        return <FiClock className="text-yellow-600" />;
-      case 'in-transit':
-        return <FiNavigation className="text-blue-600" />;
-      case 'delivered':
-        return <FiCheckCircle className="text-green-600" />;
-      case 'cancelled':
-        return <FiXCircle className="text-red-600" />;
-      default:
-        return <FiPackage className="text-gray-600" />;
-    }
+  const getStatusStyle = (status) => {
+    const s = String(status).toLowerCase();
+    if (['delivered', 'completed'].includes(s)) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (['cancelled', 'failed'].includes(s)) return 'bg-rose-100 text-rose-700 border-rose-200';
+    if (['in-transit', 'shipped', 'out_for_delivery'].includes(s)) return 'bg-blue-100 text-blue-700 border-blue-200';
+    return 'bg-amber-100 text-amber-700 border-amber-200';
   };
 
   const handleAcceptOrder = async (orderId) => {
     try {
       await acceptOrder(orderId);
-      toast.success('Order accepted successfully');
-      setFilter('pending'); // Switch to pending to show the accepted order
+      toast.success('Order assigned! Head to pickup.');
+      setFilter('pending');
       setCurrentPage(1);
-      loadOrders(1, 'pending');
-    } catch {
-      // Error toast handled by API interceptor.
-    }
+    } catch(err) {}
   };
 
   const handleCompleteOrder = async (orderId) => {
-    const otp = window.prompt('Enter 6-digit delivery OTP shared by customer:');
-    if (otp === null) return;
-    if (!/^\d{6}$/.test(String(otp).trim())) {
-      toast.error('Please enter a valid 6-digit OTP');
+    const otp = window.prompt('Enter 6-digit delivery OTP:');
+    if (!otp) return;
+    if (!/^\d{6}$/.test(otp.trim())) {
+      toast.error('Invalid OTP format');
       return;
     }
 
     try {
-      await completeOrder(orderId, String(otp).trim());
-      toast.success('Order marked as delivered');
-    } catch {
-      // Error toast handled by API interceptor.
-    }
-  };
-
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(1, prev - 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(Number(ordersPagination?.pages || 1), prev + 1));
+      await completeOrder(orderId, otp.trim());
+      toast.success('Delivery confirmed! Earning added.');
+    } catch(err) {}
   };
 
   return (
     <PageTransition>
-      <div className="px-4 py-6 space-y-4">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
-          <span className="text-sm text-gray-600">
-            {Number(ordersPagination?.total || orders.length)} orders
-          </span>
-        </motion.div>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        {/* Sleek Sub-Header */}
+        <div className="bg-[#0F172A] pt-28 pb-24 px-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          
+          <div className="relative z-10 flex items-center justify-between">
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                 <FiActivity size={20} className="text-white" />
+              </div>
+              Job Board
+            </h1>
+            <div className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-[11px] font-black text-indigo-400 uppercase tracking-widest">
+               {filter === 'available' ? 'Searching Live...' : 'Management'}
+            </div>
+          </div>
 
-        {/* Filter Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex gap-2 overflow-x-auto pb-2"
-        >
-          {['available', 'pending', 'in-transit', 'delivered']
-            .filter(tab => tab !== 'available' || isOnline)
-            .map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setFilter(tab);
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${filter === tab
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                {tab === 'available' ? 'Available' : tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
-              </button>
-            ))}
-        </motion.div>
-
-        {/* Orders List */}
-        <div className="space-y-4">
-          {isLoadingOrders ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
-            >
-              <p className="text-gray-600">Loading orders...</p>
-            </motion.div>
-          ) : loadFailed ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
-            >
-              <FiXCircle className="text-red-400 text-5xl mx-auto mb-4" />
-              <p className="text-gray-700 mb-3">Could not load orders.</p>
-              <button
-                onClick={() => loadOrders(currentPage, filter)}
-                className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold"
-              >
-                Retry
-              </button>
-            </motion.div>
-          ) : orders.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
-            >
-              <FiPackage className="text-gray-400 text-5xl mx-auto mb-4" />
-              <p className="text-gray-600">No {filter === 'available' ? 'available for acceptance' : filter} orders found</p>
-            </motion.div>
-          ) : (
-            orders.map((order, index) => (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={() => navigate(`/delivery/orders/${order.id}`)}
-                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                {/* Order Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      {getStatusIcon(order.status === 'ready_for_delivery' ? 'pending' : (order.status === 'assigned' ? 'pending' : order.status))}
-                      <p className="font-bold text-gray-800">{order.id}</p>
-                    </div>
-                    <p className="text-sm text-gray-800 font-semibold">{order.customer}</p>
-                    <div className="flex flex-col gap-1.5 mt-1.5">
-                      {order.phone && (
-                        <div className="flex items-center gap-1.5 text-primary-700 font-bold text-sm bg-primary-50 px-2.5 py-1 rounded-md w-fit border border-primary-100">
-                          <FiPhone size={12} />
-                          <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()}>{order.phone}</a>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                        {order.paymentMethod === 'cod' ? (
-                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                            <FiCreditCard size={10} /> Cash on Delivery (COD)
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            <FiCreditCard size={10} /> Prepaid
-                          </span>
-                        )}
-                        {order.deliveryType && order.deliveryType !== 'standard' && (
-                          <span className="px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded border border-primary-100 uppercase er">
-                            {order.deliveryType.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                      order.status === 'ready_for_delivery' ? 'pending' : (order.status === 'assigned' ? 'pending' : order.status)
-                    )}`}
-                  >
-                    {order.status === 'ready_for_delivery' ? 'Ready' : (order.status === 'assigned' ? 'Assigned' : order.status.replace('-', ' '))}
-                  </span>
-                </div>
-
-                {/* Address */}
-                <div className="flex items-start gap-2 mb-3 p-3 bg-white rounded-xl">
-                  <FiMapPin className="text-primary-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">{order.address || 'Address unavailable'}</p>
-                </div>
-
-                {/* Order Details */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <FiPackage />
-                      <span>{Array.isArray(order.items) ? order.items.length : (typeof order.items === 'number' ? order.items : 0)} items</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <FiClock />
-                      <span>{order.estimatedTime || '-'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <FiNavigation />
-                      <span>{order.distance || '-'}</span>
-                    </div>
-                  </div>
-                  <p className="font-bold text-primary-600">{formatPrice(order.total)}</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  {/* Show Accept button if order is ready_for_delivery (backend) AND in available list */}
-                  {(order.rawStatus === 'ready_for_delivery' && filter === 'available') && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedNewOrder(order);
-                        setShowNewOrderModal(true);
-                      }}
-                      disabled={isUpdatingOrderStatus}
-                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isUpdatingOrderStatus ? 'Please wait...' : 'View & Accept'}
-                    </button>
-                  )}
-                  {/* Show View/Pickup button if order is assigned to us or we have a pending pickup */}
-                  {(order.rawStatus === 'assigned' || (order.rawStatus === 'ready_for_delivery' && filter === 'pending')) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/delivery/orders/${order.id}`);
-                      }}
-                      className="flex-1 gradient-primary text-white py-2.5 rounded-xl font-semibold text-sm"
-                    >
-                      Go to Pickup
-                    </button>
-                  )}
-
-                  {order.status === 'in-transit' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCompleteOrder(order.id);
-                      }}
-                      disabled={isUpdatingOrderStatus}
-                      className="flex-1 gradient-green text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isUpdatingOrderStatus ? 'Please wait...' : 'Mark Delivered'}
-                    </button>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/delivery/orders/${order.id}`);
-                    }}
-                    className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-200"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </motion.div>
-            ))
-          )}
+          <div className="relative z-10 mt-8 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+             {['available', 'pending', 'in-transit', 'delivered'].filter(t => t !== 'available' || isOnline).map((tab) => (
+               <button
+                 key={tab}
+                 onClick={() => { setFilter(tab); setCurrentPage(1); }}
+                 className={`px-5 py-2.5 rounded-2xl text-[13px] font-black tracking-tight whitespace-nowrap transition-all duration-300 ${
+                   filter === tab 
+                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                   : 'bg-slate-800/50 text-slate-400 border border-slate-700/50 hover:bg-slate-800'
+                 }`}
+               >
+                 {tab === 'available' ? 'Live Requests' : tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
+               </button>
+             ))}
+          </div>
         </div>
 
-        {!isLoadingOrders && !loadFailed && Number(ordersPagination?.pages || 1) > 1 && (
-          <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-3">
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage <= 1}
-              className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600">
-              Page {currentPage} of {Number(ordersPagination?.pages || 1)}
-            </span>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= Number(ordersPagination?.pages || 1)}
-              className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
+        {/* Task List Section */}
+        <div className="px-6 -mt-12 relative z-20 pb-20">
+          <div className="space-y-4">
+            {isLoadingOrders ? (
+              Array(3).fill(0).map((_, i) => <div key={i} className="h-40 bg-white rounded-[32px] animate-pulse" />)
+            ) : orders.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-[40px] border border-slate-100 shadow-sm">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                   <FiPackage size={40} className="text-slate-200" />
+                </div>
+                <p className="text-slate-500 font-black text-lg">Empty Queue</p>
+                <p className="text-slate-400 text-sm mt-1">No orders matched your current filter.</p>
+              </div>
+            ) : (
+              orders.map((order, index) => (
+                <motion.div
+                  key={order.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => navigate(`/delivery/orders/${order.id}`)}
+                  className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                       <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg uppercase tracking-wider mb-2 block w-fit">#{order.id.slice(-6)}</span>
+                       <h3 className="font-black text-slate-900 text-lg leading-tight mb-1">{order.customer || 'Guest User'}</h3>
+                       <div className="flex gap-2 flex-wrap mt-2">
+                           {order.paymentMethod === 'cod' ? (
+                              <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">COD</span>
+                           ) : (
+                              <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">PAID</span>
+                           )}
+                           <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusStyle(order.status)}`}>
+                             {order.status.replace(/_/g, ' ')}
+                           </span>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="font-black text-slate-900 text-lg">{formatPrice(order.total || 0)}</p>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Order Total</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl mb-5 group-hover:bg-indigo-50/50 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
+                       <FiMapPin size={18} />
+                    </div>
+                    <p className="text-[12px] text-slate-600 font-bold leading-snug line-clamp-2">
+                       {order.address || 'Navigation data loading...'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-4">
+                       <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold">
+                          <FiPackage size={14} className="text-indigo-500" /> {Array.isArray(order.items) ? order.items.length : 1}
+                       </div>
+                       <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold">
+                          <FiNavigation size={14} className="text-emerald-500" /> {order.distance || '2.4 km'}
+                       </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                       {(order.rawStatus === 'ready_for_delivery' && filter === 'available') && (
+                          <button 
+                             onClick={(e) => { e.stopPropagation(); setSelectedNewOrder(order); setShowNewOrderModal(true); }}
+                             className="px-6 py-2.5 bg-[#0F172A] text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 shadow-lg"
+                          >
+                             Accept Job
+                          </button>
+                       )}
+                       {order.status === 'in-transit' && (
+                          <button 
+                             onClick={(e) => { e.stopPropagation(); handleCompleteOrder(order.id); }}
+                             className="px-6 py-2.5 bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 shadow-lg"
+                          >
+                             Complete
+                          </button>
+                       )}
+                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                          <FiChevronRight size={20} />
+                       </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
-        )}
+        </div>
 
         <NewOrderModal
           isOpen={showNewOrderModal}
           order={selectedNewOrder}
           isAccepting={isUpdatingOrderStatus}
-          onClose={() => {
-            if (!isUpdatingOrderStatus) setShowNewOrderModal(false);
-          }}
-          onAccept={async (id) => {
-            await handleAcceptOrder(id);
-            setShowNewOrderModal(false);
-          }}
+          onClose={() => !isUpdatingOrderStatus && setShowNewOrderModal(false)}
+          onAccept={async (id) => { await handleAcceptOrder(id); setShowNewOrderModal(false); }}
         />
-
       </div>
     </PageTransition>
   );
 };
 
 export default DeliveryOrders;
-

@@ -1,0 +1,175 @@
+From 74551572e67e99c1d04d5f972aea39eb52e2b98a Mon Sep 17 00:00:00 2001
+From: sagar chauhan <sagarchouhan7609@mail.com>
+Date: Mon, 23 Mar 2026 11:04:19 +0530
+Subject: [PATCH] frontend ui  updation
+
+---
+ backend/src/config/env.js                     |  5 --
+ backend/src/config/redis.js                   | 40 +++++++++------
+ backend/src/middlewares/rateLimiter.js        | 49 +++++++++++++------
+ .../src/modules/admin/routes/admin.routes.js  |  2 +-
+ 4 files changed, 58 insertions(+), 38 deletions(-)
+
+diff --git a/backend/src/config/env.js b/backend/src/config/env.js
+index 5632974..2740ab6 100644
+--- a/backend/src/config/env.js
++++ b/backend/src/config/env.js
+@@ -14,10 +14,5 @@ export const validateEnv = () => {
+         throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+     }
+ 
+-    // Optional but recommended for Redis
+-    if (!process.env.REDIS_HOST && !process.env.REDIS_URL) {
+-        console.warn('⚠️  REDIS_HOST or REDIS_URL not set. Falling back to default (127.0.0.1:6379).');
+-    }
+-
+     console.log('Environment variables validated successfully');
+ };
+diff --git a/backend/src/config/redis.js b/backend/src/config/redis.js
+index 80ed63a..00e744c 100644
+--- a/backend/src/config/redis.js
++++ b/backend/src/config/redis.js
+@@ -1,32 +1,40 @@
+ import { createClient } from 'redis';
+ 
++const IS_REDIS_CONFIGURED = !!(process.env.REDIS_URL || process.env.REDIS_HOST);
++
+ const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`;
+ 
+-const redisClient = createClient({
+-    url: redisUrl,
+-    password: process.env.REDIS_PASSWORD || undefined
+-});
++let redisClient = null;
++
++if (IS_REDIS_CONFIGURED) {
++    redisClient = createClient({
++        url: redisUrl,
++        password: process.env.REDIS_PASSWORD || undefined
++    });
+ 
+-redisClient.on('error', (err) => {
+-    console.error('❌ Redis Client Error:', err);
+-});
++    redisClient.on('error', (err) => {
++        console.error('❌ Redis Client Error:', err);
++    });
+ 
+-redisClient.on('connect', () => {
+-    console.log('📡 Redis client connecting...');
+-});
++    redisClient.on('connect', () => {
++        console.log('📡 Redis client connecting...');
++    });
+ 
+-redisClient.on('ready', () => {
+-    console.log('✅ Redis client ready and connected');
+-});
++    redisClient.on('ready', () => {
++        console.log('✅ Redis client ready and connected');
++    });
++}
+ 
+ export const connectRedis = async () => {
++    if (!IS_REDIS_CONFIGURED) {
++        console.log('ℹ️  Redis not configured. Skipping connection.');
++        return;
++    }
++    
+     try {
+         await redisClient.connect();
+     } catch (error) {
+         console.error('❌ Failed to connect to Redis:', error.message);
+-        // We don't necessarily want to crash the whole app if Redis fails, 
+-        // but for high-performance apps, it might be critical.
+-        // For now, we'll just log the error.
+     }
+ };
+ 
+diff --git a/backend/src/middlewares/rateLimiter.js b/backend/src/middlewares/rateLimiter.js
+index 57439da..013fff1 100644
+--- a/backend/src/middlewares/rateLimiter.js
++++ b/backend/src/middlewares/rateLimiter.js
+@@ -4,25 +4,42 @@ import redisClient from '../config/redis.js';
+ 
+ const IS_DEV = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
+ 
++// Check if Redis should be used (if explicitly configured AND client exists)
++const useRedis = !!(redisClient && (process.env.REDIS_URL || process.env.REDIS_HOST));
++
+ // Helper to create a store with a unique prefix
+-const createStore = (prefix) => new RedisStore({
+-    sendCommand: async (...args) => {
+-        // Wait for Redis to be ready (up to 30 seconds)
+-        let retries = 0;
+-        while (!redisClient?.isReady && retries < 300) {
+-            await new Promise(resolve => setTimeout(resolve, 100));
+-            retries++;
++const createStore = (prefix) => {
++    if (!useRedis) {
++        if (IS_DEV) {
++            console.log(`ℹ️  Redis not configured for ${prefix}. Using default MemoryStore.`);
+         }
++        return undefined; // Falls back to express-rate-limit's default MemoryStore
++    }
+ 
+-        if (!redisClient?.isReady) {
+-            console.error(`❌ Redis connection timed out for ${prefix}. Initializing with local store...`);
+-            return null;
+-        }
++    try {
++        return new RedisStore({
++            sendCommand: async (...args) => {
++                // Wait for Redis to be ready (up to 5 seconds)
++                let retries = 0;
++                while (!redisClient?.isReady && retries < 50) {
++                    await new Promise(resolve => setTimeout(resolve, 100));
++                    retries++;
++                }
+ 
+-        return redisClient.sendCommand(args);
+-    },
+-    prefix: prefix,
+-});
++                if (!redisClient?.isReady) {
++                    console.error(`❌ Redis connection timed out for ${prefix}.`);
++                    throw new Error("Redis connection timed out");
++                }
++
++                return redisClient.sendCommand(args);
++            },
++            prefix: prefix,
++        });
++    } catch (err) {
++        console.error(`❌ Failed to initialize RedisStore for ${prefix}:`, err.message);
++        return undefined;
++    }
++};
+ 
+ // General API rate limiter
+ export const apiLimiter = rateLimit({
+@@ -48,7 +65,7 @@ export const authLimiter = rateLimit({
+ export const otpLimiter = rateLimit({
+     windowMs: 60 * 1000,
+     max: IS_DEV ? 10000 : 3,
+-    message: { success: false, message: 'Too many OTP requests, please wait a minute.' },
++    message: { success: false, message: { success: false, message: 'Too many OTP requests, please wait a minute.' } },
+     store: createStore('rl-otp:'),
+ });
+ 
+diff --git a/backend/src/modules/admin/routes/admin.routes.js b/backend/src/modules/admin/routes/admin.routes.js
+index 9fba544..7050b33 100644
+--- a/backend/src/modules/admin/routes/admin.routes.js
++++ b/backend/src/modules/admin/routes/admin.routes.js
+@@ -187,7 +187,7 @@ router.delete('/support/ticket-types/:id', ...adminAuth, checkPermission('suppor
+ router.get('/reviews', ...adminAuth, checkPermission('products_manage'), reviewController.getAllReviews);
+ router.patch('/reviews/:id/status', ...adminAuth, checkPermission('products_manage'), reviewController.updateReviewStatus);
+ router.delete('/reviews/:id', ...adminAuth, checkPermission('products_manage'), reviewController.deleteReview);
+-router.post('/uploads/image', ...adminAuth, uploadController.uploadImage);
++router.post('/uploads/image', ...adminAuth, uploadSingle('image'), uploadController.uploadImage);
+ 
+ // ─── Attribute Management ─────────────────────────────────────────────────────
+ router.get('/attributes', ...adminAuth, checkPermission('attributes_manage'), attributeController.getAllAttributes);
+-- 
+2.51.0.windows.2
+

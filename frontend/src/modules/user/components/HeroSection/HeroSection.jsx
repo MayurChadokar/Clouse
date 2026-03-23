@@ -17,7 +17,7 @@ const HeroSection = () => {
     }, [initialize]);
 
     // Filter active hero/home_slider banners
-    const dbBanners = banners.filter(b =>
+    const activeBanners = banners.filter(b =>
         (b.isActive !== false) &&
         (['hero', 'home_slider', 'banner'].includes(b.type))
     );
@@ -31,185 +31,112 @@ const HeroSection = () => {
             image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2070",
             cta: "Shop Now",
             link: "/shop"
+        },
+        {
+            id: 'fallback-2',
+            title: "Modern Minimalist",
+            subtitle: "Elevate your daily rotation with pieces designed for versatility and timeless aesthetic.",
+            image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=2070",
+            cta: "Explore Now",
+            link: "/shop"
         }
     ];
 
-    const activeBanners = dbBanners.length > 0 ? dbBanners : fallbackBanners;
-
-    // Side Banner Logic
-    const dbSideBanners = banners.filter(b =>
-        (b.isActive !== false) &&
-        (b.type === 'side_banner')
-    ).sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const fallbackSideBanner = {
-        title: "Luxe Essentials",
-        subtitle: "Wardrobe Staples",
-        image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=1000",
-        link: "/shop"
-    };
-
-    const sideBanner = dbSideBanners[0] || fallbackSideBanner;
+    const slides = activeBanners.length > 0 ? activeBanners : fallbackBanners;
 
     useEffect(() => {
-        if (activeBanners.length > 1) {
+        if (slides.length > 1) {
             const timer = setInterval(() => {
-                setCurrentSlide((prev) => (prev + 1) % activeBanners.length);
-            }, 5000);
+                setCurrentSlide((prev) => (prev + 1) % slides.length);
+            }, 6000);
             return () => clearInterval(timer);
         }
-    }, [activeBanners.length]);
-
-    // Mobile auto-scroll
-    useEffect(() => {
-        const container = scrollRef.current;
-        if (!container) return;
-
-        const timer = setInterval(() => {
-            setMobileSlide(prev => {
-                const next = (prev + 1) % totalMobileSlides;
-                const scrollWidth = container.scrollWidth / totalMobileSlides;
-                container.scrollTo({ left: scrollWidth * next, behavior: 'smooth' });
-                return next;
-            });
-        }, 4000);
-        return () => clearInterval(timer);
-    }, [totalMobileSlides]);
+    }, [slides.length]);
 
     const getHeroTheme = (categoryName) => {
         const name = categoryName?.toLowerCase() || '';
-        if (name === 'hello' || name === 'women') return 'from-[#FF4081]/20 to-[#FAFAFA]';
-        if (name === 'men\'s fashion' || name === 'mens' || name === 'men') return 'from-[#4FC3F7]/20 to-[#FAFAFA]';
-        return 'from-gray-100 to-[#FAFAFA]';
+        if (name === 'hello' || name === 'women') return 'from-[#FF4081]/10 to-[#FAFAFA]';
+        if (name === 'men\'s fashion' || name === 'mens' || name === 'men') return 'from-[#4FC3F7]/10 to-[#FAFAFA]';
+        return 'from-gray-50 to-[#FAFAFA]';
     };
 
     const currentHeroBg = isSubcategoryMode ? getHeroTheme(activeSubCategory) : getHeroTheme(activeCategory);
 
     return (
-        <section className={`w-full bg-gradient-to-b ${currentHeroBg} md:px-4 lg:px-8 py-0 md:py-4 font-sans transition-colors duration-500`}>
-            <div className="max-w-[1400px] mx-auto">
-                <div ref={scrollRef} className="flex md:grid overflow-x-auto snap-x snap-mandatory no-scrollbar md:grid-cols-2 lg:grid-cols-4 gap-0 md:gap-5 -mx-4 md:mx-0">
-                    {/* Main Slider (1/4) - Mobile Snap Card */}
-                    <div className="flex-shrink-0 w-full snap-center relative h-[300px] lg:h-[350px] overflow-hidden rounded-none md:rounded-2xl shadow-none md:shadow-xl">
-                        <div className="w-full h-full relative">
-                            {activeBanners.map((banner, index) => (
-                                <div
-                                    key={banner.id}
-                                    className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                                >
-                                    <div
-                                        className="absolute inset-0 bg-cover bg-center"
-                                        style={{ backgroundImage: `url(${banner.image})` }}
-                                    />
-                                    <div className="absolute inset-0 bg-black/40" />
+        <section className={`w-full bg-gradient-to-b ${currentHeroBg} transition-colors duration-700`}>
+            <div className="max-w-[1600px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-4">
+                <div className="relative h-[220px] md:h-[260px] lg:h-[300px] w-full overflow-hidden rounded-none md:rounded-[24px] shadow-lg group">
+                    
+                    {/* Main Banner Slider */}
+                    {slides.map((banner, index) => (
+                        <div
+                            key={banner.id || index}
+                            className={`absolute inset-0 transition-opacity duration-[1s] ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        >
+                            {/* Background Image */}
+                            <div
+                                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                style={{ backgroundImage: `url(${banner.image})` }}
+                            />
+                            
+                            {/* Pro Overlay for Readability */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
 
-                                    <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
-                                        <div className="flex flex-col gap-2">
-                                            <span className="text-[9px] font-bold text-white tracking-widest uppercase opacity-70">The Edit</span>
-                                            <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
-                                                {banner.title.includes("SS24") ? "SS24 Edit" : banner.title}
-                                            </h2>
-                                            <div className="flex items-center gap-3 mt-1">
-                                                <button
-                                                    onClick={() => navigate(banner.link)}
-                                                    className="bg-white text-black py-2.5 px-5 rounded-xl font-black text-[10px] uppercase hover:bg-black hover:text-white transition-all shadow-lg active:scale-95"
-                                                >
-                                                    Shop Now
-                                                </button>
-                                            </div>
+                            {/* Content Layer */}
+                            <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-12 lg:px-16 z-20">
+                                <div className={`max-w-xl transition-all duration-700 transform ${index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                                    <div className="hidden md:flex items-center gap-2 mb-2">
+                                        <div className="h-[1.5px] w-4 bg-white/40" />
+                                        <span className="text-[8px] font-bold text-white tracking-[0.3em] uppercase opacity-60">Featured Collection</span>
+                                    </div>
+                                    
+                                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-[1] mb-2 md:mb-3 tracking-tighter shadow-black/20 drop-shadow-md">
+                                        {banner.title}
+                                    </h2>
+                                    
+                                    <p className="hidden md:block text-[11px] md:text-[12px] text-white/70 font-medium max-w-sm mb-5 leading-relaxed">
+                                        {banner.subtitle || "The season's most-wanted essentials, exclusively curated for you."}
+                                    </p>
+
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => navigate(banner.link)}
+                                            className="bg-white text-black py-2 px-6 rounded-lg font-black text-[10px] md:text-[12px] uppercase hover:bg-black hover:text-white transition-all shadow-xl active:scale-95"
+                                        >
+                                            {banner.cta || "Shop Now"}
+                                        </button>
+                                        <div className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white/90 text-[8px] font-bold border border-white/10 uppercase">
+                                            <div className="w-1 h-1 rounded-full bg-emerald-400" /> New
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Side Banner 1 - Mobile Snap Card */}
-                    <div
-                        className="flex-shrink-0 w-full snap-center flex flex-col h-[300px] lg:h-[350px] rounded-none md:rounded-2xl overflow-hidden relative group cursor-pointer shadow-none md:shadow-xl"
-                        onClick={() => navigate(sideBanner.link)}
-                    >
-                        <div
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover:scale-110"
-                            style={{ backgroundImage: `url(${sideBanner.image})` }}
-                        />
-                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
-
-                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
-                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
-                                {sideBanner.title}
-                            </h3>
-                            <div className="flex items-center flex-wrap gap-2">
-                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
-                                    {sideBanner.subtitle}
-                                </p>
-                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                                    Discover
-                                </button>
                             </div>
                         </div>
-                    </div>
+                    ))}
 
-                    {/* Side Banner 2 (Seed) - Mobile Snap Card */}
-                    <div
-                        className="flex-shrink-0 w-full snap-center flex flex-col h-[300px] lg:h-[350px] rounded-none md:rounded-2xl overflow-hidden relative group cursor-pointer shadow-none md:shadow-xl"
-                        onClick={() => navigate('/shop')}
-                    >
-                        <div
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover:scale-110"
-                            style={{ backgroundImage: `url(https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=1000)` }}
-                        />
-                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
-
-                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
-                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
-                                New Arrivals
-                            </h3>
-                            <div className="flex items-center flex-wrap gap-2">
-                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
-                                     Fresh Drops
-                                 </p>
-                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                                    Shop All
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Side Banner 3 (Seed) - Mobile Snap Card */}
-                    <div
-                        className="flex-shrink-0 w-full snap-center flex flex-col h-[300px] lg:h-[350px] rounded-none md:rounded-2xl overflow-hidden relative group cursor-pointer shadow-none md:shadow-xl"
-                        onClick={() => navigate('/shop')}
-                    >
-                        <div
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover:scale-110"
-                            style={{ backgroundImage: `url(https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&q=80&w=1000)` }}
-                        />
-                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
-
-                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
-                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
-                                Trending Now
-                            </h3>
-                            <div className="flex items-center flex-wrap gap-2">
-                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
-                                    High Demand
-                                </p>
-                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                                    Explore
-                                </button>
-                            </div>
-                        </div>
+                    {/* Minimal Dots (Bottom Right) */}
+                    <div className="absolute bottom-4 right-6 z-30 flex items-center gap-1.5">
+                        {slides.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`h-1 rounded-full transition-all duration-500 ${index === currentSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/20 hover:bg-white/40'}`}
+                            />
+                        ))}
                     </div>
                 </div>
-                <style dangerouslySetInnerHTML={{
-                    __html: `
-                    .no-scrollbar::-webkit-scrollbar { display: none; }
-                    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                `}} />
             </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @keyframes bannerIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}} />
         </section>
     );
 };
 
 export default HeroSection;
+

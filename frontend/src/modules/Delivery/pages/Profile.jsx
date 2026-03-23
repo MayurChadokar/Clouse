@@ -124,7 +124,7 @@ const DeliveryProfile = () => {
 
   return (
     <PageTransition>
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 pt-28 pb-6 space-y-6">
         {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

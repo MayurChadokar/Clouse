@@ -11,7 +11,7 @@ const UserLayout = ({ children, variant = 'default', showHeader = true }) => {
             {showHeader && <Header variant={variant} />}
             <main className="flex-1" style={{ paddingTop: showHeader ? 'var(--user-header-height, 0px)' : '0px' }}>{children}</main>
             {['product', 'account', 'cart', 'checkout', 'products', 'payment'].includes(variant) ? <div className="hidden md:block"><Footer /></div> : variant !== 'shop' && <Footer />}
-            <BottomNav />
+            {!['checkout', 'payment'].includes(variant) && <BottomNav />}
 
         </div>
     );

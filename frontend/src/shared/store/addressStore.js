@@ -55,6 +55,7 @@ export const useAddressStore = create(
             state: normalizeText(address?.state),
             zipCode: normalizeText(address?.zipCode),
             country: normalizeText(address?.country),
+            coordinates: address?.coordinates || null,
             isDefault: state.addresses.length === 0 || Boolean(address?.isDefault),
           };
           const response = await api.post('/user/addresses', payload);

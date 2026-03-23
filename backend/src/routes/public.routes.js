@@ -425,7 +425,7 @@ router.post('/shipping/estimate', asyncHandler(async (req, res) => {
     }
 
     const products = await Product.find({ _id: { $in: productIds }, isActive: true })
-        .populate('vendorId', 'shippingEnabled defaultShippingRate freeShippingThreshold')
+        .populate('vendorId', 'shippingEnabled defaultShippingRate freeShippingThreshold shopLocation')
         .select('_id vendorId price variants.prices')
         .lean();
 
@@ -448,12 +448,13 @@ router.post('/shipping/estimate', asyncHandler(async (req, res) => {
                 shippingEnabled: product.vendorId.shippingEnabled !== false,
                 defaultShippingRate: product.vendorId.defaultShippingRate,
                 freeShippingThreshold: product.vendorId.freeShippingThreshold,
+                shopLocation: product.vendorId.shopLocation,
             };
         }
         vendorMap[vendorId].subtotal += subtotal;
     });
 
-    const { totalShipping, shippingByVendor } = await calculateVendorShippingForGroups({
+    const { totalShipping, shippingByVendor, distanceByVendor } = await calculateVendorShippingForGroups({
         vendorGroups: Object.values(vendorMap),
         shippingAddress,
         shippingOption,
@@ -461,7 +462,11 @@ router.post('/shipping/estimate', asyncHandler(async (req, res) => {
     });
 
     res.status(200).json(
-        new ApiResponse(200, { shipping: totalShipping, byVendor: shippingByVendor }, 'Shipping estimate calculated.')
+        new ApiResponse(200, {
+            shipping: totalShipping,
+            byVendor: shippingByVendor,
+            distances: distanceByVendor
+        }, 'Shipping estimate calculated.')
     );
 }));
 

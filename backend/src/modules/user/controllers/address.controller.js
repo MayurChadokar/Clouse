@@ -15,6 +15,7 @@ const buildAddressPayload = (input = {}) => ({
     state: toTrimmed(input.state),
     zipCode: toTrimmed(input.zipCode),
     country: toTrimmed(input.country),
+    coordinates: input.coordinates,
 });
 
 // GET /api/user/addresses
@@ -53,7 +54,7 @@ export const updateAddress = asyncHandler(async (req, res) => {
     }
 
     const payload = {};
-    const allowedFields = ['name', 'fullName', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'isDefault'];
+    const allowedFields = ['name', 'fullName', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'isDefault', 'coordinates'];
     allowedFields.forEach((field) => {
         if (Object.prototype.hasOwnProperty.call(req.body, field)) {
             if (field === 'phone') {

@@ -2,7 +2,7 @@ import { FiShoppingBag } from "react-icons/fi";
 import { formatPrice } from "../../../../shared/utils/helpers";
 import { formatVariantLabel, getVariantSignature } from "../../../../shared/utils/variant";
 
-const OrderSummary = ({ itemsByVendor, total, discount, shipping, tax, finalTotal }) => {
+const OrderSummary = ({ itemsByVendor, total, discount, shipping, tax, finalTotal, distances }) => {
   return (
     <div className="glass-card rounded-xl p-4">
       <h3 className="text-base font-bold text-gray-800 mb-3">Order Summary</h3>
@@ -14,6 +14,11 @@ const OrderSummary = ({ itemsByVendor, total, discount, shipping, tax, finalTota
                 <FiShoppingBag className="text-white text-[10px]" />
               </div>
               <span className="text-sm font-bold text-primary-700 flex-1">{vendorGroup.vendorName}</span>
+              {distances && distances[vendorGroup.vendorId] && (
+                <span className="text-[10px] bg-white/50 px-2 py-0.5 rounded-full text-primary-600 font-medium mr-1">
+                  {distances[vendorGroup.vendorId]} km
+                </span>
+              )}
               <span className="text-xs font-semibold text-primary-600 bg-white px-2 py-0.5 rounded-md">
                 {formatPrice(vendorGroup.subtotal)}
               </span>

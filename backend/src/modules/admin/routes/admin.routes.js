@@ -16,6 +16,7 @@ import * as notificationController from '../controllers/notification.controller.
 import * as employeeController from '../controllers/employee.controller.js';
 import * as roleController from '../controllers/role.controller.js';
 import * as attributeController from '../controllers/attribute.controller.js';
+import * as adminWithdrawalController from '../controllers/adminWithdrawal.controller.js';
 
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus, checkPermission, authorizeAdmin } from '../../../middlewares/authorize.js';
@@ -167,6 +168,10 @@ router.patch('/delivery-boys/:id/status', ...adminAuth, checkPermission('deliver
 router.patch('/delivery-boys/:id/application-status', ...adminAuth, checkPermission('delivery_manage'), validate(deliveryBoyIdParamSchema, 'params'), validate(updateDeliveryApplicationStatusSchema), deliveryController.updateDeliveryBoyApplicationStatus);
 router.get('/delivery-boys/:id/cash-history', ...adminAuth, checkPermission('delivery_manage'), validate(deliveryBoyIdParamSchema, 'params'), deliveryController.getCashHistory);
 router.post('/delivery-boys/:id/settle-cash', ...adminAuth, checkPermission('delivery_manage'), validate(deliveryBoyIdParamSchema, 'params'), validate(settleCashSchema), deliveryController.settleCash);
+
+// ─── Withdrawal Requests ──────────────────────────────────────────────────────
+router.get('/withdrawals', ...adminAuth, checkPermission('finance_view'), adminWithdrawalController.getAllWithdrawalRequests);
+router.patch('/withdrawals/:id/status', ...adminAuth, checkPermission('finance_view'), adminWithdrawalController.updateWithdrawalStatus);
 
 // ─── Return Requests ──────────────────────────────────────────────────────────
 router.get('/return-requests', ...adminAuth, checkPermission('orders_manage'), returnController.getAllReturnRequests);

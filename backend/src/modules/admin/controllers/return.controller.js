@@ -6,6 +6,7 @@ import { createNotification } from '../../../services/notification.service.js';
 import { ApiError } from '../../../utils/ApiError.js';
 import { ApiResponse } from '../../../utils/ApiResponse.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
+import { refundPayment } from '../../../services/razorpay.service.js';
 
 const enrichReturnItems = (request) => {
     const orderItems = Array.isArray(request?.orderId?.items) ? request.orderId.items : [];
@@ -43,6 +44,8 @@ const normalizeReturnRequest = (requestDoc) => {
             : { name: 'Guest', email: 'N/A', phone: 'N/A' },
         orderId: orderOrderId || (typeof orderRefId === 'string' ? orderRefId : 'N/A'),
         orderRefId: orderRefId ? String(orderRefId) : null,
+        paymentMethod: request.orderId?.paymentMethod || 'manual',
+        paymentStatus: request.orderId?.paymentStatus || 'unknown',
         requestDate: request.createdAt,
         items: enrichReturnItems(request),
     };
@@ -102,7 +105,7 @@ export const getAllReturnRequests = asyncHandler(async (req, res) => {
 
     const returnRequests = await ReturnRequest.find(filter)
         .populate('userId', 'name email phone')
-        .populate('orderId', 'orderId total items')
+        .populate('orderId', 'orderId total items paymentMethod paymentStatus')
         .sort({ createdAt: -1 })
         .skip((numericPage - 1) * numericLimit)
         .limit(numericLimit);
@@ -133,7 +136,7 @@ export const getAllReturnRequests = asyncHandler(async (req, res) => {
 export const getReturnRequestById = asyncHandler(async (req, res) => {
     const request = await ReturnRequest.findById(req.params.id)
         .populate('userId', 'name email phone')
-        .populate('orderId', 'orderId total createdAt items')
+        .populate('orderId', 'orderId total createdAt items paymentMethod paymentStatus razorpayPaymentId')
         .populate('vendorId', 'shopName email');
 
     if (!request) {
@@ -158,14 +161,18 @@ export const updateReturnRequestStatus = asyncHandler(async (req, res) => {
 
     const request = await ReturnRequest.findById(req.params.id)
         .populate('userId', 'name email phone')
-        .populate('orderId', 'orderId total items');
+        .populate('orderId', 'orderId total items paymentMethod paymentStatus razorpayPaymentId');
 
     if (!request) {
         throw new ApiError(404, 'Return request not found');
     }
 
+    const currentStatus = request.status;
+    const currentRefundStatus = request.refundStatus || 'pending';
+
     const allowedStatuses = ['pending', 'approved', 'processing', 'rejected', 'completed'];
     const allowedRefundStatuses = ['pending', 'processed', 'failed'];
+    
     const statusTransitions = {
         pending: ['approved', 'rejected'],
         approved: ['processing', 'completed'],
@@ -186,45 +193,57 @@ export const updateReturnRequestStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, `Refund status must be one of: ${allowedRefundStatuses.join(', ')}`);
     }
 
-    const nextStatus = status || request.status;
-    const nextRefundStatus = refundStatus || request.refundStatus;
-    const nextAdminNote = adminNote !== undefined ? adminNote : request.adminNote;
-    const statusUnchanged = !status || status === request.status;
-    const refundUnchanged = !refundStatus || refundStatus === request.refundStatus;
-    const adminNoteUnchanged = adminNote === undefined || adminNote === request.adminNote;
-    if (statusUnchanged && refundUnchanged && adminNoteUnchanged) {
-        const normalizedNoop = {
-            ...request._doc,
-            id: request._id,
-            customer: request.userId ? {
-                name: request.userId.name,
-                email: request.userId.email,
-                phone: request.userId.phone
-            } : { name: 'Guest', email: 'N/A' },
-            orderId: request.orderId?.orderId || 'N/A',
-            requestDate: request.createdAt
-        };
-        return res.status(200).json(new ApiResponse(200, normalizedNoop, 'No changes applied.'));
-    }
-
-    if (status && status !== request.status) {
-        const allowedNext = statusTransitions[request.status] || [];
-        if (!allowedNext.includes(status)) {
-            throw new ApiError(409, `Cannot move return request from ${request.status} to ${status}.`);
+    // Status Transition Validation
+    if (status && status !== currentStatus) {
+        const allowed = statusTransitions[currentStatus] || [];
+        if (!allowed.includes(status)) {
+            throw new ApiError(409, `Cannot move return request from ${currentStatus} to ${status}.`);
         }
     }
 
-    const currentRefundStatus = request.refundStatus || 'pending';
-    if (refundStatus && refundStatus !== request.refundStatus) {
+    // Refund Transition Validation & Automation
+    if (refundStatus && refundStatus !== currentRefundStatus) {
         const allowedRefundNext = refundTransitions[currentRefundStatus] || [];
         if (!allowedRefundNext.includes(refundStatus)) {
             throw new ApiError(409, `Cannot move refund status from ${currentRefundStatus} to ${refundStatus}.`);
         }
+
+        // Automated refund if status is being set to 'processed'
+        if (refundStatus === 'processed') {
+            const order = request.orderId;
+            if (!order) throw new ApiError(400, "Linked order not found for refund.");
+
+            if (order.paymentMethod !== 'cod' && order.razorpayPaymentId) {
+                try {
+                    const refund = await refundPayment({
+                        paymentId: order.razorpayPaymentId,
+                        amount: request.refundAmount || 0,
+                        notes: {
+                            return_id: String(request._id),
+                            order_id: String(order.orderId)
+                        }
+                    });
+                    request.refundId = refund.id;
+                    request.refundNotes = `Automated Razorpay Refund successful. Refund ID: ${refund.id}`;
+                    
+                    // Mark order payment status as refunded
+                    order.paymentStatus = 'refunded';
+                    await order.save();
+                } catch (error) {
+                    console.error('Automated Refund Error:', error);
+                    throw new ApiError(500, `Automated refund failed: ${error.message}. Please handle manually.`);
+                }
+            } else if (order.paymentMethod === 'cod') {
+                 request.refundNotes = `Manual refund processed for COD order. ` + (adminNote || '');
+            } else {
+                 throw new ApiError(400, "Online payment record (razorpayPaymentId) not found. Manual refund required.");
+            }
+        }
     }
 
-    request.status = nextStatus;
-    request.adminNote = nextAdminNote;
-    if (refundStatus) request.refundStatus = nextRefundStatus;
+    if (status) request.status = status;
+    if (refundStatus) request.refundStatus = refundStatus;
+    if (adminNote !== undefined) request.adminNote = adminNote;
 
     await request.save();
 

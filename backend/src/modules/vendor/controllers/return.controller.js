@@ -8,6 +8,10 @@ import Commission from '../../../models/Commission.model.js';
 import User from '../../../models/User.model.js';
 import Admin from '../../../models/Admin.model.js';
 import { createNotification } from '../../../services/notification.service.js';
+import { notifyNearbyDeliveryBoysForReturn } from '../../delivery/controllers/assignment.controller.js';
+import Vendor from '../../../models/Vendor.model.js';
+import Address from '../../../models/Address.model.js';
+import { emitEvent } from '../../../services/socket.service.js';
 
 const enrichReturnItems = (request) => {
     const orderItems = Array.isArray(request?.orderId?.items) ? request.orderId.items : [];
@@ -196,19 +200,43 @@ export const updateVendorReturnRequestStatus = asyncHandler(async (req, res) => 
         }
     }
 
-    const currentRefundStatus = request.refundStatus || 'pending';
-    if (refundStatus && refundStatus !== request.refundStatus) {
-        const allowedRefundNext = refundTransitions[currentRefundStatus] || [];
-        if (!allowedRefundNext.includes(refundStatus)) {
-            throw new ApiError(409, `Cannot move refund status from ${currentRefundStatus} to ${refundStatus}.`);
-        }
-    }
-
     request.status = nextStatus;
     if (refundStatus) request.refundStatus = nextRefundStatus;
     if (rejectionReason !== undefined) request.rejectionReason = nextRejectionReason;
     if (status !== 'rejected' && request.rejectionReason) request.rejectionReason = '';
-    await request.save();
+
+    // If status is approved, setup the delivery task
+    if (status === 'approved' && request.status !== 'approved') {
+        const vendor = await Vendor.findById(request.vendorId);
+        const order = await Order.findById(request.orderId);
+        
+        // 1. Set Pickup Location (Customer's address)
+        if (order && order.shippingAddress) {
+            request.pickupLocation = {
+                type: 'Point',
+                coordinates: order.shippingAddress.coordinates || [0, 0]
+            };
+        }
+
+        // 2. Set Dropoff Location (Vendor's shop location)
+        if (vendor && vendor.shopLocation) {
+            request.dropoffLocation = {
+                type: 'Point',
+                coordinates: vendor.shopLocation.coordinates || [0, 0]
+            };
+        }
+
+        await request.save();
+
+        // 3. Notify nearby delivery boys within 8km of customer
+        if (request.pickupLocation?.coordinates?.length === 2 && request.pickupLocation.coordinates[0] !== 0) {
+            await notifyNearbyDeliveryBoysForReturn(request).catch(err => 
+                console.error(`[Return Assignment] Failed to notify delivery boys for return ${request._id}:`, err)
+            );
+        }
+    } else {
+        await request.save();
+    }
 
     // Keep lifecycle effects consistent when vendor processes returns.
     if (status === 'approved' || status === 'completed') {

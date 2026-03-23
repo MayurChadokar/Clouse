@@ -9,35 +9,12 @@ import PageTransition from '../../../shared/components/PageTransition';
 import Badge from '../../../shared/components/Badge';
 import LazyImage from '../../../shared/components/LazyImage';
 import { useAuthStore } from '../../../shared/store/authStore';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
 import socketService from '../../../shared/utils/socket';
+import TrackingMap from '../components/TrackingMap';
 
-// Fix for default marker icon issues in Leaflet with React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom delivery boy icon
-const deliveryIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
-  iconSize: [35, 35],
-  iconAnchor: [17, 35],
-  popupAnchor: [0, -35],
-});
-
-const ChangeView = ({ center }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (center && Array.isArray(center) && center.length === 2) {
-      map.setView(center);
-    }
-  }, [center, map]);
-  return null;
-};
+// Google Maps Icons (Using URLs for markers)
+const DELIVERY_ICON = "https://maps.google.com/mapfiles/ms/icons/cycling.png";
+const CUSTOMER_ICON = "https://maps.google.com/mapfiles/ms/icons/red-pushpin.png";
 
 const MobileTrackOrder = () => {
   const { orderId } = useParams();
@@ -45,6 +22,7 @@ const MobileTrackOrder = () => {
   const { getOrder, fetchOrderById, fetchPublicTrackingOrder, lastError } = useOrderStore();
   const { user } = useAuthStore();
   const [isResolving, setIsResolving] = useState(true);
+  const [riderLiveLocation, setRiderLiveLocation] = useState(null);
   const order = getOrder(orderId);
   const shippingAddress = order?.shippingAddress || {};
   const orderItems = Array.isArray(order?.items) ? order.items : [];
@@ -74,27 +52,41 @@ const MobileTrackOrder = () => {
 
     // Socket.io for real-time updates
     socketService.connect();
+    
+    // Join order-specific room for tracking
+    if (orderId) {
+      socketService.joinRoom(`order_${orderId}`);
+    }
+
+    // Listen for events on this order
+    const handleStatusUpdate = (data) => {
+        if (data.orderId === displayOrderId || data.orderId === orderId) {
+            fetchOrder();
+        }
+    };
+
+    socketService.on('order_status_updated', handleStatusUpdate);
+    socketService.on('order_picked_up', handleStatusUpdate);
+    socketService.on('order_out_for_delivery', handleStatusUpdate);
+    socketService.on('order_delivered', handleStatusUpdate);
+    socketService.on('order_updated', handleStatusUpdate);
+    socketService.on('order_assigned', handleStatusUpdate);
+
     if (user?.id) {
       socketService.joinRoom(`user_${user.id}`);
-      socketService.on('order_status_updated', (data) => {
-        if (data.orderId === displayOrderId) {
-          fetchOrder();
-        }
-      });
-      socketService.on('order_picked_up', (data) => {
-        if (data.orderId === displayOrderId) fetchOrder();
-      });
-      socketService.on('order_out_for_delivery', (data) => {
-        if (data.orderId === displayOrderId) fetchOrder();
-      });
-      socketService.on('order_delivered', (data) => {
-        if (data.orderId === displayOrderId) fetchOrder();
-      });
     }
+
+    const handleLocationUpdate = (data) => {
+        console.log('📍 Rider moved:', data);
+        setRiderLiveLocation({ lat: data.lat, lng: data.lng });
+    };
+
+    // Listen for live location updates from rider
+    socketService.on('location_updated', handleLocationUpdate);
 
     // Polling as fallback
     const pollingInterval = setInterval(() => {
-      if (['accepted', 'ready_for_pickup', 'picked_up', 'out_for_delivery'].includes(normalizedStatus)) {
+      if (['accepted', 'ready_for_pickup', 'picked_up', 'out_for_delivery', 'assigned'].includes(normalizedStatus)) {
         fetchOrder();
       }
     }, 30000); // 30 seconds fallback
@@ -102,12 +94,13 @@ const MobileTrackOrder = () => {
     return () => {
       mounted = false;
       clearInterval(pollingInterval);
-      if (user?.id) {
-        socketService.off('order_status_updated');
-        socketService.off('order_picked_up');
-        socketService.off('order_out_for_delivery');
-        socketService.off('order_delivered');
-      }
+      socketService.off('order_status_updated', handleStatusUpdate);
+      socketService.off('order_picked_up', handleStatusUpdate);
+      socketService.off('order_out_for_delivery', handleStatusUpdate);
+      socketService.off('order_delivered', handleStatusUpdate);
+      socketService.off('order_updated', handleStatusUpdate);
+      socketService.off('order_assigned', handleStatusUpdate);
+      socketService.off('location_updated', handleLocationUpdate);
     };
   }, [orderId, fetchOrderById, fetchPublicTrackingOrder, normalizedStatus, user?.id, displayOrderId]);
 
@@ -117,9 +110,15 @@ const MobileTrackOrder = () => {
     }
   }, [isResolving, order, navigate, user?.id]);
 
-  const riderLocation = order?.deliveryBoyId?.currentLocation?.coordinates;
-  const hasRiderLocation = Array.isArray(riderLocation) && riderLocation.length === 2;
-  const riderPosition = hasRiderLocation ? [riderLocation[1], riderLocation[0]] : null; // [lat, lng]
+  const initialRiderLoc = order?.deliveryBoyId?.currentLocation?.coordinates;
+  const deliveryLocation = riderLiveLocation || (Array.isArray(initialRiderLoc) && initialRiderLoc.length === 2 ? { lat: initialRiderLoc[1], lng: initialRiderLoc[0] } : null);
+  
+  const dropLoc = order?.dropoffLocation?.coordinates;
+  const customerLocation = Array.isArray(dropLoc) && dropLoc.length === 2 && dropLoc[0] !== 0 ? { lat: dropLoc[1], lng: dropLoc[0] } : null;
+
+  const vendorLoc = order?.pickupLocation?.coordinates;
+  const vendorLocation = Array.isArray(vendorLoc) && vendorLoc.length === 2 && vendorLoc[0] !== 0 ? { lat: vendorLoc[1], lng: vendorLoc[0] } : null;
+
 
   if (isResolving) {
     return (
@@ -252,27 +251,13 @@ const MobileTrackOrder = () => {
           {['assigned', 'picked_up', 'out_for_delivery'].includes(normalizedStatus) && (
             <div className="px-4 mb-4">
               <div className="h-64 rounded-2xl overflow-hidden shadow-lg border-2 border-white relative">
-                {hasRiderLocation ? (
-                  <MapContainer
-                    center={riderPosition}
-                    zoom={15}
-                    style={{ height: '100%', width: '100%', zIndex: 10 }}
-                    zoomControl={false}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; OpenStreetMap'
-                    />
-                    <Marker position={riderPosition} icon={deliveryIcon}>
-                      <Popup>
-                        <div className="text-center">
-                          <p className="font-bold text-gray-800">{order?.deliveryBoyId?.name || 'Delivery Partner'}</p>
-                          <p className="text-xs text-gray-600">On the way to you!</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                    <ChangeView center={riderPosition} />
-                  </MapContainer>
+                {deliveryLocation ? (
+                  <TrackingMap 
+                    deliveryLocation={deliveryLocation}
+                    customerLocation={customerLocation}
+                    vendorLocation={vendorLocation}
+                    followMode={true}
+                  />
                 ) : (
                   <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center text-center p-6">
                     <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mb-3">
@@ -321,6 +306,48 @@ const MobileTrackOrder = () => {
                 <p className="text-lg font-bold text-primary-600">{order.trackingNumber}</p>
               </div>
             )}
+
+            {/* Rider Details */}
+            {['assigned', 'picked_up', 'out_for_delivery', 'shipped', 'delivered'].includes(normalizedStatus) ? (
+              <div className="glass-card rounded-2xl p-4 bg-gradient-to-br from-white to-primary-50 border border-primary-100 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                    <FiTruck className="text-primary-600" />
+                    Delivery Executive
+                  </h2>
+                </div>
+                {order.deliveryBoyId ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                      <FiTruck className="text-primary-600 text-2xl" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                        {order.deliveryBoyId.name || 'Our Partner'}
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" title="Online" />
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-2">{order.deliveryBoyId.phone || 'Contact provided soon'}</p>
+                      
+                      <div className="flex gap-2">
+                        <a 
+                          href={`tel:${order.deliveryBoyId.phone || '#'}`}
+                          className="px-4 py-1.5 bg-primary-600 text-white text-xs font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                        >
+                          Call Now
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 py-2 text-gray-500 italic">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <FiClock className="text-gray-400" />
+                    </div>
+                    <p className="text-sm font-medium">Assigning a partner for your delivery...</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {/* Shipping Address */}
             {hasShippingAddress ? (

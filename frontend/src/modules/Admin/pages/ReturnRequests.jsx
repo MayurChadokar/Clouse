@@ -218,14 +218,19 @@ const ReturnRequests = () => {
           {row.status === 'approved' && row.refundStatus === 'pending' && (
             <button
               onClick={() => {
-                if (window.confirm('Process refund for this return request?')) {
+                const isOnline = row.paymentMethod !== 'cod' && row.paymentMethod !== 'manual';
+                const msg = isOnline 
+                  ? 'Process automated RAZORPAY refund for this return request?'
+                  : 'Mark this COD order as refunded? (Requires manual payment/adjustment)';
+                
+                if (window.confirm(msg)) {
                   handleStatusUpdate(row.id, 'completed', 'process-refund');
                 }
               }}
-              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              title="Process Refund"
+              className={`p-2 rounded-lg transition-colors ${row.paymentMethod !== 'cod' ? 'text-purple-600 hover:bg-purple-50' : 'text-blue-600 hover:bg-blue-50'}`}
+              title={row.paymentMethod !== 'cod' ? "Process Razorpay Refund" : "Mark as Refunded"}
             >
-              <FiRefreshCw />
+              <FiRefreshCw className={row.paymentMethod !== 'cod' ? "animate-spin-slow" : ""} />
             </button>
           )}
         </div>

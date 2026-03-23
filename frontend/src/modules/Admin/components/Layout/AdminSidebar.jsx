@@ -80,6 +80,7 @@ const getChildRoute = (parentRoute, childName) => {
       "Delivery Boys": "/admin/delivery/delivery-boys",
       "Cash Collection": "/admin/delivery/cash-collection",
       "Assign Delivery": "/admin/delivery/assign-delivery",
+      "Payout Requests": "/admin/delivery/withdrawals",
     },
     "/admin/attributes": {
       "Attribute Sets": "/admin/attributes/sets",

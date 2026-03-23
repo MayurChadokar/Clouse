@@ -3,6 +3,7 @@ import * as authController from '../controllers/auth.controller.js';
 import * as orderController from '../controllers/order.controller.js';
 import * as assignmentController from '../controllers/assignment.controller.js';
 import * as notificationController from '../controllers/notification.controller.js';
+import * as withdrawalController from '../controllers/withdrawal.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus } from '../../../middlewares/authorize.js';
 import { authLimiter } from '../../../middlewares/rateLimiter.js';
@@ -57,10 +58,19 @@ router.patch('/orders/:id/status', ...deliveryAuth, orderController.updateDelive
 router.post('/orders/:id/accept', ...deliveryAuth, assignmentController.acceptOrderAssignment);
 router.post('/orders/:id/resend-delivery-otp', ...deliveryAuth, orderController.resendDeliveryOtp);
 
+// Returns
+router.get('/returns/available', ...deliveryAuth, orderController.getAvailableReturns);
+router.post('/returns/:id/accept', ...deliveryAuth, orderController.acceptReturnAssignment);
+router.patch('/returns/:id/status', ...deliveryAuth, orderController.updateReturnStatus);
+
 // Notifications
 router.get('/notifications', ...deliveryAuth, notificationController.getDeliveryNotifications);
 router.put('/notifications/:id/read', ...deliveryAuth, notificationController.markDeliveryNotificationAsRead);
 router.put('/notifications/read-all', ...deliveryAuth, notificationController.markAllDeliveryNotificationsAsRead);
 router.delete('/notifications/:id', ...deliveryAuth, notificationController.deleteDeliveryNotification);
+
+// Withdrawals
+router.post('/withdrawals', ...deliveryAuth, withdrawalController.requestWithdrawal);
+router.get('/withdrawals', ...deliveryAuth, withdrawalController.getWithdrawalHistory);
 
 export default router;

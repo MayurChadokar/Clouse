@@ -10,28 +10,68 @@ import ApiError from '../../../utils/ApiError.js';
 /**
  * Find nearby delivery boys for an order
  * @param {Object} order - The order document
- * @param {Number} radiusKm - Search radius in kilometers
+ * @param {Number} radiusMeters - Search radius in meters
  * @returns {Array} List of nearby delivery boys
  */
-export const findNearbyDeliveryBoys = async (order, radiusKm = 5) => {
+export const findNearbyDeliveryBoys = async (order, radiusMeters = 8000) => {
     const pickupLocation = order.pickupLocation;
     if (!pickupLocation || !pickupLocation.coordinates || pickupLocation.coordinates[0] === 0) {
         return [];
     }
 
-    // radiusKm to radians (6371 is earth radius in km)
-    const radiusInRadians = radiusKm / 6371;
+    const nearbyBoys = await DeliveryBoy.aggregate([
+        {
+            $geoNear: {
+                near: {
+                    type: 'Point',
+                    coordinates: pickupLocation.coordinates,
+                },
+                distanceField: 'distance',
+                maxDistance: radiusMeters,
+                query: { 
+                    status: 'available', 
+                    isActive: true, 
+                    isAvailable: true,
+                    applicationStatus: 'approved' 
+                },
+                spherical: true,
+            },
+        },
+        { $limit: 10 },
+    ]);
 
-    const nearbyBoys = await DeliveryBoy.find({
-        status: 'available',
-        isActive: true,
-        applicationStatus: 'approved',
-        currentLocation: {
-            $geoWithin: {
-                $centerSphere: [pickupLocation.coordinates, radiusInRadians]
-            }
-        }
-    }).limit(10);
+    return nearbyBoys;
+};
+
+/**
+ * Find nearby delivery partners for a return pickup (origin is customer)
+ */
+export const findNearbyDeliveryBoysForReturn = async (returnRequest, radiusMeters = 8000) => {
+    const pickupLocation = returnRequest.pickupLocation;
+    if (!pickupLocation || !pickupLocation.coordinates || pickupLocation.coordinates[0] === 0) {
+        return [];
+    }
+
+    const nearbyBoys = await DeliveryBoy.aggregate([
+        {
+            $geoNear: {
+                near: {
+                    type: 'Point',
+                    coordinates: pickupLocation.coordinates.map(Number),
+                },
+                distanceField: 'distance',
+                maxDistance: radiusMeters,
+                query: { 
+                    status: 'available', 
+                    isActive: true, 
+                    isAvailable: true,
+                    applicationStatus: 'approved' 
+                },
+                spherical: true,
+            },
+        },
+        { $limit: 10 },
+    ]);
 
     return nearbyBoys;
 };
@@ -51,12 +91,82 @@ export const notifyNearbyDeliveryBoys = async (order) => {
             type: 'order',
             data: {
                 orderId: order.orderId,
-                pickupLocation: order.pickupLocation,
-                dropoffLocation: order.shippingAddress, // or dropoffLocation if set
+                pickupLocation: JSON.stringify(order.pickupLocation),
+                dropoffLocation: JSON.stringify(order.shippingAddress),
                 type: 'new_assignment_broadcast'
             }
         })
     );
+
+    await Promise.allSettled(notificationPromises);
+    return nearbyBoys.length;
+};
+
+/**
+ * Notify nearby delivery partners about a return pickup
+ */
+export const notifyNearbyDeliveryBoysForReturn = async (returnRequest) => {
+    const nearbyBoys = await findNearbyDeliveryBoysForReturn(returnRequest);
+    const orderId = returnRequest.orderId?.orderId || 'Order';
+
+    const notificationPromises = nearbyBoys.map(boy =>
+        createNotification({
+            recipientId: boy._id,
+            recipientType: 'delivery',
+            title: 'Return Request Available',
+            message: `A return request for #${orderId} is ready for pickup near you.`,
+            type: 'return',
+            data: {
+                returnId: String(returnRequest._id),
+                orderId: orderId,
+                pickupLocation: JSON.stringify(returnRequest.pickupLocation),
+                dropoffLocation: JSON.stringify(returnRequest.dropoffLocation),
+                type: 'return_pickup_broadcast'
+            }
+        })
+    );
+
+    // Calculate Distance & Earning for the return broadcast
+    let estimatedDistance = 'N/A';
+    let estimatedTime = 'N/A';
+    let deliveryFee = 25;
+
+    try {
+        if (returnRequest.pickupLocation?.coordinates?.length === 2 && returnRequest.dropoffLocation?.coordinates?.length === 2) {
+            const { getDistanceMatrix } = await import('../../../services/googleMaps.service.js');
+            const { calculateDistance, getDeliveryEarning } = await import('../../../utils/geo.js');
+            
+            const matrix = await getDistanceMatrix(returnRequest.pickupLocation.coordinates, returnRequest.dropoffLocation.coordinates);
+            let distanceVal = 0;
+
+            if (matrix) {
+                distanceVal = matrix.distance;
+                estimatedDistance = `${matrix.distance} km`;
+                estimatedTime = matrix.duration;
+            } else {
+                distanceVal = calculateDistance(returnRequest.pickupLocation.coordinates, returnRequest.dropoffLocation.coordinates);
+                estimatedDistance = `${distanceVal} km (est.)`;
+                estimatedTime = `${Math.round(distanceVal * 3)} mins`;
+            }
+            deliveryFee = getDeliveryEarning(distanceVal);
+        }
+    } catch (err) {
+        console.error('[ReturnDistance] Failed to calculate return distance:', err.message);
+    }
+
+    // Emit real-time event for available return
+    emitEvent('delivery_partners', 'return_ready_for_pickup', {
+        returnId: String(returnRequest._id),
+        orderId: orderId,
+        pickupLocation: returnRequest.pickupLocation,
+        dropoffLocation: returnRequest.dropoffLocation,
+        customerName: returnRequest.userId?.name || 'Customer',
+        total: returnRequest.orderId?.total || 0,
+        distance: estimatedDistance,
+        estimatedTime: estimatedTime,
+        deliveryFee: deliveryFee,
+        type: 'return'
+    });
 
     await Promise.allSettled(notificationPromises);
     return nearbyBoys.length;

@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import { createNotification } from '../../../services/notification.service.js';
 import { notifyNearbyDeliveryBoys } from '../../delivery/controllers/assignment.controller.js';
 import { emitEvent } from '../../../services/socket.service.js';
+import { getDistanceMatrix } from '../../../services/googleMaps.service.js';
 
 const deriveTopLevelOrderStatus = (vendorItems = [], fallback = 'pending') => {
     const statuses = (vendorItems || [])
@@ -113,7 +114,6 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     );
     order.status = deriveTopLevelOrderStatus(order.vendorItems, order.status);
     await order.save();
-
     if (status === 'ready_for_pickup') {
         if (vendor && vendor.shopLocation) {
             order.pickupLocation = vendor.shopLocation;
@@ -123,11 +123,49 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         await notifyNearbyDeliveryBoys(order).catch(err =>
             console.error(`[Assignment] Failed to notify delivery boys for order ${order.orderId}:`, err)
         );
+
+        // Calculate Distance & Duration for the delivery boy popup
+        let estimatedDistance = 'N/A';
+        let estimatedTime = 'N/A';
+        let deliveryFee = 25; // Default minimum
+
+        try {
+            if (order.pickupLocation?.coordinates?.length === 2 && order.dropoffLocation?.coordinates?.length === 2) {
+                const matrix = await getDistanceMatrix(order.pickupLocation.coordinates, order.dropoffLocation.coordinates);
+                let distanceVal = 0;
+                
+                if (matrix) {
+                    distanceVal = matrix.distance;
+                    estimatedDistance = `${matrix.distance} km`;
+                    estimatedTime = matrix.duration;
+                } else {
+                    // Fallback to Haversine if Google fails
+                    const { calculateDistance } = await import('../../../utils/geo.js');
+                    distanceVal = calculateDistance(order.pickupLocation.coordinates, order.dropoffLocation.coordinates);
+                    estimatedDistance = `${distanceVal} km (est.)`;
+                    estimatedTime = `${Math.round(distanceVal * 3)} mins`; // rough 20km/h
+                }
+                
+                const { getDeliveryEarning } = await import('../../../utils/geo.js');
+                deliveryFee = getDeliveryEarning(distanceVal);
+            }
+        } catch (error) {
+            console.error('[GoogleMaps] Distance calculation failed:', error.message);
+        }
+
         // Real-time socket event for delivery partners
         emitEvent('delivery_partners', 'order_ready_for_pickup', {
             orderId: order.orderId,
+            id: order.orderId, // For frontend compatibility
             pickupLocation: order.pickupLocation,
-            vendorName: storeName
+            vendorName: storeName,
+            vendorAddress: vendor?.address || 'Indore, MP',
+            address: order.shippingAddress?.address || 'Customer Address',
+            customer: order.shippingAddress?.name || 'Customer',
+            total: order.total,
+            distance: estimatedDistance,
+            estimatedTime: estimatedTime,
+            deliveryFee: deliveryFee
         });
     }
 
@@ -139,6 +177,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     });
 
     // Notify Customer in real-time
+    const trackingRoom = `order_${order.orderId}`;
     if (order.userId) {
         emitEvent(`user_${order.userId}`, 'order_status_updated', {
             orderId: order.orderId,
@@ -147,6 +186,13 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
             message: `Your order ${order.orderId} has been ${status.replace(/_/g, ' ')} by ${storeName}.`
         });
     }
+
+    emitEvent(trackingRoom, 'order_status_updated', {
+        orderId: order.orderId,
+        status: status,
+        vendorName: storeName,
+        message: `Order ${order.orderId} moved to ${status.replace(/_/g, ' ')}.`
+    });
 
     const notificationTasks = [];
     if (order.userId) {
@@ -231,6 +277,7 @@ export const getEarnings = asyncHandler(async (req, res) => {
         };
     });
 
+    const currentVendor = await mongoose.model('Vendor').findById(req.user.id);
     const summary = allCommissionsForSummary.reduce((acc, doc) => {
         const c = doc.toObject();
         const status = String(c.status || 'pending');
@@ -256,7 +303,8 @@ export const getEarnings = asyncHandler(async (req, res) => {
         paidEarnings: 0,
         cancelledEarnings: 0,
         totalCommission: 0,
-        totalOrders: 0
+        totalOrders: 0,
+        availableBalance: currentVendor?.availableBalance || 0
     });
 
     res.status(200).json(

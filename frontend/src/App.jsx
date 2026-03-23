@@ -58,6 +58,7 @@ import CustomerDetailPage from "./modules/Admin/pages/customers/CustomerDetailPa
 import DeliveryBoys from "./modules/Admin/pages/delivery/DeliveryBoys";
 import CashCollection from "./modules/Admin/pages/delivery/CashCollection";
 import AssignDelivery from "./modules/Admin/pages/delivery/AssignDelivery";
+import Withdrawals from "./modules/Admin/pages/delivery/Withdrawals";
 // Vendors child pages
 import Vendors from "./modules/Admin/pages/Vendors";
 import ManageVendors from "./modules/Admin/pages/vendors/ManageVendors";
@@ -229,6 +230,7 @@ const AppRoutes = () => {
         <Route path="delivery/delivery-boys" element={<DeliveryBoys />} />
         <Route path="delivery/cash-collection" element={<CashCollection />} />
         <Route path="delivery/assign-delivery" element={<AssignDelivery />} />
+        <Route path="delivery/withdrawals" element={<Withdrawals />} />
         <Route path="vendors" element={<Vendors />} />
         <Route path="vendors/manage-vendors" element={<ManageVendors />} />
         <Route

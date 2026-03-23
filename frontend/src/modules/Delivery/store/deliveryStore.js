@@ -102,6 +102,36 @@ const normalizeOrder = (raw) => {
   };
 };
 
+const normalizeReturn = (raw) => {
+  if (!raw) return null;
+  const id = raw._id || raw.id;
+  const status = raw.status || 'approved';
+  
+  // For returns, pickup is from customer, dropoff is to vendor
+  const customerAddress = raw.orderId?.shippingAddress || {};
+  const vendorData = raw.vendorId || {};
+
+  return {
+    ...raw,
+    id,
+    type: 'return',
+    customer: customerAddress.name || 'Customer',
+    phone: customerAddress.phone || customerAddress.mobile || '',
+    address: toAddressLine(customerAddress) || 'Customer Address',
+    vendorName: vendorData.storeName || 'Vendor',
+    vendorAddress: vendorData.shopAddress || vendorData.address?.street || 'Vendor Address',
+    amount: Number(raw.refundAmount || 0),
+    total: Number(raw.refundAmount || 0),
+    status: status === 'approved' ? 'pending' : (status === 'processing' ? 'accepted' : status),
+    rawStatus: status,
+    items: Array.isArray(raw.items) ? raw.items : [],
+    pickupLocation: raw.pickupLocation,
+    dropoffLocation: raw.dropoffLocation,
+    pickupPhoto: raw.pickupPhoto || null,
+    deliveryPhoto: raw.deliveryPhoto || null,
+  };
+};
+
 export const useDeliveryAuthStore = create(
   persist(
     (set, get) => ({
@@ -111,6 +141,7 @@ export const useDeliveryAuthStore = create(
       isAuthenticated: false,
       isLoading: false,
       orders: [],
+      returns: [],
       ordersPagination: {
         total: 0,
         page: 1,
@@ -123,7 +154,7 @@ export const useDeliveryAuthStore = create(
       isUpdatingOrderStatus: false,
       isUpdatingStatus: false,
 
-      // Delivery boy login action
+      // Delivery boy actions
       register: async (registrationData) => {
         set({ isLoading: true });
         try {
@@ -135,18 +166,10 @@ export const useDeliveryAuthStore = create(
           formData.append('address', registrationData.address || '');
           formData.append('vehicleType', registrationData.vehicleType || '');
           formData.append('vehicleNumber', registrationData.vehicleNumber || '');
-          if (registrationData.drivingLicense) {
-            formData.append('drivingLicense', registrationData.drivingLicense);
-          }
-          if (registrationData.drivingLicenseBack) {
-            formData.append('drivingLicenseBack', registrationData.drivingLicenseBack);
-          }
-          if (registrationData.aadharCard) {
-            formData.append('aadharCard', registrationData.aadharCard);
-          }
-          if (registrationData.aadharCardBack) {
-            formData.append('aadharCardBack', registrationData.aadharCardBack);
-          }
+          if (registrationData.drivingLicense) formData.append('drivingLicense', registrationData.drivingLicense);
+          if (registrationData.drivingLicenseBack) formData.append('drivingLicenseBack', registrationData.drivingLicenseBack);
+          if (registrationData.aadharCard) formData.append('aadharCard', registrationData.aadharCard);
+          if (registrationData.aadharCardBack) formData.append('aadharCardBack', registrationData.aadharCardBack);
 
           const response = await api.post('/delivery/auth/register', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -160,160 +183,48 @@ export const useDeliveryAuthStore = create(
         }
       },
 
-      forgotPassword: async (email) => {
-        set({ isLoading: true });
-        try {
-          const response = await api.post('/delivery/auth/forgot-password', { email });
-          const payload = response?.data ?? response;
-          set({ isLoading: false });
-          return { success: true, message: payload?.message };
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      verifyResetOtp: async (email, otp) => {
-        set({ isLoading: true });
-        try {
-          const response = await api.post('/delivery/auth/verify-reset-otp', { email, otp });
-          const payload = response?.data ?? response;
-          set({ isLoading: false });
-          return { success: true, message: payload?.message };
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      resetPassword: async (email, password, confirmPassword) => {
-        set({ isLoading: true });
-        try {
-          const response = await api.post('/delivery/auth/reset-password', { email, password, confirmPassword });
-          const payload = response?.data ?? response;
-          set({ isLoading: false });
-          return { success: true, message: payload?.message };
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      // Delivery boy login action
-      login: async (email, password, rememberMe = false) => {
+      login: async (email, password) => {
         set({ isLoading: true });
         try {
           const response = await api.post('/delivery/auth/login', { email, password });
           const payload = response?.data ?? response;
           const accessToken = payload?.accessToken;
           const refreshToken = payload?.refreshToken;
-          const loginDeliveryBoy = normalizeDeliveryBoy(payload?.deliveryBoy);
-
-          if (!accessToken || !refreshToken || !loginDeliveryBoy) {
-            throw new Error('Invalid login response from server.');
-          }
+          const user = normalizeDeliveryBoy(payload?.deliveryBoy);
 
           localStorage.setItem('delivery-token', accessToken);
           localStorage.setItem('delivery-refresh-token', refreshToken);
 
-          let enriched = loginDeliveryBoy;
-          try {
-            const profileResponse = await api.get('/delivery/auth/profile');
-            const profilePayload = profileResponse?.data ?? profileResponse;
-            enriched = normalizeDeliveryBoy({ ...loginDeliveryBoy, ...profilePayload });
-          } catch {
-            // Keep login payload as fallback.
-          }
-
           set({
-            deliveryBoy: enriched,
+            deliveryBoy: user,
             token: accessToken,
             refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
-
-          return { success: true, deliveryBoy: enriched };
+          return { success: true, deliveryBoy: user };
         } catch (error) {
           set({ isLoading: false });
           throw error;
         }
       },
 
-      // Delivery boy logout action
       logout: () => {
         const refreshToken = localStorage.getItem('delivery-refresh-token');
         if (refreshToken) {
           api.post('/delivery/auth/logout', { refreshToken }).catch(() => { });
         }
-
         set({
           deliveryBoy: null,
           token: null,
           refreshToken: null,
           isAuthenticated: false,
           orders: [],
-          ordersPagination: {
-            total: 0,
-            page: 1,
-            limit: 20,
-            pages: 1,
-          },
+          returns: [],
           selectedOrder: null,
         });
         localStorage.removeItem('delivery-token');
         localStorage.removeItem('delivery-refresh-token');
-      },
-
-      // Update delivery boy status
-      updateStatus: async (status) => {
-        const current = get().deliveryBoy;
-        if (!current) return false;
-
-        const isAvailable = status === 'available' || status === 'busy';
-        set({ isUpdatingStatus: true });
-        try {
-          const response = await api.put('/delivery/auth/profile', { isAvailable, status });
-          const payload = response?.data ?? response;
-          set({
-            deliveryBoy: normalizeDeliveryBoy({
-              ...current,
-              ...payload,
-              status,
-            }),
-            isUpdatingStatus: false,
-          });
-          return true;
-        } catch (error) {
-          set({ isUpdatingStatus: false });
-          throw error;
-        }
-      },
-
-      updateLocation: async (latitude, longitude) => {
-        const current = get().deliveryBoy;
-        if (!current || !latitude || !longitude) return;
-
-        try {
-          const response = await api.put('/delivery/auth/profile', {
-            currentLocation: {
-              type: 'Point',
-              coordinates: [longitude, latitude], // GeoJSON order: [lng, lat]
-            },
-          });
-          const payload = response?.data ?? response;
-          set({
-            deliveryBoy: normalizeDeliveryBoy({
-              ...current,
-              ...payload,
-            }),
-          });
-        } catch (error) {
-          // Silently ignore rate limit errors from GPS updates; avoid spamming toast
-          if (error?.response?.status !== 429) {
-            console.warn('Location update failed:', error?.response?.status, error?.message);
-          }
-        }
       },
 
       fetchProfile: async () => {
@@ -330,100 +241,21 @@ export const useDeliveryAuthStore = create(
         }
       },
 
-      updateProfile: async (profileData) => {
-        set({ isLoading: true });
+      updateStatus: async (status) => {
+        const current = get().deliveryBoy;
+        if (!current) return false;
+        const isAvailable = status === 'available';
+        set({ isUpdatingStatus: true });
         try {
-          const response = await api.put('/delivery/auth/profile', profileData);
+          const response = await api.put('/delivery/auth/profile', { isAvailable, status });
           const payload = response?.data ?? response;
-          const current = get().deliveryBoy || {};
-          const deliveryBoy = normalizeDeliveryBoy({ ...current, ...payload });
-          set({ deliveryBoy, isLoading: false });
-          return deliveryBoy;
+          set({
+            deliveryBoy: normalizeDeliveryBoy({ ...current, ...payload, status }),
+            isUpdatingStatus: false,
+          });
+          return true;
         } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      fetchOrders: async (options = {}) => {
-        set({ isLoadingOrders: true });
-        try {
-          const { status, page, limit } = options || {};
-          const params = {};
-          if (status) params.status = status;
-          if (page !== undefined) params.page = page;
-          if (limit !== undefined) params.limit = limit;
-
-          const response = await api.get('/delivery/orders', { params });
-          const payload = response?.data ?? response;
-
-          const hasPaginatedPayload =
-            payload &&
-            !Array.isArray(payload) &&
-            Array.isArray(payload.orders);
-
-          const rawOrders = hasPaginatedPayload ? payload.orders : (Array.isArray(payload) ? payload : []);
-          const list = rawOrders.map(normalizeOrder);
-
-          const pagination = hasPaginatedPayload
-            ? {
-              total: Number(payload?.pagination?.total || 0),
-              page: Number(payload?.pagination?.page || 1),
-              limit: Number(payload?.pagination?.limit || 20),
-              pages: Number(payload?.pagination?.pages || 1),
-            }
-            : {
-              total: list.length,
-              page: 1,
-              limit: list.length || 20,
-              pages: 1,
-            };
-
-          set({ orders: list, ordersPagination: pagination, isLoadingOrders: false });
-          return list;
-        } catch (error) {
-          set({ isLoadingOrders: false });
-          throw error;
-        }
-      },
-
-      fetchAvailableOrders: async (options = {}) => {
-        set({ isLoadingOrders: true });
-        try {
-          const { page, limit } = options || {};
-          const params = {};
-          if (page !== undefined) params.page = page;
-          if (limit !== undefined) params.limit = limit;
-
-          const response = await api.get('/delivery/orders/available', { params });
-          const payload = response?.data ?? response;
-
-          const hasPaginatedPayload =
-            payload &&
-            !Array.isArray(payload) &&
-            Array.isArray(payload.orders);
-
-          const rawOrders = hasPaginatedPayload ? payload.orders : (Array.isArray(payload) ? payload : []);
-          const list = rawOrders.map(normalizeOrder);
-
-          const pagination = hasPaginatedPayload
-            ? {
-              total: Number(payload?.pagination?.total || 0),
-              page: Number(payload?.pagination?.page || 1),
-              limit: Number(payload?.pagination?.limit || 20),
-              pages: Number(payload?.pagination?.pages || 1),
-            }
-            : {
-              total: list.length,
-              page: 1,
-              limit: list.length || 20,
-              pages: 1,
-            };
-
-          set({ orders: list, ordersPagination: pagination, isLoadingOrders: false });
-          return list;
-        } catch (error) {
-          set({ isLoadingOrders: false });
+          set({ isUpdatingStatus: false });
           throw error;
         }
       },
@@ -431,68 +263,25 @@ export const useDeliveryAuthStore = create(
       fetchDashboardSummary: async () => {
         const response = await api.get('/delivery/orders/dashboard-summary');
         const payload = response?.data ?? response ?? {};
-        const recentRaw = Array.isArray(payload?.recentOrders) ? payload.recentOrders : [];
         return {
           totalOrders: Number(payload?.totalOrders || 0),
           completedToday: Number(payload?.completedToday || 0),
           openOrders: Number(payload?.openOrders || 0),
           earnings: Number(payload?.earnings || 0),
-          recentOrders: recentRaw.map(normalizeOrder),
+          recentOrders: (payload?.recentOrders || []).map(normalizeOrder),
         };
       },
 
-      fetchProfileSummary: async () => {
-        const response = await api.get('/delivery/orders/profile-summary');
-        const payload = response?.data ?? response ?? {};
-        return {
-          totalDeliveries: Number(payload?.totalDeliveries || 0),
-          completedToday: Number(payload?.completedToday || 0),
-          earnings: Number(payload?.earnings || 0),
-        };
-      },
-
-      fetchOrderById: async (id) => {
-        set({ isLoadingOrder: true });
+      fetchAvailableOrders: async (options = {}) => {
+        set({ isLoadingOrders: true });
         try {
-          const response = await api.get(`/delivery/orders/${id}`);
+          const response = await api.get('/delivery/orders/available', { params: options });
           const payload = response?.data ?? response;
-          const order = normalizeOrder(payload);
-          set({ selectedOrder: order, isLoadingOrder: false });
-          return order;
+          const list = (payload?.orders || []).map(normalizeOrder);
+          set({ orders: list, isLoadingOrders: false });
+          return list;
         } catch (error) {
-          set({ isLoadingOrder: false });
-          throw error;
-        }
-      },
-
-      updateOrderStatus: async (id, backendStatus, options = {}) => {
-        set({ isUpdatingOrderStatus: true });
-        try {
-          const requestPayload = { status: backendStatus };
-          if (options?.otp) {
-            requestPayload.otp = String(options.otp).trim();
-          }
-          if (options?.pickupPhoto) {
-            requestPayload.pickupPhoto = options.pickupPhoto;
-          }
-          if (options?.deliveryPhoto) {
-            requestPayload.deliveryPhoto = options.deliveryPhoto;
-          }
-
-          const response = await api.patch(`/delivery/orders/${id}/status`, requestPayload);
-          const responsePayload = response?.data ?? response;
-          const normalized = normalizeOrder(responsePayload);
-          set((state) => ({
-            orders: state.orders.map((order) => (String(order.id) === String(id) ? normalized : order)),
-            selectedOrder:
-              state.selectedOrder && String(state.selectedOrder.id) === String(id)
-                ? normalized
-                : state.selectedOrder,
-            isUpdatingOrderStatus: false,
-          }));
-          return normalized;
-        } catch (error) {
-          set({ isUpdatingOrderStatus: false });
+          set({ isLoadingOrders: false });
           throw error;
         }
       },
@@ -503,12 +292,51 @@ export const useDeliveryAuthStore = create(
           const response = await api.post(`/delivery/orders/${id}/accept`);
           const payload = response?.data ?? response;
           const normalized = normalizeOrder(payload);
+          set({ isUpdatingOrderStatus: false });
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
+        }
+      },
+
+      updateOrderStatus: async (id, status, options = {}) => {
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.patch(`/delivery/orders/${id}/status`, { status, ...options });
+          const payload = response?.data ?? response;
+          const normalized = normalizeOrder(payload);
+          set({ isUpdatingOrderStatus: false });
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
+        }
+      },
+
+      // Return related actions
+      fetchAvailableReturns: async () => {
+        set({ isLoadingOrders: true });
+        try {
+          const response = await api.get('/delivery/returns/available');
+          const payload = response?.data ?? response;
+          const list = (payload?.returns || []).map(normalizeReturn);
+          set({ returns: list, isLoadingOrders: false });
+          return list;
+        } catch (error) {
+          set({ isLoadingOrders: false });
+          throw error;
+        }
+      },
+
+      acceptReturn: async (id) => {
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.post(`/delivery/returns/${id}/accept`);
+          const payload = response?.data ?? response;
+          const normalized = normalizeReturn(payload);
           set((state) => ({
-            orders: state.orders.map((order) => (String(order.id) === String(id) ? normalized : order)),
-            selectedOrder:
-              state.selectedOrder && String(state.selectedOrder.id) === String(id)
-                ? normalized
-                : state.selectedOrder,
+            returns: state.returns.filter(ret => String(ret.id) !== String(id)),
             isUpdatingOrderStatus: false,
           }));
           return normalized;
@@ -518,36 +346,28 @@ export const useDeliveryAuthStore = create(
         }
       },
 
-      completeOrder: async (id, otp, deliveryPhoto) => {
-        const state = get();
-        const current =
-          state.orders.find((order) => String(order.id) === String(id)) ||
-          (state.selectedOrder && String(state.selectedOrder.id) === String(id)
-            ? state.selectedOrder
-            : null);
-        // Allow completion when rider has already picked up the order (UI: 'picked-up' or 'out-for-delivery')
-        if (current && current.status !== 'picked-up' && current.status !== 'out-for-delivery') {
-          return current;
+      updateReturnStatus: async (id, status, options = {}) => {
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.patch(`/delivery/returns/${id}/status`, { status, ...options });
+          const payload = response?.data ?? response;
+          const normalized = normalizeReturn(payload);
+          set({ isUpdatingOrderStatus: false });
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
         }
-        return get().updateOrderStatus(id, 'delivered', { otp, deliveryPhoto });
       },
 
-      resendDeliveryOtp: async (id) => {
-        await api.post(`/delivery/orders/${id}/resend-delivery-otp`);
-        return true;
-      },
-
-      // Initialize delivery auth state from localStorage
       initialize: () => {
         const token = localStorage.getItem('delivery-token');
         if (token) {
           const storedState = JSON.parse(localStorage.getItem('delivery-auth-storage') || '{}');
-          const refreshToken = localStorage.getItem('delivery-refresh-token');
           if (storedState.state?.deliveryBoy) {
             set({
               deliveryBoy: normalizeDeliveryBoy(storedState.state.deliveryBoy),
               token,
-              refreshToken: refreshToken || null,
               isAuthenticated: true,
             });
           }
@@ -560,4 +380,3 @@ export const useDeliveryAuthStore = create(
     }
   )
 );
-

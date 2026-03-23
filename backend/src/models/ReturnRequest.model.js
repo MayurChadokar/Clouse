@@ -22,9 +22,22 @@ const returnRequestSchema = new mongoose.Schema(
         },
         refundAmount: Number,
         refundStatus: { type: String, enum: ['pending', 'processed', 'failed'] },
+        refundId: String,
+        refundNotes: String,
         adminNote: String,
         rejectionReason: String,
         images: [String],
+        deliveryBoyId: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryBoy', index: true },
+        pickupLocation: {
+            type: { type: String, enum: ['Point'], default: 'Point' },
+            coordinates: { type: [Number], default: [0, 0] },
+        },
+        dropoffLocation: {
+            type: { type: String, enum: ['Point'], default: 'Point' },
+            coordinates: { type: [Number], default: [0, 0] },
+        },
+        pickupPhoto: String,
+        deliveryPhoto: String,
     },
     { timestamps: true }
 );

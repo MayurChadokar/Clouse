@@ -7,6 +7,7 @@ import User from '../../../models/User.model.js';
 import Commission from '../../../models/Commission.model.js';
 import Product from '../../../models/Product.model.js';
 import { createNotification } from '../../../services/notification.service.js';
+import { emitEvent } from '../../../services/socket.service.js';
 
 // GET /api/admin/orders
 export const getAllOrders = asyncHandler(async (req, res) => {
@@ -255,6 +256,13 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         await Promise.allSettled(notificationTasks);
     }
 
+    // Real-time broadcast to tracking room
+    emitEvent(`order_${order.orderId}`, 'order_status_updated', {
+        orderId: order.orderId,
+        status: nextStatus,
+        message: `Your order status has been updated to ${nextStatus}.`
+    });
+
     res.status(200).json(new ApiResponse(200, order, 'Order status updated.'));
 });
 
@@ -352,6 +360,14 @@ export const assignDeliveryBoy = asyncHandler(async (req, res) => {
     if (assignmentTasks.length > 0) {
         await Promise.allSettled(assignmentTasks);
     }
+
+    // Real-time broadcast to tracking room
+    emitEvent(`order_${order.orderId}`, 'order_assigned', {
+        orderId: order.orderId,
+        deliveryBoyId: deliveryBoyId,
+        deliveryBoyName: deliveryBoy.name,
+        status: order.status
+    });
 
     res.status(200).json(new ApiResponse(200, order, 'Delivery boy assigned.'));
 });

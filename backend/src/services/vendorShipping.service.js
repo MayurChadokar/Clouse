@@ -1,5 +1,6 @@
 import VendorShippingZone from '../models/VendorShippingZone.model.js';
 import VendorShippingRate from '../models/VendorShippingRate.model.js';
+import { calculateDistance } from '../utils/geo.js';
 
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
@@ -67,6 +68,7 @@ export const calculateVendorShippingForGroups = async ({
     });
 
     const shippingByVendor = {};
+    const distanceByVendor = {};
     const shippingCountry = normalizeText(shippingAddress?.country);
 
     groups.forEach((group) => {
@@ -116,6 +118,27 @@ export const calculateVendorShippingForGroups = async ({
         }
 
         const fallbackStandard = defaultRate > 0 ? defaultRate : 50;
+
+        // --- Distance-Based Logic ---
+        if (group.shopLocation && group.shopLocation.coordinates && 
+            shippingAddress?.coordinates && Array.isArray(shippingAddress.coordinates) && 
+            shippingAddress.coordinates.length === 2 && shippingAddress.coordinates[0] !== 0) {
+            
+            const distance = calculateDistance(
+                group.shopLocation.coordinates,
+                shippingAddress.coordinates
+            );
+            distanceByVendor[vendorId] = distance;
+
+            // Logic: 0-3km = ₹25, then ₹9 per additional km
+            let shippingFee = 25;
+            if (distance > 3) {
+                shippingFee += Math.ceil(distance - 3) * 9;
+            }
+            shippingByVendor[vendorId] = shippingFee;
+            return;
+        }
+
         shippingByVendor[vendorId] = normalizeText(shippingOption) === 'express'
             ? (defaultRate > 0 ? defaultRate * 2 : 100)
             : fallbackStandard;
@@ -125,6 +148,6 @@ export const calculateVendorShippingForGroups = async ({
         Object.values(shippingByVendor).reduce((sum, amount) => sum + toNumber(amount, 0), 0).toFixed(2)
     );
 
-    return { totalShipping, shippingByVendor };
+    return { totalShipping, shippingByVendor, distanceByVendor };
 };
 

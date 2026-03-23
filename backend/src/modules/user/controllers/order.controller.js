@@ -13,6 +13,8 @@ import mongoose from 'mongoose';
 import { createNotification } from '../../../services/notification.service.js';
 import { calculateVendorShippingForGroups } from '../../../services/vendorShipping.service.js';
 import { emitEvent } from '../../../services/socket.service.js';
+import { calculateDistance } from '../../../utils/geo.js';
+import Vendor from '../../../models/Vendor.model.js';
 
 const normalizeVariantPart = (value) => String(value || '').trim().toLowerCase();
 const normalizeAxisName = (value) =>
@@ -243,7 +245,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
     for (const item of items) {
         const product = await Product.findById(item.productId).populate(
             'vendorId',
-            'commissionRate storeName shippingEnabled defaultShippingRate freeShippingThreshold'
+            'commissionRate storeName shippingEnabled defaultShippingRate freeShippingThreshold shopLocation'
         );
         if (!product) throw new ApiError(404, `Product not found: ${item.productId}`);
         if (product.stock === 'out_of_stock') throw new ApiError(400, `${product.name} is out of stock.`);
@@ -299,6 +301,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
         }
         vendorMap[vid].items.push(enriched);
         vendorMap[vid].subtotal += itemSubtotal;
+        vendorMap[vid].shopLocation = product.vendorId.shopLocation;
     }
 
     // 2. Validate coupon
@@ -321,20 +324,38 @@ export const placeOrder = asyncHandler(async (req, res) => {
         appliedCoupon = coupon;
     }
 
-    // 3. Calculate shipping
-    const vendorShippingInput = Object.values(vendorMap).map((vendorGroup) => ({
-        vendorId: vendorGroup.vendorId,
-        subtotal: vendorGroup.subtotal,
-        shippingEnabled: vendorGroup.shippingEnabled,
-        defaultShippingRate: vendorGroup.defaultShippingRate,
-        freeShippingThreshold: vendorGroup.freeShippingThreshold,
-    }));
-    const { totalShipping: shipping, shippingByVendor } = await calculateVendorShippingForGroups({
-        vendorGroups: vendorShippingInput,
-        shippingAddress,
-        shippingOption,
-        couponType: appliedCoupon?.type || null,
-    });
+    // 3. Calculate distance-based shipping
+    const dropoffCoords = req.body.dropoffLocation?.coordinates || [0, 0];
+    const shippingByVendor = {};
+    let totalShipping = 0;
+
+    for (const vid in vendorMap) {
+        const v = vendorMap[vid];
+        if (!v.shippingEnabled) {
+            shippingByVendor[vid] = 0;
+            continue;
+        }
+
+        const vendorCoords = v.shopLocation?.coordinates || [0, 0];
+        const distKm = calculateDistance(vendorCoords, dropoffCoords);
+        v.distance = distKm;
+
+        // Formula: 0-3km = 25, then 9 per additional km
+        let fee = 25;
+        if (distKm > 3) {
+            const extraKm = Math.ceil(distKm - 3);
+            fee += extraKm * 9;
+        }
+
+        // Apply free shipping threshold if any
+        if (v.freeShippingThreshold > 0 && v.subtotal >= v.freeShippingThreshold) {
+            fee = 0;
+        }
+
+        shippingByVendor[vid] = fee;
+        totalShipping += fee;
+    }
+    const shipping = totalShipping;
 
     // 4. Calculate tax (18%)
     const tax = parseFloat(((subtotal - couponDiscount) * 0.18).toFixed(2));
@@ -351,6 +372,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
             items: v.items,
             subtotal: v.subtotal,
             shipping: Number(shippingByVendor[String(v.vendorId)] || 0),
+            distance: v.distance || 0,
             tax: parseFloat((v.subtotal * 0.18).toFixed(2)),
             discount: 0,
             commissionRate: v.commissionRate,
@@ -394,7 +416,8 @@ export const placeOrder = asyncHandler(async (req, res) => {
                 couponCode: couponCode?.toUpperCase(),
                 couponDiscount,
                 orderType,
-                deliveryType: 'online',
+                pickupLocation: vendorItems[0]?.vendorId?.shopLocation || undefined, // Default to first vendor's location
+                dropoffLocation: req.body.dropoffLocation || undefined,
                 trackingNumber: generateTrackingNumber(),
                 estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // +5 days
                 idempotencyKey: idempotencyKey || undefined,

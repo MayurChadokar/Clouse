@@ -8,6 +8,7 @@ import { sendEmail } from '../../../services/email.service.js';
 import { createNotification } from '../../../services/notification.service.js';
 import { emitEvent } from '../../../services/socket.service.js';
 import DeliveryBoy from '../../../models/DeliveryBoy.model.js';
+import ReturnRequest from '../../../models/ReturnRequest.model.js';
 
 const DELIVERY_OTP_TTL_MS = 10 * 60 * 1000;
 const DELIVERY_OTP_MAX_ATTEMPTS = 5;
@@ -385,15 +386,44 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
             order.isCashSettled = false;
         }
 
-        // Increment delivery boy's total deliveries count
+        // Increment delivery boy's total deliveries count and earnings
+        const riderEarnings = Number(order.shipping || 0);
         await DeliveryBoy.findByIdAndUpdate(order.deliveryBoyId, {
-            $inc: { totalDeliveries: 1 }
+            $inc: { 
+                totalDeliveries: 1,
+                totalEarnings: riderEarnings,
+                availableBalance: riderEarnings
+            }
         });
 
+        // Increment each vendor's availableBalance based on their respective group earnings
+        const vendorUpdates = (order.vendorItems || []).map(group => {
+            if (group.vendorId && group.vendorEarnings > 0) {
+                return mongoose.model('Vendor').findByIdAndUpdate(group.vendorId, {
+                    $inc: { availableBalance: Number(group.vendorEarnings) }
+                });
+            }
+            return null;
+        }).filter(Boolean);
+        
+        if (vendorUpdates.length > 0) {
+            await Promise.all(vendorUpdates);
+        }
+
         // Emit events
+        const trackingRoom = `order_${order.orderId}`;
         emitEvent(`user_${order.userId}`, 'order_delivered', { orderId: order.orderId });
+        emitEvent(trackingRoom, 'order_delivered', { orderId: order.orderId });
         order.vendorItems.forEach(vi => emitEvent(`vendor_${vi.vendorId}`, 'order_delivered', { orderId: order.orderId }));
     }
+
+    // Generic status update broadcast to tracking room
+    const trackingRoom = `order_${order.orderId}`;
+    let eventName = 'order_status_updated';
+    if (status === 'picked_up') eventName = 'order_picked_up';
+    if (status === 'out_for_delivery') eventName = 'order_out_for_delivery';
+    
+    emitEvent(trackingRoom, eventName, { orderId: order.orderId, status });
 
     order.status = status;
     // Align vendor sub-order statuses
@@ -533,4 +563,122 @@ export const getDeliveryOtpForDebug = asyncHandler(async (req, res) => {
         otp,
         expiresAt: order.deliveryOtpExpiry,
     }, 'Debug OTP fetched.'));
+});
+
+// --- RETURN SYSTEM CONTROLLERS ---
+
+// GET /api/delivery/returns/available
+export const getAvailableReturns = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    const numericPage = Math.max(1, Number(page) || 1);
+    const numericLimit = Math.min(Math.max(1, Number(limit) || 20), 100);
+    const skip = (numericPage - 1) * numericLimit;
+
+    // Available returns are approved by vendor but not yet assigned
+    const filter = {
+        status: 'approved',
+        deliveryBoyId: { $exists: false }
+    };
+
+    const [returns, total] = await Promise.all([
+        ReturnRequest.find(filter)
+            .populate('userId', 'name email phone')
+            .populate('orderId', 'orderId total shippingAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(numericLimit),
+        ReturnRequest.countDocuments(filter),
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            returns,
+            pagination: {
+                total,
+                page: numericPage,
+                limit: numericLimit,
+                pages: Math.ceil(total / numericLimit) || 1,
+            },
+        }, 'Available returns fetched.')
+    );
+});
+
+// POST /api/delivery/returns/:id/accept
+export const acceptReturnAssignment = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const deliveryBoyId = req.user.id;
+
+    const returnReq = await ReturnRequest.findOneAndUpdate(
+        {
+            _id: id,
+            status: 'approved',
+            deliveryBoyId: { $exists: false }
+        },
+        {
+            $set: {
+                status: 'processing',
+                deliveryBoyId: deliveryBoyId
+            }
+        },
+        { new: true }
+    ).populate('userId').populate('orderId');
+
+    if (!returnReq) {
+        throw new ApiError(409, 'Return request is no longer available or already assigned.');
+    }
+
+    // Notify user
+    if (returnReq.userId?._id) {
+        emitEvent(`user_${returnReq.userId._id}`, 'return_delivery_assigned', {
+            returnId: returnReq._id,
+            deliveryBoyId
+        });
+    }
+
+    // Notify vendor
+    if (returnReq.vendorId) {
+        emitEvent(`vendor_${returnReq.vendorId}`, 'return_delivery_assigned', {
+            returnId: returnReq._id,
+            deliveryBoyId
+        });
+    }
+
+    res.status(200).json(new ApiResponse(200, returnReq, 'Return assignment accepted.'));
+});
+
+// PATCH /api/delivery/returns/:id/status
+export const updateReturnStatus = asyncHandler(async (req, res) => {
+    const { status, pickupPhoto, deliveryPhoto } = req.body;
+    const { id } = req.params;
+    const deliveryBoyId = req.user.id;
+
+    const returnReq = await ReturnRequest.findOne({
+        _id: id,
+        deliveryBoyId
+    }).populate('userId').populate('orderId');
+
+    if (!returnReq) throw new ApiError(404, 'Return request not found.');
+
+    if (status === 'picked_up') {
+        if (!pickupPhoto) throw new ApiError(400, 'Pickup photo is required.');
+        returnReq.status = 'processing'; // Assuming 'processing' covers picking up and en-route
+        returnReq.pickupPhoto = pickupPhoto;
+        
+        emitEvent(`user_${returnReq.userId?._id}`, 'return_picked_up', { returnId: returnReq._id });
+        emitEvent(`vendor_${returnReq.vendorId}`, 'return_picked_up', { returnId: returnReq._id });
+    } else if (status === 'completed') {
+        if (!deliveryPhoto) throw new ApiError(400, 'Delivery photo is required.');
+        returnReq.status = 'completed';
+        returnReq.deliveryPhoto = deliveryPhoto;
+
+        // On completion, vendor might need to verify before refunding, but standard is marked completed
+        emitEvent(`user_${returnReq.userId?._id}`, 'return_completed', { returnId: returnReq._id });
+        emitEvent(`vendor_${returnReq.vendorId}`, 'return_completed', { returnId: returnReq._id });
+    } else {
+        throw new ApiError(400, 'Invalid return status.');
+    }
+
+    await returnReq.save();
+
+    res.status(200).json(new ApiResponse(200, returnReq, 'Return status updated.'));
 });

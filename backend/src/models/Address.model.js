@@ -12,6 +12,17 @@ const addressSchema = new mongoose.Schema(
         zipCode: { type: String, required: true },
         country: { type: String, required: true },
         isDefault: { type: Boolean, default: false },
+        coordinates: {
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point',
+            },
+            coordinates: {
+                type: [Number], // [longitude, latitude]
+                default: [0, 0],
+            },
+        },
     },
     { timestamps: true }
 );

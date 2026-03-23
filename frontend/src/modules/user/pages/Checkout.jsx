@@ -48,7 +48,9 @@ const MobileCheckout = () => {
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [estimatedShipping, setEstimatedShipping] = useState(null);
+  const [estimatedDistances, setEstimatedDistances] = useState({});
   const [isEstimatingShipping, setIsEstimatingShipping] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] = useState(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -168,6 +170,7 @@ const MobileCheckout = () => {
           items: validItems,
           shippingAddress: {
             country: String(formData.country || "").trim(),
+            coordinates: selectedCoordinates || null,
           },
           shippingOption: 'online',
           couponType: appliedCoupon?.type || null,
@@ -177,6 +180,7 @@ const MobileCheckout = () => {
         const nextShipping = Number(payload?.shipping);
         if (active) {
           setEstimatedShipping(Number.isFinite(nextShipping) ? nextShipping : null);
+          setEstimatedDistances(payload?.distances || {});
         }
       } catch {
         if (active) {
@@ -242,6 +246,7 @@ const MobileCheckout = () => {
       orderType: formData.orderType || "check_and_buy",
       paymentMethod: formData.paymentMethod || "card",
     });
+    setSelectedCoordinates(address.coordinates?.coordinates || address.coordinates || null);
   };
 
   const handleNewAddress = async (addressData) => {
@@ -331,6 +336,7 @@ const MobileCheckout = () => {
           couponCode: appliedCoupon ? (appliedCoupon.code || couponCode.trim().toUpperCase()) : null,
           orderType: formData.orderType || "check_and_buy",
           deliveryType: 'online',
+          dropoffLocation: selectedCoordinates ? { type: 'Point', coordinates: selectedCoordinates } : null,
         });
 
         clearCart();
@@ -728,6 +734,7 @@ const MobileCheckout = () => {
                         tax={tax}
                         finalTotal={finalTotal}
                         formatPrice={formatPrice}
+                        distances={estimatedDistances}
                       />
                     </div>
                   </motion.div>
@@ -746,6 +753,7 @@ const MobileCheckout = () => {
                       tax={tax}
                       finalTotal={finalTotal}
                       formatPrice={formatPrice}
+                      distances={estimatedDistances}
                     />
                     <div className="p-4 border-t border-gray-100 bg-white">
                       <button
@@ -822,6 +830,49 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
     zipCode: "",
     country: "",
   });
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [coordinates, setCoordinates] = useState(null);
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsGeocoding(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoordinates([longitude, latitude]);
+        
+        try {
+          const response = await api.get(`/geocode?lat=${latitude}&lon=${longitude}`);
+          const payload = response?.data ?? response;
+          const address = payload?.address;
+          
+          if (address) {
+            setFormData(prev => ({
+              ...prev,
+              address: payload.display_name || prev.address,
+              city: address.city || address.town || address.village || prev.city,
+              state: address.state || prev.state,
+              zipCode: address.postcode || prev.zipCode,
+              country: address.country || prev.country
+            }));
+          }
+          toast.success("Location detected!");
+        } catch (error) {
+          console.error("Geocoding error", error);
+        } finally {
+          setIsGeocoding(false);
+        }
+      },
+      (error) => {
+        toast.error("Failed to get location: " + error.message);
+        setIsGeocoding(false);
+      }
+    );
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -829,7 +880,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({ ...formData, coordinates: coordinates ? { type: 'Point', coordinates } : null });
   };
 
   return (
@@ -853,6 +904,17 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
             <FiX className="text-xl" />
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={handleGetCurrentLocation}
+          disabled={isGeocoding}
+          className="w-full mb-6 p-4 border-2 border-primary-100 bg-primary-50 rounded-2xl flex items-center justify-center gap-3 text-primary-700 font-bold hover:bg-primary-100 transition-all group"
+        >
+          <FiMapPin className={`text-xl ${isGeocoding ? 'animate-bounce' : 'group-hover:scale-110 transition-transform'}`} />
+          {isGeocoding ? "Detecting..." : "Use Current Location"}
+        </button>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">

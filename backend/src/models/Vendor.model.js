@@ -23,6 +23,7 @@ const vendorSchema = new mongoose.Schema(
         reviewCount: { type: Number, default: 0 },
         totalSales: { type: Number, default: 0 },
         totalEarnings: { type: Number, default: 0 },
+        availableBalance: { type: Number, default: 0 },
         shippingEnabled: { type: Boolean, default: true },
         freeShippingThreshold: { type: Number, default: 100, min: 0 },
         defaultShippingRate: { type: Number, default: 5, min: 0 },
@@ -75,6 +76,7 @@ const vendorSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+vendorSchema.index({ shopLocation: '2dsphere' });
 
 vendorSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();

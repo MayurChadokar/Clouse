@@ -72,12 +72,16 @@ const DeliveryOrderDetail = () => {
     isLoadingOrder,
     isUpdatingOrderStatus,
     updateOrderStatus,
+    acceptReturn,
+    updateReturnStatus,
   } = useDeliveryAuthStore();
   const [order, setOrder] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [deliveryOtp, setDeliveryOtp] = useState('');
   const [deliveryPhoto, setDeliveryPhoto] = useState(null);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
+
+  const isReturn = order?.type === 'return';
 
   const loadOrder = async () => {
     try {
@@ -98,62 +102,85 @@ const DeliveryOrderDetail = () => {
     socketService.joinRoom('delivery_partners');
 
     const handleUpdate = (data) => {
-      if (data.orderId === id) {
+      if (String(data.orderId || data.id) === String(id)) {
         loadOrder();
       }
     };
 
     socketService.on('order_status_updated', handleUpdate);
+    socketService.on('return_status_updated', handleUpdate);
     socketService.on('order_taken', (data) => {
-      if (data.orderId === id) {
-        toast.error('This order has been taken by another partner');
+      if (String(data.orderId || data.id) === String(id)) {
+        toast.error('This task has been taken by another partner');
         navigate('/delivery/orders');
       }
     });
 
     return () => {
       socketService.off('order_status_updated');
+      socketService.off('return_status_updated');
       socketService.off('order_taken');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const s = String(status).toLowerCase();
+    switch (s) {
       case 'pending':
+      case 'approved':
         return 'bg-yellow-100 text-yellow-800';
       case 'assigned':
+      case 'processing':
         return 'bg-purple-100 text-purple-800';
       case 'picked-up':
+      case 'picked_up':
         return 'bg-blue-100 text-blue-800';
       case 'out-for-delivery':
+      case 'out_for_delivery':
         return 'bg-indigo-100 text-indigo-800';
       case 'delivered':
+      case 'completed':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleAcceptOrder = async () => {
-    if (!order || order.status !== 'pending') return;
+  const handleAcceptTask = async () => {
+    if (!order) return;
     try {
-      const updated = await acceptOrder(order.id);
-      setOrder(updated);
-      toast.success('Order assigned to you');
-    } catch {
-      // Error toast handled by API interceptor.
-    }
+      if (isReturn) {
+        const updated = await acceptReturn(order.id);
+        setOrder(updated);
+        toast.success('Return assignment accepted');
+      } else {
+        const updated = await acceptOrder(order.id);
+        setOrder(updated);
+        toast.success('Order assigned to you');
+      }
+    } catch { }
   };
 
   const handleUpdateStatus = async (newBackendStatus, successMessage, options = {}) => {
     try {
-      const updated = await updateOrderStatus(order.id, newBackendStatus, options);
+      let updated;
+      if (isReturn) {
+        updated = await updateReturnStatus(order.id, newBackendStatus, options);
+      } else {
+        updated = await updateOrderStatus(order.id, newBackendStatus, options);
+      }
       setOrder(updated);
       toast.success(successMessage);
-    } catch {
-      // Error toast handled by API interceptor.
+    } catch { }
+  };
+
+  const handleCompleteReturn = async () => {
+    if (!deliveryPhoto) {
+      toast.error('Please upload delivery photo as proof');
+      return;
     }
+    await handleUpdateStatus('completed', 'Return delivered to vendor!', { deliveryPhoto });
   };
 
   const handleCompleteOrder = async () => {
@@ -595,29 +622,31 @@ const DeliveryOrderDetail = () => {
           transition={{ delay: 0.4 }}
           className="space-y-3 pt-4"
         >
-          {order.status === 'pending' && (
+          {/* Accept Mode */}
+          {(order.status === 'pending' || order.status === 'approved') && (
             <button
-              onClick={handleAcceptOrder}
+              onClick={handleAcceptTask}
               disabled={isUpdatingOrderStatus}
-              className="w-full gradient-green text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-green-200 disabled:opacity-60"
+              className={`w-full ${isReturn ? 'bg-orange-600' : 'gradient-green'} text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg disabled:opacity-60`}
             >
               <FiCheckCircle />
-              {isUpdatingOrderStatus ? 'Accepting...' : 'Accept Order'}
+              {isUpdatingOrderStatus ? 'Accepting...' : isReturn ? 'Accept Return Pickup' : 'Accept Order'}
             </button>
           )}
 
-          {order.status === 'accepted' && ( // Backend: 'assigned'
-            <div className="space-y-4 bg-orange-50 p-5 rounded-2xl border-2 border-orange-200">
+          {/* Pickup Mode */}
+          {(order.status === 'assigned' || (isReturn && order.status === 'processing')) && (
+            <div className={`space-y-4 ${isReturn ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'} p-5 rounded-2xl border-2`}>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-orange-500 text-white rounded-lg">
+                <div className={`p-2 ${isReturn ? 'bg-orange-500' : 'bg-green-600'} text-white rounded-lg`}>
                   <FiPackage />
                 </div>
-                <h3 className="font-bold text-orange-900 uppercase italic">Confirm Pick-Up</h3>
+                <h3 className={`font-bold ${isReturn ? 'text-orange-900' : 'text-green-900'} uppercase italic`}>Confirm Pick-Up</h3>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-orange-700 uppercase ">Capture / Upload Pickup Photo (Mandatory)</label>
-                <div className="flex items-center justify-center border-2 border-dashed border-orange-300 rounded-xl p-4 bg-white/50 cursor-pointer">
+                <label className="block text-xs font-bold text-gray-700 uppercase">Capture Pickup Photo (Mandatory)</label>
+                <div className={`flex items-center justify-center border-2 border-dashed ${isReturn ? 'border-orange-300' : 'border-green-300'} rounded-xl p-4 bg-white/50 cursor-pointer`}>
                   <input
                     type="file"
                     accept="image/*"
@@ -625,11 +654,10 @@ const DeliveryOrderDetail = () => {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      // Convert to base64 for simplicity in this demo or use FormData in store
                       const reader = new FileReader();
                       reader.onloadend = async () => {
                         try {
-                          await handleUpdateStatus('picked_up', 'Order Picked Up!', { pickupPhoto: reader.result });
+                          await handleUpdateStatus('picked_up', 'Items Picked Up!', { pickupPhoto: reader.result });
                         } catch (err) {
                           toast.error("Failed to upload photo");
                         }
@@ -639,18 +667,74 @@ const DeliveryOrderDetail = () => {
                     className="hidden"
                     id="pickup-photo"
                   />
-                  <label htmlFor="pickup-photo" className="text-sm font-bold text-orange-600 flex flex-col items-center gap-2 cursor-pointer">
-                    <span className="px-4 py-2 bg-orange-500 text-white rounded-lg shadow-sm">Take Photo</span>
-                    <span className="text-[10px] text-orange-400">Click to open camera</span>
+                  <label htmlFor="pickup-photo" className={`text-sm font-bold ${isReturn ? 'text-orange-600' : 'text-green-600'} flex flex-col items-center gap-2 cursor-pointer`}>
+                    <span className={`px-4 py-2 ${isReturn ? 'bg-orange-500' : 'bg-green-500'} text-white rounded-lg shadow-sm`}>Take Photo</span>
+                    <span className="text-[10px] opacity-60">Click to open camera</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Return Completion Mode (No OTP for returns, just photo) */}
+          {isReturn && order.status === 'picked_up' && (
+            <div className="space-y-4 bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-200">
+               <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-emerald-600 text-white rounded-lg">
+                  <FiCheckCircle />
+                </div>
+                <h3 className="font-bold text-emerald-900 uppercase italic">Return to Vendor</h3>
+              </div>
+              
+              <p className="text-sm text-emerald-800 font-medium">Deliver the package back to the vendor shop to complete the return.</p>
+
+              <div className="space-y-2 mt-2">
+                <label className="block text-xs font-bold text-emerald-700 uppercase">Proof of Delivery to Vendor</label>
+                <div className="flex items-center justify-center border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white/50 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setDeliveryPhoto(reader.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                    id="return-photo"
+                  />
+                   <label htmlFor="return-photo" className="text-sm font-bold text-emerald-600 flex flex-col items-center gap-2 cursor-pointer">
+                    {deliveryPhoto ? (
+                      <div className="relative">
+                        <img src={deliveryPhoto} alt="Return Proof" className="w-24 h-24 object-cover rounded-lg" />
+                        <span className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full p-0.5"><FiCheckCircle size={12} /></span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="px-4 py-2 bg-emerald-500 text-white rounded-lg shadow-sm">Take Photo</span>
+                        <span className="text-[10px] text-emerald-400">Final proof of delivery</span>
+                      </>
+                    )}
                   </label>
                 </div>
               </div>
 
-              <p className="text-[10px] text-orange-600 font-bold italic">* Photo will be shared with vendor & customer as proof of pickup.</p>
+              <button
+                onClick={handleCompleteReturn}
+                disabled={isUpdatingOrderStatus || !deliveryPhoto}
+                className="w-full gradient-green text-white py-4 rounded-xl font-bold text-sm shadow-lg disabled:opacity-60 uppercase"
+              >
+                {isUpdatingOrderStatus ? 'Finishing...' : 'Complete Return'}
+              </button>
             </div>
           )}
 
-          {order.status === 'picked-up' && (
+          {/* Standard Order Out for Delivery / Completion */}
+          {!isReturn && order.status === 'picked-up' && (
             <button
               onClick={() => handleUpdateStatus('out_for_delivery', 'Order is now Out for Delivery!')}
               disabled={isUpdatingOrderStatus}
@@ -661,7 +745,7 @@ const DeliveryOrderDetail = () => {
             </button>
           )}
 
-          {(order.status === 'out-for-delivery' || order.status === 'picked-up') && (
+          {!isReturn && (order.status === 'out-for-delivery' || order.status === 'picked-up') && (
             <div className="space-y-4 bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-200">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-emerald-600 text-white rounded-lg">
@@ -682,12 +766,12 @@ const DeliveryOrderDetail = () => {
                   </div>
                   <p className="text-3xl font-black text-amber-900 leading-none">{formatPrice(order.total)}</p>
                   <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest text-center mt-1">
-                    Collect physical cash (Indian Rupees) from customer before entering OTP
+                    Collect physical cash from customer before entering OTP
                   </p>
                 </motion.div>
               )}
 
-              <p className="text-xs font-bold text-emerald-700 uppercase  mb-1 text-center">Enter 6-Digit Delivery OTP from Customer</p>
+              <p className="text-xs font-bold text-emerald-700 uppercase mb-1 text-center">Enter 6-Digit Delivery OTP</p>
 
               <input
                 type="text"
@@ -700,7 +784,7 @@ const DeliveryOrderDetail = () => {
               />
 
               <div className="space-y-2 mt-4">
-                <label className="block text-xs font-bold text-emerald-700 uppercase ">Capture / Upload Delivery Photo (Mandatory)</label>
+                <label className="block text-xs font-bold text-emerald-700 uppercase ">Capture Delivery Photo (Mandatory)</label>
                 <div className="flex items-center justify-center border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white/50 cursor-pointer">
                   <input
                     type="file"
@@ -759,7 +843,7 @@ const DeliveryOrderDetail = () => {
               className="w-full bg-white border border-gray-200 text-gray-700 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-white hover:text-black shadow-sm"
             >
               <FiPhone className="text-primary-600" />
-              Call Customer
+              Call {isReturn ? 'Customer' : 'Contact'}
             </button>
           )}
         </motion.div>

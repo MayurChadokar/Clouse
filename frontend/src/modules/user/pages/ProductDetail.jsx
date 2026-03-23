@@ -571,7 +571,7 @@ const MobileProductDetail = () => {
                     </div>
                   )}
 
-                  <h1 className="text-2xl lg:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 leading-tight">
                     {product.name}
                   </h1>
 
@@ -595,7 +595,7 @@ const MobileProductDetail = () => {
                   {/* Price */}
                   <div className="bg-white rounded-2xl p-6 mb-8 border border-gray-100">
                     <div className="flex items-end gap-3 mb-2">
-                      <span className="text-4xl font-extrabold text-gray-900">
+                      <span className="text-4xl font-bold text-gray-900">
                         {formatPrice(currentPrice)}
                       </span>
                       {product.originalPrice && (

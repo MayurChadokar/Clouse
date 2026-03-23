@@ -1,102 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Grid, ShoppingCart, User, Compass } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { createPortal } from "react-dom";
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FiHome, FiGrid, FiCompass, FiHeart, FiUser } from "react-icons/fi";
+import { useWishlistStore } from "../../../../shared/store/wishlistStore";
+import { useAuthStore } from "../../../../shared/store/authStore";
 
-const BottomNav = () => {
-    const { getCartCount } = useCart();
-    const cartCount = getCartCount();
-    const location = useLocation();
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
+const MobileBottomNav = () => {
+  const location = useLocation();
+  const wishlistCount = useWishlistStore((state) => state.getItemCount());
+  const { isAuthenticated } = useAuthStore();
 
-    useEffect(() => {
-        let ticking = false;
+  const navItems = [
+    { path: "/home", icon: FiHome, label: "Home" },
+    { path: "/categories", icon: FiGrid, label: "Categories" },
+    {
+      path: "/wishlist",
+      icon: FiHeart,
+      label: "Wishlist",
+      badge: wishlistCount > 0 ? wishlistCount : null,
+    },
+    {
+      path: isAuthenticated ? "/profile" : "/login",
+      icon: FiUser,
+      label: "Profile",
+    },
+  ];
 
-        const handleScroll = () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const currentScrollY = window.scrollY;
-                    const scrollHeight = document.documentElement.scrollHeight;
-                    const clientHeight = document.documentElement.clientHeight;
-                    const isAtBottom = currentScrollY + clientHeight >= scrollHeight - 80;
+  const isActive = (path) => {
+    if (path === "/home") return location.pathname === "/home" || location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
-                    // Prevent iOS/Android rubber-banding (overscroll) from triggering nav updates
-                    if (currentScrollY <= 0) {
-                        setIsVisible(true);
-                    } else if (currentScrollY > scrollHeight - clientHeight) {
-                        setIsVisible(false);
-                    } else if (Math.abs(currentScrollY - lastScrollY) > 10) {
-                        // Only trigger if scrolled more than 10px to avoid micro-bounce jitters
-                        if (isAtBottom) {
-                            setIsVisible(false);
-                        } else if (currentScrollY > lastScrollY) {
-                            // Scrolling Down -> Hide Navigation
-                            setIsVisible(false);
-                        } else {
-                            // Scrolling Up -> Show Navigation
-                            setIsVisible(true);
-                        }
-                        setLastScrollY(currentScrollY);
-                    }
+  const iconVariants = {
+    inactive: { scale: 1, color: "#9ca3af" },
+    active: { scale: 1.1, color: "#111827", transition: { duration: 0.3, ease: "easeOut" } },
+  };
 
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
+  const navContent = (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-[9999] safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.03)] md:hidden">
+      <div className="flex items-center justify-around h-16 px-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [lastScrollY]);
-
-    // Hide bottom nav on PLP page to show filter bar
-    if (location.pathname === '/products') return null;
-
-    return (
-        <div className={`fixed bottom-0 left-0 w-full h-[65px] md:h-[70px] bg-white/80 backdrop-blur-xl border-t border-gray-300 flex md:hidden justify-around items-center z-[1000] shadow-[0_-10px_30px_rgba(0,0,0,0.08)] pb-safe transition-transform duration-300 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}>
-            <NavLink
-                to="/"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase  no-underline ${isActive ? 'text-accent' : 'text-gray-400'}`}
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex flex-col items-center justify-center flex-1 h-full relative"
             >
-                <Home size={22} />
-                <span>Home</span>
-            </NavLink>
-            <NavLink
-                to="/shop"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase  no-underline ${isActive ? 'text-accent' : 'text-gray-400'}`}
-            >
-                <Grid size={22} className={location.pathname === '/shop' ? 'animate-spin-slow' : ''} />
-                <span>Categories</span>
-            </NavLink>
-            {/* <NavLink
-                to="/shop"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase  no-underline ${isActive && location.hash === '#categories' ? 'text-accent' : 'text-gray-400'}`}
-            >
-                <Grid size={22} />
-                <span>Categories</span>
-            </NavLink> */}
-            <NavLink
-                to="/cart"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase  no-underline relative ${isActive ? 'text-accent' : 'text-gray-400'}`}
-            >
-                <ShoppingCart size={22} />
-                {cartCount > 0 && (
-                    <span className="absolute -top-1.5 right-1.5 bg-black text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">
-                        {cartCount}
+              <div className="relative flex flex-col items-center gap-1">
+                <motion.div
+                  variants={iconVariants}
+                  initial="inactive"
+                  animate={active ? "active" : "inactive"}
+                  className="relative"
+                >
+                  <Icon className="text-xl" />
+                  {item.badge && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF5722] text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                      {item.badge}
                     </span>
+                  )}
+                </motion.div>
+                <span className={`text-[10px] font-bold uppercase transition-colors ${active ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {item.label}
+                </span>
+                {active && (
+                  <motion.div
+                    layoutId="activeDot"
+                    className="absolute -bottom-2 w-1 h-1 bg-[#FF5722] rounded-full"
+                  />
                 )}
-                <span>Cart</span>
-            </NavLink>
-            <NavLink
-                to="/account"
-                className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-bold uppercase  no-underline ${isActive ? 'text-accent' : 'text-gray-400'}`}
-            >
-                <User size={22} />
-                <span>Account</span>
-            </NavLink>
-        </div>
-    );
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+
+  return createPortal(navContent, document.body);
 };
 
-export default BottomNav;
+export default MobileBottomNav;

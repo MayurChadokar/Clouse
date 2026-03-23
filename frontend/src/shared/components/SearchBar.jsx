@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSearch, FiClock, FiTrendingUp } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCatalogProducts } from '../../modules/UserApp/data/catalogData';
+import { getCatalogProducts } from '../../modules/user/data/catalogData';
 import api from '../utils/api';
 
 const RECENT_SEARCHES_KEY = 'recent-searches';
@@ -226,7 +226,7 @@ const SearchBar = () => {
     <div className="w-full relative" ref={searchRef}>
       <form onSubmit={handleSubmit} className="w-full">
         <div className="relative group">
-          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors z-10" />
+          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-300 group-focus-within:text-gray-400 transition-colors z-10 text-lg" />
           <input
             ref={inputRef}
             type="text"
@@ -235,8 +235,8 @@ const SearchBar = () => {
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
-            placeholder="Search products..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5722] transition-all duration-300 text-gray-700 placeholder:text-gray-400 shadow-sm"
+            placeholder="Search for products, brands or more"
+            className="w-full pl-12 pr-4 py-2.5 bg-white border border-gray-100 rounded-lg focus:outline-none focus:border-gray-300 transition-all duration-300 text-sm text-gray-700 placeholder:text-gray-400 placeholder:font-medium shadow-none"
           />
         </div>
       </form>

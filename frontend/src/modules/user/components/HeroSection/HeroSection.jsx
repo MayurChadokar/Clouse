@@ -64,7 +64,7 @@ const HeroSection = () => {
     useEffect(() => {
         const container = scrollRef.current;
         if (!container) return;
-        
+
         const timer = setInterval(() => {
             setMobileSlide(prev => {
                 const next = (prev + 1) % totalMobileSlides;
@@ -103,18 +103,20 @@ const HeroSection = () => {
                                     />
                                     <div className="absolute inset-0 bg-black/40" />
 
-                                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-5">
-                                        <div className="space-y-2">
-                                            <span className="text-[10px] font-bold text-white tracking-widest uppercase opacity-70">The Edit</span>
-                                            <h2 className="text-2xl md:text-2xl font-black text-white leading-tight">
+                                    <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-[9px] font-bold text-white tracking-widest uppercase opacity-70">The Edit</span>
+                                            <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
                                                 {banner.title.includes("SS24") ? "SS24 Edit" : banner.title}
                                             </h2>
-                                            <button 
-                                                onClick={() => navigate(banner.link)}
-                                                className="bg-white text-black py-3 px-6 rounded-lg font-black text-[11px] uppercase hover:bg-black hover:text-white transition-all shadow-lg w-full md:w-auto"
-                                            >
-                                                Shop Now
-                                            </button>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <button
+                                                    onClick={() => navigate(banner.link)}
+                                                    className="bg-white text-black py-2.5 px-5 rounded-xl font-black text-[10px] uppercase hover:bg-black hover:text-white transition-all shadow-lg active:scale-95"
+                                                >
+                                                    Shop Now
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -133,17 +135,17 @@ const HeroSection = () => {
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20">
-                            <h3 className="text-white text-3xl md:text-2xl font-black uppercase tracking-tight leading-none mb-3 shadow-sm">
+                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
                                 {sideBanner.title}
                             </h3>
-                            <p className="text-black font-black text-[10px] uppercase tracking-widest bg-white/90 px-4 py-1.5 rounded-full">
-                                {sideBanner.subtitle}
-                            </p>
-                        </div>
-                        <div className="absolute inset-x-0 bottom-6 px-6 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-500 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                            <div className="bg-white text-black py-3 rounded-xl font-black text-center text-[10px] shadow-xl md:hidden">
-                                Discover More
+                            <div className="flex items-center flex-wrap gap-2">
+                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
+                                    {sideBanner.subtitle}
+                                </p>
+                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                    Discover
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -159,17 +161,17 @@ const HeroSection = () => {
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20">
-                            <h3 className="text-white text-3xl md:text-2xl font-black uppercase tracking-tight leading-none mb-3">
-                                New<br/>Arrivals
+                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
+                                New Arrivals
                             </h3>
-                            <p className="text-black font-black text-[10px] uppercase tracking-widest bg-white/90 px-4 py-1.5 rounded-full">
-                                Fresh Drops
-                            </p>
-                        </div>
-                        <div className="absolute inset-x-0 bottom-6 px-6 md:hidden">
-                            <div className="bg-white text-black py-3 rounded-xl font-black text-center text-[10px] shadow-xl">
-                                Shop All
+                            <div className="flex items-center flex-wrap gap-2">
+                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
+                                     Fresh Drops
+                                 </p>
+                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                    Shop All
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -185,22 +187,23 @@ const HeroSection = () => {
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20">
-                            <h3 className="text-white text-3xl md:text-2xl font-black uppercase tracking-tight leading-none mb-3">
-                                Trending<br/>Now
+                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                            <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight leading-none">
+                                Trending Now
                             </h3>
-                            <p className="text-black font-black text-[10px] uppercase tracking-widest bg-white/90 px-4 py-1.5 rounded-full">
-                                High Demand
-                            </p>
-                        </div>
-                        <div className="absolute inset-x-0 bottom-6 px-6 md:hidden">
-                            <div className="bg-white text-black py-3 rounded-xl font-black text-center text-[10px] shadow-xl">
-                                Explore
+                            <div className="flex items-center flex-wrap gap-2">
+                                <p className="text-black font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
+                                    High Demand
+                                </p>
+                                <button className="bg-white text-black py-2 px-4 rounded-xl font-black text-[9px] uppercase shadow-xl border border-black/5 hover:bg-black hover:text-white transition-all active:scale-95 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                    Explore
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <style dangerouslySetInnerHTML={{ __html: `
+                <style dangerouslySetInnerHTML={{
+                    __html: `
                     .no-scrollbar::-webkit-scrollbar { display: none; }
                     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 `}} />

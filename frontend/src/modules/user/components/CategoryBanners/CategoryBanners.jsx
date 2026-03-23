@@ -27,25 +27,27 @@ const CategoryBanners = () => {
     };
 
     return (
-        <div className="py-5 md:py-10">
+        <div className="py-5 md:py-8">
             <div className="container">
                 {/* Dynamic Categories Row */}
-                <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-6">
+                <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 gap-4 md:gap-8">
                     {activeCategories.map((category) => (
                         <div
                             key={category.id}
                             onClick={() => handleCategoryClick(category.name)}
                             className="flex flex-col items-center cursor-pointer transition-all group"
                         >
-                            <div className="w-full aspect-square rounded-xl md:rounded-2xl overflow-hidden mb-2 md:mb-4 shadow-sm bg-gray-100">
-                                <img
-                                    src={category.image || 'https://placehold.co/150?text=' + category.name}
-                                    alt={category.name}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    onError={(e) => { e.target.src = 'https://placehold.co/150?text=' + category.name }}
-                                />
+                            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full p-[2px] bg-white shadow-[0_6px_16px_rgba(0,0,0,0.12)] mb-2 md:mb-3">
+                                <div className="w-full h-full rounded-full overflow-hidden bg-gray-100">
+                                    <img
+                                        src={category.image || 'https://placehold.co/150?text=' + category.name}
+                                        alt={category.name}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        onError={(e) => { e.target.src = 'https://placehold.co/150?text=' + category.name }}
+                                    />
+                                </div>
                             </div>
-                            <p className="text-[10px] sm:text-xs md:text-sm font-bold text-center text-text-primary uppercase  line-clamp-1">{category.name}</p>
+                            <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-center text-gray-600 line-clamp-1">{category.name}</p>
                         </div>
                     ))}
                 </div>

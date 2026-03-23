@@ -12,6 +12,7 @@ import {
   FiUser,
   FiTrendingUp,
   FiCreditCard,
+  FiDollarSign,
 } from 'react-icons/fi';
 import { IndianRupee } from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition';
@@ -277,12 +278,12 @@ const DeliveryOrderDetail = () => {
               <span className="text-xl font-bold text-gray-800">#{order.id}</span>
               {order.orderType && order.orderType !== 'standard' && (
                 <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full border border-primary-200 uppercase ">
-                  {order.orderType.replace(/_/g, ' ')}
+                  {String(order.orderType || 'standard').replace(/_/g, ' ')}
                 </span>
               )}
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-              {order.status.replace('-', ' ')}
+              {String(order.status || 'pending').replace(/-/g, ' ')}
             </span>
           </div>
         </div>
@@ -405,7 +406,7 @@ const DeliveryOrderDetail = () => {
               </div>
               <div>
                 <h2 className="text-primary-900 font-bold text-lg leading-tight uppercase ">
-                  {order.orderType.replace(/_/g, ' ')} Mode
+                  {String(order.orderType || 'standard').replace(/_/g, ' ')} Mode
                 </h2>
                 <p className="text-primary-600 text-[10px] font-bold uppercase  italic">Special Handling Required</p>
               </div>
@@ -653,7 +654,7 @@ const DeliveryOrderDetail = () => {
             <button
               onClick={() => handleUpdateStatus('out_for_delivery', 'Order is now Out for Delivery!')}
               disabled={isUpdatingOrderStatus}
-              className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 uppercase er"
+              className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 uppercase"
             >
               <FiNavigation className="animate-bounce" />
               {isUpdatingOrderStatus ? 'Starting Delivery...' : 'Start Out for Delivery'}
@@ -666,7 +667,7 @@ const DeliveryOrderDetail = () => {
                 <div className="p-2 bg-emerald-600 text-white rounded-lg">
                   <FiCheckCircle />
                 </div>
-                <h3 className="font-bold text-emerald-900 uppercase italic er">Complete Delivery</h3>
+                <h3 className="font-bold text-emerald-900 uppercase italic">Complete Delivery</h3>
               </div>
 
               {(order.paymentMethod === 'cod' || order.paymentMethod === 'cash') && (
@@ -676,15 +677,13 @@ const DeliveryOrderDetail = () => {
                   className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-5 mb-4 flex flex-col items-center gap-2 animate-pulse shadow-md shadow-amber-200"
                 >
                   <div className="flex items-center gap-2 text-amber-900 font-extrabold uppercase text-sm tracking-tighter">
-                    <IndianRupee size={20} className="font-bold" />
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold uppercase text-sm er">
-                      <FiDollarSign className="text-xl" />
-                      Cash Collection Required
-                    </div>
-                    <p className="text-3xl font-black text-amber-900 leading-none">{formatPrice(order.total)}</p>
-                    <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest text-center mt-1">Collect physical cash (Indian Rupees) from customer before entering OTP</p>
-                    <p className="text-3xl font-bold text-amber-900 leading-none">{formatPrice(order.total)}</p>
-                    <p className="text-[10px] text-amber-700 font-bold uppercase  text-center mt-1">Collect physical cash from customer before entering OTP</p>
+                    <FiDollarSign className="text-xl" />
+                    Cash Collection Required
+                  </div>
+                  <p className="text-3xl font-black text-amber-900 leading-none">{formatPrice(order.total)}</p>
+                  <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest text-center mt-1">
+                    Collect physical cash (Indian Rupees) from customer before entering OTP
+                  </p>
                 </motion.div>
               )}
 

@@ -59,16 +59,16 @@ const ProductCard = ({ product }) => {
                         />
 
                         {/* Top Right Actions (Wishlist) - Glassmorphism */}
-                        <div className="absolute top-2.5 right-2.5 z-10 transition-all duration-500">
+                        <div className="absolute top-2 right-2 z-10 transition-all duration-500">
                             <button
-                                className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-75 ${isInWishlist(product.id) ? 'bg-white shadow-md text-red-500' : 'bg-white/70 text-gray-900 border border-gray-100'}`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-75 ${isInWishlist(product.id) ? 'bg-white shadow-md text-red-500' : 'bg-white/70 text-gray-900 border border-gray-100'}`}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     toggleWishlist(product);
                                 }}
                             >
-                                <Heart size={13} className={`${isInWishlist(product.id) ? 'fill-red-500' : ''}`} />
+                                <Heart size={11} className={`${isInWishlist(product.id) ? 'fill-red-500' : ''}`} />
                             </button>
                         </div>
 
@@ -83,12 +83,12 @@ const ProductCard = ({ product }) => {
                         </div>
 
                         {/* Mobile Cart Button (Always Visible) */}
-                        <div className="absolute bottom-2.5 right-2.5 z-10 md:hidden">
+                        <div className="absolute bottom-2 right-2 z-10 md:hidden">
                             <button
-                                className="w-7 h-7 rounded-full bg-white shadow-lg border border-gray-100 text-black flex items-center justify-center active:scale-95 transition-all"
+                                className="w-6 h-6 rounded-full bg-white shadow-lg border border-gray-100 text-black flex items-center justify-center active:scale-95 transition-all"
                                 onClick={handleAddToCart}
                             >
-                                <ShoppingCart size={12} />
+                                <ShoppingCart size={10} />
                             </button>
                         </div>
 

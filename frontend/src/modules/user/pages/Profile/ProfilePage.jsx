@@ -6,7 +6,7 @@ import { Camera, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ProfilePage = () => {
-    const { user, updateProfile } = useAuth();
+    const { user, updateProfile, uploadProfileAvatar } = useAuth();
     const fileInputRef = useRef(null);
 
     // Form State initialized from user context
@@ -45,13 +45,15 @@ const ProfilePage = () => {
         const file = e.target.files[0];
         if (file) {
             try {
-                // Actually upload if we had an upload function in useAuth
-                // For now, keep the local preview logic but we should call the store
+                // Local preview immediately
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     setFormData(prev => ({ ...prev, avatar: reader.result }));
                 };
                 reader.readAsDataURL(file);
+
+                await uploadProfileAvatar(file);
+                toast.success('Avatar updated successfully');
             } catch (error) {
                 toast.error('Failed to update avatar');
             }
@@ -104,7 +106,7 @@ const ProfilePage = () => {
                 <div className="bg-white p-10 rounded-[32px] shadow-sm w-full max-w-md text-center border border-gray-100">
                     <h2 className="text-[28px] font-bold text-gray-900 mb-4 ">Account</h2>
                     <p className="text-[13px] text-gray-500 mb-8">Login to view your profile and manage orders</p>
-                    <Link to="/login" className="block w-full py-4 bg-black text-white rounded-full text-[13px] font-bold uppercase  hover:bg-gray-100 hover:text-black transition-all no-underline shadow-[0_10px_30px_rgba(212,175,55,0.2)]">
+                    <Link to="/login" className="block w-full py-4 bg-black text-white rounded-full text-[14px] font-semibold hover:bg-gray-100 hover:text-black transition-all no-underline shadow-lg">
                         Login / Sign Up
                     </Link>
                 </div>
@@ -114,10 +116,10 @@ const ProfilePage = () => {
 
     return (
         <AccountLayout>
-            <div className="max-w-[500px] mx-auto bg-white min-h-screen pb-20">
+            <div className="max-w-[800px] mx-auto bg-white min-h-screen pb-20">
 
                 {/* Header & Avatar Section */}
-                <div className="flex flex-col items-center mb-10 pt-4">
+                <div className="flex flex-col items-center mb-10 pt-4 px-4">
                     <div className="relative group cursor-pointer mb-5" onClick={triggerFileInput}>
                         <input
                             type="file"
@@ -126,90 +128,89 @@ const ProfilePage = () => {
                             accept="image/*"
                             className="hidden"
                         />
-                        <div className="w-28 h-28 md:w-32 md:h-32 rounded-full p-[3px] bg-gray-100 shadow-sm group-hover:shadow-md transition-all duration-500">
-                            <div className="w-full h-full rounded-full bg-white overflow-hidden relative border-4 border-gray-50">
+                        <div className="w-28 h-28 md:w-36 md:h-36 rounded-full p-[4px] bg-gradient-to-tr from-[#FF5722]/20 to-[#FF5722]/5 shadow-sm group-hover:shadow-lg transition-all duration-500">
+                            <div className="w-full h-full rounded-full bg-white overflow-hidden relative border-4 border-white">
                                 <img
                                     src={formData.avatar}
                                     alt="User Avatar"
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                 />
-                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
-                                    <Camera className="text-[#FF5722] w-8 h-8" strokeWidth={1.5} />
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
+                                    <Camera className="text-white w-8 h-8" strokeWidth={1.5} />
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <h2 className="text-[24px] font-bold text-gray-900 ">{formData.firstName} {formData.lastName}</h2>
-                    <div className="flex items-center gap-1.5 mt-1.5 opacity-80">
-                        <Check size={12} className="text-[#FF5722]" strokeWidth={3} />
-                        <span className="text-[10px] font-bold text-[#FF5722] uppercase">Member Since 2024</span>
+                    <h2 className="text-[26px] md:text-[32px] font-bold text-gray-900 ">{formData.firstName} {formData.lastName}</h2>
+                    <div className="flex items-center gap-2 mt-1.5 px-4 py-1.5 bg-gray-50 rounded-full border border-gray-100">
+                        <Check size={14} className="text-[#FF5722]" strokeWidth={3} />
+                        <span className="text-[12px] font-bold text-gray-500">Premium Member</span>
                     </div>
                 </div>
 
                 {/* Form Fields Section */}
                 <div className="space-y-5 px-4 text-gray-900">
                     {/* Basic Info */}
-                    <div className="grid grid-cols-1 gap-5">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="relative group">
-                                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase z-10 transition-colors group-focus-within:text-[#FF5722]">First Name</label>
-                                <input
-                                    type="text"
-                                    value={formData.firstName}
-                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-medium text-[14px] text-gray-900"
-                                    placeholder="First Name"
-                                />
-                            </div>
-                            <div className="relative group">
-                                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase z-10 transition-colors group-focus-within:text-[#FF5722]">Last Name</label>
-                                <input
-                                    type="text"
-                                    value={formData.lastName}
-                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-medium text-[14px] text-gray-900"
-                                    placeholder="Last Name"
-                                />
-                            </div>
-                        </div>
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                         <div className="relative group">
-                            <label className="absolute -top-2.5 left-4 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase z-10 transition-colors group-focus-within:text-[#FF5722]">Email Address</label>
+                            <label className="absolute -top-2.5 left-4 bg-white px-2 text-[11px] font-bold text-gray-400 z-10 transition-colors group-focus-within:text-[#FF5722]">First Name</label>
                             <input
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-medium text-[14px] text-gray-900"
-                                placeholder="Email"
+                                type="text"
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-semibold text-[14px] text-gray-900"
+                                placeholder="First Name"
                             />
                         </div>
+                        <div className="relative group">
+                            <label className="absolute -top-2.5 left-4 bg-white px-2 text-[11px] font-bold text-gray-400 z-10 transition-colors group-focus-within:text-[#FF5722]">Last Name</label>
+                            <input
+                                type="text"
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-semibold text-[14px] text-gray-900"
+                                placeholder="Last Name"
+                            />
+                        </div>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="relative group">
-                                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase z-10 transition-colors group-focus-within:text-[#FF5722]">Mobile Number</label>
-                                <div className="flex items-center gap-3 w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] focus-within:ring-1 focus-within:ring-[#FF5722] focus-within:border-[#FF5722] transition-all">
-                                    <div className="flex items-center gap-2 pr-3 border-r border-gray-100">
-                                        <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 rounded-sm shadow-sm" />
-                                        <span className="text-[13px] font-bold text-gray-500">+91</span>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="flex-1 bg-transparent border-none outline-none font-medium text-[14px] text-gray-900"
-                                    />
+                    <div className="relative group">
+                        <label className="absolute -top-2.5 left-4 bg-white px-2 text-[11px] font-bold text-gray-400 z-10 transition-colors group-focus-within:text-[#FF5722]">Email Address</label>
+                        <input
+                            type="email"
+                            value={formData.email}
+                            readOnly
+                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] outline-none transition-all font-semibold text-[14px] text-gray-400 cursor-not-allowed"
+                            placeholder="Email"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                        <div className="relative group">
+                            <label className="absolute -top-2.5 left-4 bg-white px-2 text-[11px] font-bold text-gray-400 z-10 transition-colors group-focus-within:text-[#FF5722]">Mobile Number</label>
+                            <div className="flex items-center gap-3 w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] focus-within:ring-1 focus-within:ring-[#FF5722] focus-within:border-[#FF5722] transition-all">
+                                <div className="flex items-center gap-2 pr-3 border-r border-gray-200">
+                                    <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-5 rounded-[2px] shadow-sm" />
+                                    <span className="text-[14px] font-bold text-gray-600">+91</span>
                                 </div>
-                            </div>
-                            <div className="relative group">
-                                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase z-10 transition-colors group-focus-within:text-[#FF5722]">Date of Birth</label>
                                 <input
                                     type="text"
-                                    value={formData.dob}
-                                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-medium text-[14px] text-gray-900"
-                                    placeholder="DD/MM/YYYY"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className="flex-1 bg-transparent border-none outline-none font-semibold text-[14px] text-gray-900"
+                                    placeholder="Phone Number"
                                 />
                             </div>
+                        </div>
+                        <div className="relative group">
+                            <label className="absolute -top-2.5 left-4 bg-white px-2 text-[11px] font-bold text-gray-400 z-10 transition-colors group-focus-within:text-[#FF5722]">Date of Birth</label>
+                            <input
+                                type="text"
+                                value={formData.dob}
+                                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] focus:ring-1 focus:ring-[#FF5722] focus:border-[#FF5722] outline-none transition-all font-semibold text-[14px] text-gray-900"
+                                placeholder="DD/MM/YYYY"
+                            />
                         </div>
                     </div>
 
@@ -219,15 +220,15 @@ const ProfilePage = () => {
                     <div className="space-y-7">
                         {/* Preferred Fit */}
                         <div>
-                            <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-3 ml-1">Preferred Fit (Bespoke)</h4>
-                            <div className="flex flex-wrap gap-2.5">
+                            <h4 className="text-[11px] font-semibold text-gray-500 mb-3 ml-1">Preferred Fit (Bespoke)</h4>
+                            <div className="flex flex-wrap gap-2 md:gap-2.5">
                                 {fitOptions.map(opt => (
                                     <button
                                         key={opt}
                                         onClick={() => setFormData({ ...formData, preferredFit: opt })}
-                                        className={`px-5 py-2 rounded-full text-[12px] font-bold transition-all duration-300 ${formData.preferredFit === opt
-                                            ? 'bg-[#FF5722] text-white shadow-md scale-105'
-                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-[#FF5722]/50 hover:text-gray-900 hover:-translate-y-0.5'
+                                        className={`px-4 md:px-5 py-2 rounded-full text-[11px] md:text-[12px] font-semibold transition-all duration-300 ${formData.preferredFit === opt
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-black/30 hover:text-gray-900'
                                             }`}
                                     >
                                         {opt}
@@ -238,15 +239,15 @@ const ProfilePage = () => {
 
                         {/* Gender */}
                         <div>
-                            <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-3 ml-1">Gender Identification</h4>
-                            <div className="flex flex-wrap gap-2.5">
+                            <h4 className="text-[11px] font-semibold text-gray-500 mb-3 ml-1">Gender Identification</h4>
+                            <div className="flex flex-wrap gap-2 md:gap-2.5">
                                 {genderOptions.map(opt => (
                                     <button
                                         key={opt}
                                         onClick={() => setFormData({ ...formData, gender: opt })}
-                                        className={`px-5 py-2 rounded-full text-[12px] font-bold transition-all duration-300 ${formData.gender === opt
-                                            ? 'bg-[#FF5722] text-white shadow-md scale-105'
-                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-[#FF5722]/50 hover:text-gray-900 hover:-translate-y-0.5'
+                                        className={`px-4 md:px-5 py-2 rounded-full text-[11px] md:text-[12px] font-semibold transition-all duration-300 ${formData.gender === opt
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-black/30 hover:text-gray-900'
                                             }`}
                                     >
                                         {opt}
@@ -257,15 +258,15 @@ const ProfilePage = () => {
 
                         {/* Age Range */}
                         <div>
-                            <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-3 ml-1">Age Demographics</h4>
-                            <div className="flex flex-wrap gap-2.5">
+                            <h4 className="text-[11px] font-semibold text-gray-500 mb-3 ml-1">Age Demographics</h4>
+                            <div className="flex flex-wrap gap-2 md:gap-2.5">
                                 {ageOptions.map(opt => (
                                     <button
                                         key={opt}
                                         onClick={() => setFormData({ ...formData, ageRange: opt })}
-                                        className={`px-5 py-2 rounded-full text-[12px] font-bold transition-all duration-300 ${formData.ageRange === opt
-                                            ? 'bg-[#FF5722] text-white shadow-md scale-105'
-                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-[#FF5722]/50 hover:text-gray-900 hover:-translate-y-0.5'
+                                        className={`px-4 md:px-5 py-2 rounded-full text-[11px] md:text-[12px] font-semibold transition-all duration-300 ${formData.ageRange === opt
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-black/30 hover:text-gray-900'
                                             }`}
                                     >
                                         {opt}
@@ -276,15 +277,15 @@ const ProfilePage = () => {
 
                         {/* Style Preference */}
                         <div>
-                            <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-3 ml-1">Style Preference</h4>
+                            <h4 className="text-[11px] font-semibold text-gray-500 mb-3 ml-1">Style Preference</h4>
                             <div className="flex flex-wrap gap-2.5">
                                 {styleOptions.map(opt => (
                                     <button
                                         key={opt}
                                         onClick={() => setFormData({ ...formData, stylePreference: opt })}
-                                        className={`px-4 py-2 rounded-full text-[11px] font-bold transition-all duration-300 ${formData.stylePreference === opt
-                                            ? 'bg-[#FF5722] text-white shadow-md scale-105'
-                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-[#FF5722]/50 hover:text-gray-900 hover:-translate-y-0.5'
+                                        className={`px-4 py-2 rounded-full text-[11px] font-semibold transition-all duration-300 ${formData.stylePreference === opt
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border border-gray-100 hover:border-black/30 hover:text-gray-900'
                                             }`}
                                     >
                                         {opt}
@@ -297,7 +298,7 @@ const ProfilePage = () => {
                         <div className="pt-8 pb-4 relative">
                             {saveMessage && (
                                 <div className="absolute -top-2 left-0 w-full flex justify-center">
-                                    <span className="bg-[#FF5722]/10 text-[#FF5722] border border-[#FF5722]/20 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase animate-fade-in-up">
+                                    <span className="bg-[#FF5722]/10 text-[#FF5722] border border-[#FF5722]/20 px-4 py-1.5 rounded-full text-[11px] font-semibold animate-fade-in-up">
                                         {saveMessage}
                                     </span>
                                 </div>
@@ -308,7 +309,7 @@ const ProfilePage = () => {
                                 className="group relative w-full py-4 bg-black text-white rounded-full overflow-hidden disabled:opacity-70 transition-transform active:scale-95 shadow-xl shadow-gray-200"
                             >
                                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                                <span className="relative font-bold text-[13px] uppercase">
+                                <span className="relative font-bold text-[14px]">
                                     {isSaving ? 'Updating Profile...' : 'Save Profile Details'}
                                 </span>
                             </button>

@@ -703,7 +703,7 @@ const PaymentPage = () => {
                 </div>
 
                 {/* Footer Section - Fixed Bottom */}
-                <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 z-50">
+                <div className="fixed bottom-16 md:bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 z-[10000] safe-area-bottom">
                     <div className="flex items-center justify-between container mx-auto max-w-2xl">
                         <div className="flex flex-col">
                             <span className="text-[16px] font-bold text-gray-900">₹{finalTotal}</span>

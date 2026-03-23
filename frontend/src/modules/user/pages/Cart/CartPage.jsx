@@ -48,7 +48,7 @@ const CartPage = () => {
     return (
         <div className="bg-white text-gray-900 min-h-screen pb-32 md:pb-12">
             {/* Mobile Header Nav */}
-            <div className="md:hidden sticky top-0 bg-gray-50/90 backdrop-blur-xl z-40 border-b border-gray-200 px-4 py-4 flex items-center gap-4 shadow-sm">
+            <div className="md:hidden sticky top-0 bg-white/90 backdrop-blur-xl z-40 border-b border-gray-100 px-4 py-4 flex items-center gap-4 shadow-sm">
                 <button onClick={() => {
                     if (window.history.length > 2) {
                         navigate(-1);
@@ -96,9 +96,9 @@ const CartPage = () => {
                     {/* Cart Items List */}
                     <div className="flex-[1.5] space-y-4">
                         {cart.map((item) => (
-                            <div key={`${item.id}-${item.selectedSize}`} className="bg-gray-50 rounded-[24px] overflow-hidden border border-gray-200 shadow-lg flex flex-col sm:flex-row p-4 sm:p-5 relative group transition-colors hover:border-gray-300">
-                                <Link to={`/product/${item.id}`} className="w-full sm:w-32 aspect-[3/4] sm:h-auto rounded-2xl overflow-hidden shrink-0 bg-white border border-gray-100">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100" />
+                            <div key={`${item.id}-${item.selectedSize}`} className="bg-white rounded-[24px] overflow-hidden border border-gray-100 shadow-sm flex flex-col sm:flex-row p-4 sm:p-5 relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-black/5">
+                                <Link to={`/product/${item.id}`} className="w-full sm:w-32 aspect-[3/4] sm:h-auto rounded-2xl overflow-hidden shrink-0 bg-[#F8F8F8] border border-gray-100">
+                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                 </Link>
 
                                 <div className="flex-1 flex flex-col pt-4 sm:pt-0 sm:pl-6">
@@ -154,7 +154,7 @@ const CartPage = () => {
                                                     ₹{((item.discountedPrice !== undefined ? item.discountedPrice : (item.price || item.originalPrice || 0)) * item.quantity).toFixed(0)}
                                                 </span>
                                                 {(item.discount || (item.originalPrice > (item.discountedPrice || item.price))) && (
-                                                    <span className="text-[11px] font-bold text-black bg-black px-2 py-0.5 rounded-full shadow-sm">
+                                                    <span className="text-[11px] font-bold text-white bg-black px-2 py-0.5 rounded-full shadow-sm">
                                                         {item.discount || `${Math.round(((item.originalPrice - (item.discountedPrice || item.price)) / item.originalPrice) * 100)}% OFF`}
                                                     </span>
                                                 )}
@@ -179,7 +179,7 @@ const CartPage = () => {
 
                     {/* Price Details Sidebar */}
                     <div className="flex-1 lg:max-w-md">
-                        <div className="bg-gray-50 rounded-[32px] overflow-hidden border border-gray-200 shadow-2xl lg:sticky lg:top-28">
+                        <div className="bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-xl lg:sticky lg:top-28">
                             <div className="p-8">
                                 <h3 className="text-[14px] font-bold uppercase  text-gray-900 mb-8 flex items-center justify-between">
                                     Cart Summary
@@ -207,9 +207,9 @@ const CartPage = () => {
                                             <p className="text-[10px] font-bold text-gray-500 uppercase  mb-1">Total Amount</p>
                                             <p className="text-2xl font-bold text-gray-900 ">₹{getCartTotal()}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[11px] font-bold text-black bg-black px-2 py-1 rounded-lg">You saved ₹{totalDiscount}</p>
-                                        </div>
+                                         <div className="text-right">
+                                             <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">You saved ₹{totalDiscount}</p>
+                                         </div>
                                     </div>
 
                                     {/* HIDDEN ON MOBILE: Avoids duplicate button with bottom action bar */}
@@ -231,7 +231,8 @@ const CartPage = () => {
             </div>
 
             {/* Mobile Bottom Action Bar */}
-             <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-200 px-6 py-4 z-50 flex items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+             {/* Mobile Bottom Action Bar - Shifted up to avoid overlap with BottomNav */}
+             <div className="lg:hidden fixed bottom-16 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-100 px-6 py-4 z-50 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.06)]">
                 <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase ">Total to Pay</p>
                     <p className="text-xl font-bold text-gray-900 ">₹{getCartTotal()}</p>

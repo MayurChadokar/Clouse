@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, MapPin, User, ShoppingCart, X, LayoutGrid, Compass, Heart, ChevronRight, ChevronDown } from 'lucide-react';
 import MegaMenu from './MegaMenu';
 import DiscoverModal from './DiscoverModal';
 import LocationModal from './LocationModal';
+import CategoryBar from '../Category/CategoryBar';
 import { useUserLocation } from '../../context/LocationContext';
 
 import api from '../../../../shared/utils/api';
@@ -16,6 +18,7 @@ import LoginModal from '../Modals/LoginModal';
 import { categories as localCategories } from '../../data/index';
 
 const Header = ({ variant = 'default' }) => {
+    const headerRef = useRef(null);
     const { user } = useAuth();
     const { wishlistItems } = useWishlist();
     const { activeCategory, setActiveCategory, activeSubCategory, setActiveSubCategory, getCategoryColor } = useCategory();
@@ -30,6 +33,30 @@ const Header = ({ variant = 'default' }) => {
         const handleOpenLogin = () => setIsLoginModalOpen(true);
         window.addEventListener('openLoginModal', handleOpenLogin);
         return () => window.removeEventListener('openLoginModal', handleOpenLogin);
+    }, []);
+
+    useEffect(() => {
+        const el = headerRef.current;
+        if (!el) return;
+
+        const updateHeaderHeight = () => {
+            const height = el.offsetHeight || 0;
+            document.documentElement.style.setProperty('--user-header-height', `${height}px`);
+        };
+
+        updateHeaderHeight();
+
+        let resizeObserver;
+        if ('ResizeObserver' in window) {
+            resizeObserver = new ResizeObserver(() => updateHeaderHeight());
+            resizeObserver.observe(el);
+        }
+
+        window.addEventListener('resize', updateHeaderHeight);
+        return () => {
+            window.removeEventListener('resize', updateHeaderHeight);
+            if (resizeObserver) resizeObserver.disconnect();
+        };
     }, []);
 
     const { getCartCount, lastAddedItem } = useCart();
@@ -168,59 +195,192 @@ const Header = ({ variant = 'default' }) => {
     }, [activeAddress, location.pathname]);
 
     // Show categories on Home and Shop pages
-    const showCategories = (location.pathname === '/' || location.pathname === '/home' || location.pathname === '/shop');
+    const showCategories = (location.pathname === '/' || location.pathname === '/home' || location.pathname === '/shop' || location.pathname === '/categories');
 
     const getHeaderTheme = (categoryName) => {
         return 'bg-white';
     };
 
-    const currentHeaderBg = isSubcategoryMode ? getHeaderTheme(activeSubCategory) : getHeaderTheme(activeCategory);
+    const { getCategoryGradient } = useCategory();
+    const currentGradient = isSubcategoryMode ? getCategoryGradient(activeSubCategory) : getCategoryGradient(activeCategory);
 
     return (
-        <header className={`w-full relative z-[999] shadow-sm font-sans ${currentHeaderBg} transition-all duration-300 ease-in-out ${variant === 'shop' ? 'sticky top-0' : ''} ${['product', 'account', 'cart', 'checkout', 'products', 'payment'].includes(variant) ? 'hidden md:block' : ''}`}>
+        <motion.header
+            ref={headerRef}
+            initial={false}
+            animate={{ background: currentGradient }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className={`w-full fixed top-0 left-0 z-[999] shadow-sm font-sans transition-all duration-300 ease-in-out ${['product', 'account', 'cart', 'checkout', 'products', 'payment'].includes(variant) ? 'hidden md:block' : ''}`}
+        >
             {/* Top Colored Section - Premium Frosted Background */}
             <div className={`relative z-[60] ${variant === 'shop' ? 'border-b border-black/5' : ''}`}>
 
                 {/* Location Bar / Address Bar - Vibrant Edit (HIDDEN in shop variant) */}
                 {variant !== 'shop' && (
-                    <div
-                        onClick={() => setIsLocationModalOpen(true)}
-                        className="px-4 py-3 flex items-center justify-between group cursor-pointer transition-colors"
-                    >
-                        {/* LEFT SIDE: 60 MINS Badge */}
-                        <div className="flex items-center">
-                            <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[14px] px-3 py-1.5 shadow-md shrink-0 border border-black/10">
-                                <span className="text-[14px] font-bold text-black leading-none ">60</span>
-                                <span className="text-[9px] font-bold text-[#FFC107] uppercase  leading-none mt-1 drop-shadow-sm">MINS</span>
+                    <>
+                        {/* Mobile Location Bar */}
+                        <div
+                            className="px-4 py-3 flex items-center justify-between group transition-colors md:hidden"
+                        >
+                            <div className="flex items-center gap-4">
+                                <Link to="/" className="no-underline group">
+                                    <h1 className="text-[20px] font-bold drop-shadow-md transition-all duration-500 text-gray-900 group-hover:text-black">
+                                        Clothify<span className="text-black text-[24px] leading-none group-hover:text-gray-900">.</span>
+                                    </h1>
+                                </Link>
+
+                                <div className="flex items-center">
+                                    <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[10px] px-2 py-1 shadow-md shrink-0 border border-black/10">
+                                        <span className="text-[12px] font-bold text-black leading-none ">60</span>
+                                        <span className="text-[8px] font-bold text-[#FFC107] uppercase  leading-none mt-0.5 drop-shadow-sm">MINS</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 justify-end" onClick={() => setIsLocationModalOpen(true)}>
+                                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-black/10 shadow-md shrink-0 mr-1">
+                                    <MapPin size={18} className="text-[#FFC107]" />
+                                </div>
+                                <div className="flex flex-col min-w-0 pr-2 pl-1 text-left">
+                                    <span className="text-[14px] font-bold leading-tight flex items-center gap-1.5  text-black">
+                                        Location <ChevronDown size={14} className="text-[#FFC107] drop-shadow-sm" />
+                                    </span>
+                                    <span className="text-[11.5px] font-medium truncate max-w-[120px] text-black/70 transition-colors flex items-center gap-1">
+                                        {activeAddress ? `${activeAddress.name}` : 'Indore City'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 ml-1">
+                                    <Link to="/cart" onClick={(e) => e.stopPropagation()} className="relative p-1.5 group/icon mt-[2px]">
+                                        <ShoppingCart size={20} className="text-gray-600 group-hover/icon:text-black transition-colors" />
+                                        {cartCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                                                {cartCount}
+                                            </span>
+                                        )}
+                                    </Link>
+                                </div>
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 ml-1">
+                                    <Link to={user ? "/profile" : "/login"} onClick={(e) => e.stopPropagation()} className="relative p-1.5 group/icon mt-[2px]">
+                                        <User size={20} className="text-gray-600 group-hover/icon:text-black transition-colors" />
+                                    </Link>
+                                </div>
                             </div>
                         </div>
 
-                        {/* RIGHT SIDE: Location Icon and Details + Chevrons/Mobile Icons */}
-                        <div className="flex items-center gap-2 justify-end">
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-black/10 shadow-md shrink-0 mr-1">
-                                <MapPin size={18} className="text-[#FFC107]" />
+                        {/* Desktop Inline Navbar (like reference) */}
+                        <div className="hidden md:flex items-center justify-between px-6 py-3">
+                            <div className="flex items-center gap-8">
+                                <Link to="/" className="no-underline group">
+                                    <h1 className="text-[28px] font-bold drop-shadow-md transition-all duration-500 text-gray-900 group-hover:text-black">
+                                        Clothify<span className="text-black text-[36px] leading-none group-hover:text-gray-900">.</span>
+                                    </h1>
+                                </Link>
+
+                                <button
+                                    onClick={() => setIsLocationModalOpen(true)}
+                                    className="flex items-center gap-3 group text-left"
+                                >
+                                <div className="flex items-center justify-center bg-black rounded-[14px] w-12 h-12 shrink-0 shadow-md">
+                                    <span className="text-white text-[16px] font-black leading-none">60</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[12px] font-bold text-black leading-none">Mins</span>
+                                    <span className="text-[12px] font-semibold text-black/70 leading-none mt-1">
+                                        Current: {activeAddress ? `${activeAddress.name}` : 'Add Address'}
+                                    </span>
+                                </div>
+                                <ChevronRight size={16} className="text-black/60 group-hover:translate-x-1 transition-transform" />
+                            </button>
                             </div>
-                            <div className="flex flex-col min-w-0 pr-2 pl-1 text-left">
-                                <span className="text-[14px] font-bold leading-tight flex items-center gap-1.5  text-black">
-                                    Current Location <ChevronDown size={14} className="text-[#FFC107] drop-shadow-sm" />
-                                </span>
-                                <span className="text-[11.5px] font-medium truncate max-w-[220px] text-black/70 transition-colors flex items-center gap-1">
-                                    {activeAddress ? `${activeAddress.name}, ${activeAddress.address}` : 'Indore City, MP'}
-                                </span>
+
+                            <div className="relative flex-1 max-w-[560px]">
+                                <input
+                                    type="text"
+                                    placeholder="Search for products, brands or more"
+                                    className="w-full py-3 pl-12 pr-4 border border-black/10 rounded-xl bg-white text-[14px] font-medium text-black outline-none placeholder:text-gray-400 shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => handleSearchInput(e.target.value)}
+                                    onKeyDown={handleSearch}
+                                />
+                                <Search
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
+                                    size={18}
+                                    onClick={() => searchQuery.trim() && handleSearch({ key: 'Enter' })}
+                                />
+
+                                {searchSuggestions.length > 0 && (
+                                    <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#FAFAFA] rounded-2xl shadow-xl overflow-hidden z-[1010] border border-black/5 animate-fadeInUp">
+                                        <div className="p-4 border-b border-black/5 flex items-center justify-between bg-black/[0.02]">
+                                            <span className="text-[10px] font-bold uppercase  text-black/40">Products Found</span>
+                                            <span className="text-[10px] font-bold text-black uppercase  hover:underline cursor-pointer">View All</span>
+                                        </div>
+                                        {searchSuggestions.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                onClick={() => handleSuggestionClick(item)}
+                                                className="px-5 py-3 hover:bg-black/5 flex items-center gap-4 cursor-pointer transition-colors border-b border-black/5 last:border-0 group/item"
+                                            >
+                                                <div className="w-12 h-14 rounded-xl overflow-hidden bg-black/5 shrink-0 shadow-sm">
+                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover/item:scale-110" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-[13px] font-bold text-black truncate mb-1">{item.name}</h4>
+                                                    <p className="text-[10px] font-bold uppercase text-black/40 ">{item.brand} <span className="text-[8px] mx-1 opacity-50">â€¢</span> <span className="text-black font-semibold">â‚¹{item.discountedPrice}</span></p>
+                                                </div>
+                                                <ChevronRight size={16} className="text-black/20 group-hover/item:text-black group-hover/item:translate-x-1 transition-all" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1 text-black hidden md:block" />
-                            {/* Mobile Right Icons (Cart) */}
-                            <div className="flex md:hidden items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 ml-1">
-                                <Link to={user ? "/profile" : "/login"} onClick={(e) => e.stopPropagation()} className="relative p-1.5 group/icon mt-[2px]">
-                                    <User size={20} className="text-gray-600 group-hover/icon:text-black transition-colors" />
+
+                            <div className="flex items-center gap-6">
+                                <Link
+                                    to="/categories"
+                                    className="flex items-center gap-2 text-[14px] font-semibold text-black/80 hover:text-black transition-colors"
+                                >
+                                    <LayoutGrid size={18} className="text-black/60" />
+                                    Categories
+                                </Link>
+                                <button
+                                    onClick={() => setIsDiscoverOpen(true)}
+                                    className="flex items-center gap-2 text-[14px] font-semibold text-black/80 hover:text-black transition-colors"
+                                >
+                                    <Compass size={18} className="text-black/60" />
+                                    Discover
+                                </button>
+                                <Link to="/wishlist" className="relative flex items-center gap-2 text-[14px] font-semibold text-black/80 hover:text-black transition-colors">
+                                    <Heart size={18} className="text-black/60" />
+                                    Wishlist
+                                    {wishlistItems.length > 0 && (
+                                        <span className="absolute -top-2 -right-3 bg-white border border-black text-black text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
+                                            {wishlistItems.length}
+                                        </span>
+                                    )}
+                                </Link>
+                                <Link to="/cart" className="relative flex items-center gap-2 text-[14px] font-semibold text-black/80 hover:text-black transition-colors">
+                                    <ShoppingCart size={20} className="text-black/60" />
+                                    Cart
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-2 -right-3 bg-black text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                                <Link
+                                    to={user ? "/profile" : "/login"}
+                                    className="flex items-center gap-2 text-[14px] font-semibold text-black/80 hover:text-black transition-colors"
+                                >
+                                    <User size={20} className="text-black/60" />
+                                    {user?.name || 'User'}
                                 </Link>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )}
 
                 {/* Search Bar & Wishlist Container - Seamless Collapse on Mobile Scroll */}
-                <div className={`px-4 transition-all duration-300 ease-in-out grid relative ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 h-0 overflow-hidden'}`}>
+                <div className={`px-4 transition-all duration-300 ease-in-out grid relative md:hidden ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 h-0 overflow-hidden'}`}>
                     <div className="overflow-hidden w-full flex items-center gap-3">
                         <div className={`flex items-center gap-3 w-full ${variant === 'shop' ? 'pt-4 pb-4' : 'pt-2 pb-4'}`}>
                             <div className="relative flex-1 group">
@@ -281,7 +441,7 @@ const Header = ({ variant = 'default' }) => {
                     </div>
                 </div>
 
-                <div className="hidden md:flex flex-col border-t border-black/5">
+                <div className="hidden">
                     <div className="flex items-center justify-between px-8 py-3">
                         <Link to="/" className="no-underline group">
                             <h1 className="text-[32px] font-bold  drop-shadow-md transition-all duration-500 text-black group-hover:text-black/80">
@@ -292,7 +452,7 @@ const Header = ({ variant = 'default' }) => {
                         <div className="flex items-center gap-10">
                             <div
                                 className="flex items-center gap-2.5 text-[12px] font-bold uppercase  cursor-pointer transition-colors py-2 group text-black/70 hover:text-black"
-                                onMouseEnter={() => setIsMegaMenuOpen(true)}
+
                             >
                                 <LayoutGrid size={18} className="text-black/50 group-hover:text-black transition-colors" />
                                 Categories
@@ -346,63 +506,14 @@ const Header = ({ variant = 'default' }) => {
             {/* Backdrop Overlay for Mega Menu */}
             <div
                 className={`fixed inset-0 bg-white/80 backdrop-blur-md transition-all duration-700 z-[40] ${isMegaMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
-                onMouseEnter={() => setIsMegaMenuOpen(false)}
+                onClick={() => setIsMegaMenuOpen(false)}
             />
 
             {/* Dynamic Category Tabs */}
             {showCategories && (
-                <div className={`relative z-[30] transition-all duration-300 ease-in-out grid ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100 mt-1 mb-2' : 'grid-rows-[0fr] opacity-0 mt-0 mb-0'}`}>
+                <div className={`relative z-[30] transition-all duration-300 ease-in-out grid ${isHeaderVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 h-0 overflow-hidden'}`}>
                     <div className="overflow-hidden">
-                        <div className="flex overflow-x-auto scrollbar-hide gap-1 md:gap-4 px-2 md:px-8 pt-2 items-end scroll-smooth snap-x snap-mandatory min-h-[105px]">
-                            {finalDisplayCategories.map((cat, idx) => {
-                                const isSelected = isSubcategoryMode ? (activeSubCategory === cat.name) : (activeCategory === cat.name);
-
-                                return (
-                                    <button
-                                        key={cat.id || idx}
-                                        className={`relative flex flex-col items-center shrink-0 w-[80px] md:w-[94px] snap-center outline-none group pt-3 pb-3 px-1 transition-all duration-300 ${isSelected ? 'bg-white rounded-t-[24px]' : 'hover:-translate-y-1'}`}
-                                        onClick={() => {
-                                            if (isSubcategoryMode) {
-                                                setActiveSubCategory(cat.name);
-                                            } else {
-                                                setActiveCategory(cat.name);
-                                                if (location.pathname === '/' || location.pathname === '/home') {
-                                                    setTimeout(() => {
-                                                        const grid = document.getElementById('product-grid');
-                                                        if (grid) {
-                                                            grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                        }
-                                                    }, 50);
-                                                } else if (location.pathname !== '/shop') {
-                                                    navigate('/shop');
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        {/* Inner Image Container (Circles) - Match screenshot styling */}
-                                        <div className="w-[60px] h-[60px] md:w-[72px] md:h-[72px] rounded-full overflow-hidden bg-white shadow-sm shrink-0 flex items-center justify-center p-[2px]">
-                                            <div className="w-full h-full rounded-full overflow-hidden border border-white">
-                                                <img
-                                                    src={cat.image}
-                                                    alt={cat.name}
-                                                    className={`w-full h-full object-cover transition-transform duration-[800ms] ${isSelected ? 'scale-110' : 'group-hover:scale-110'}`}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Category Text */}
-                                        <span
-                                            className={`mt-2 text-[10.5px] md:text-[11.5px] text-center transition-all duration-300 leading-tight block w-full truncate px-1 ${isSelected
-                                                ? 'text-black font-bold drop-shadow-md'
-                                                : 'text-black/70 font-semibold group-hover:text-black'
-                                                }`}
-                                        >
-                                            {cat.name}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <CategoryBar />
                     </div>
                 </div>
             )}
@@ -522,7 +633,7 @@ const Header = ({ variant = 'default' }) => {
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
             />
-        </header>
+        </motion.header>
     );
 };
 

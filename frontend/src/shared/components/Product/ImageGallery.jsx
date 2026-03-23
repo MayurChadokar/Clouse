@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import LazyImage from "../LazyImage";
-import useSwipeGesture from "../../../modules/UserApp/hooks/useSwipeGesture";
+import useSwipeGesture from "../../../modules/user/hooks/useSwipeGesture";
 
 const ImageGallery = ({ images, productName = "Product", children }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -52,7 +52,7 @@ const ImageGallery = ({ images, productName = "Product", children }) => {
       <div className="w-full flex flex-col gap-6">
         {/* Main Image */}
         <div
-          className="relative w-full aspect-square bg-white rounded-3xl p-4 shadow-sm border border-gray-100 overflow-hidden"
+          className="relative w-full aspect-[4/5] md:aspect-square max-h-[50vh] md:max-h-none bg-white rounded-3xl p-4 shadow-sm border border-gray-100 overflow-hidden"
           data-gallery>
           <motion.div
             key={selectedIndex}

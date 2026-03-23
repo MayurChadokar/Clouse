@@ -6,7 +6,7 @@ import { useCartStore } from "../../store/useStore";
 import { useWishlistStore } from "../../store/wishlistStore";
 import { formatPrice } from "../../utils/helpers";
 import { formatVariantLabel } from "../../utils/variant";
-import useSwipeGesture from "../../../modules/UserApp/hooks/useSwipeGesture";
+import useSwipeGesture from "../../../modules/user/hooks/useSwipeGesture";
 
 const SwipeableCartItem = ({ item, index }) => {
     const [swipeOffset, setSwipeOffset] = useState(0);

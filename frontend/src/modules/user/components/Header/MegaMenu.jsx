@@ -22,6 +22,7 @@ const MegaMenu = ({ isOpen, onClose }) => {
                         <button
                             key={cat.id}
                             onClick={() => setActiveDivision(cat.id)}
+                            onMouseEnter={() => setActiveDivision(cat.id)}
                             className={`px-2 py-4 text-[13px] font-bold uppercase transition-all relative group ${activeDivision === cat.id
                                 ? 'text-black'
                                 : 'text-gray-500 hover:text-gray-900'

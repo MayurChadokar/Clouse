@@ -77,13 +77,13 @@ const PromoBanners = () => {
         <div className="w-full bg-[#FAFAFA] py-8 md:py-12 overflow-hidden">
             <div className="container mx-auto px-4 md:px-8 relative">
                 {/* Navigation Arrows */}
-                <button 
+                <button
                     onClick={prevSlide}
                     className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md shadow-lg flex items-center justify-center transition-all hover:bg-black hover:text-white ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
                     <FiChevronLeft size={20} />
                 </button>
-                <button 
+                <button
                     onClick={nextSlide}
                     className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md shadow-lg flex items-center justify-center transition-all hover:bg-black hover:text-white ${currentIndex === maxIndex ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
@@ -91,21 +91,21 @@ const PromoBanners = () => {
                 </button>
 
                 <div className="relative overflow-hidden">
-                    <div 
+                    <div
                         className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                        style={{ 
+                        style={{
                             gap: visibleCards === 1 ? '0px' : '20px',
-                            transform: `translateX(calc(-${currentIndex} * (${100 / visibleCards}% + ${visibleCards === 1 ? 0 : 20 - (20 / visibleCards)}px)))` 
+                            transform: `translateX(calc(-${currentIndex} * (${100 / visibleCards}% + ${visibleCards === 1 ? 0 : 20 - (20 / visibleCards)}px)))`
                         }}
                     >
                         {activeDeals.map((deal, i) => (
-                            <div 
+                            <div
                                 key={deal.id || i}
                                 className={`flex-shrink-0 h-[240px] md:h-[280px] rounded-2xl md:rounded-[32px] overflow-hidden relative cursor-pointer shadow-md group/card ${deal.bg || 'bg-gray-100'}`}
                                 style={{ width: `calc(${100 / visibleCards}% - ${visibleCards === 1 ? 0 : 20 - (20 / visibleCards)}px)` }}
                             >
                                 {/* Background Image with Overlay */}
-                                <div 
+                                <div
                                     className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover/card:scale-110"
                                     style={{ backgroundImage: `url(${deal.image})` }}
                                 />

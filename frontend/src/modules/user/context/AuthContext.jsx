@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
         login: storeLogin,
         register: storeRegister,
         updateProfile: storeUpdateProfile,
+        uploadProfileAvatar: useAuthStore.getState().uploadProfileAvatar,
         loginWithOTP: storeVerifyOTP || (async () => ({ success: false })),
         resendOTP: storeResendOTP || (async () => ({ success: false })),
         logout: storeLogout,

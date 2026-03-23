@@ -7,9 +7,9 @@ import { formatPrice, getPlaceholderImage } from "../utils/helpers";
 import toast from "react-hot-toast";
 import LazyImage from "./LazyImage";
 import { useState, useRef } from "react";
-import useLongPress from "../../modules/UserApp/hooks/useLongPress";
-import LongPressMenu from "../../modules/UserApp/components/Mobile/LongPressMenu";
-import FlyingItem from "../../modules/UserApp/components/Mobile/FlyingItem";
+import useLongPress from "../../modules/user/hooks/useLongPress";
+import LongPressMenu from "../../modules/user/components/Mobile/LongPressMenu";
+import FlyingItem from "../../modules/user/components/Mobile/FlyingItem";
 import { getVariantSignature } from "../utils/variant";
 
 const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
@@ -106,7 +106,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
         {...longPressHandlers}
       >
         {/* IMAGE AREA - Taller 3:4 ratio with matching rounded corners */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[#F8F8F8]">
+        <div className="relative aspect-[3/4] md:aspect-[4/5] overflow-hidden rounded-xl bg-[#F8F8F8]">
           <Link to={productLink} className="block w-full h-full">
             <LazyImage
               src={product.image}

@@ -8,7 +8,8 @@ import { useUserLocation } from '../../context/LocationContext';
 
 const WishlistPage = () => {
     const { wishlistItems, toggleWishlist } = useWishlist();
-    const { addToCart } = useCart();
+    const { addToCart, getCartCount } = useCart();
+    const cartCount = getCartCount();
     const { activeAddress } = useUserLocation();
     const navigate = useNavigate();
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -25,31 +26,26 @@ const WishlistPage = () => {
             {/* Sticky Header Container */}
             <div className="md:hidden sticky top-0 z-40 bg-white">
                 {/* Mobile Header Nav */}
-                <div className="border-b border-gray-100 px-4 py-4 flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft size={20} /></button>
-                    <div className="flex-1">
-                        <h1 className="text-base font-bold uppercase ">Wishlist</h1>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase ">{wishlistItems.length} Items</p>
-                    </div>
-                </div>
-
-                {/* Address Bar - Now Sticky inside container */}
-                <div
-                    onClick={() => setIsLocationModalOpen(true)}
-                    className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer active:bg-white transition-colors"
-                >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <MapPin size={16} className="text-black shrink-0" />
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[12px] font-bold leading-tight flex items-center gap-2 text-gray-900">
-                                {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase  text-gray-500">{activeAddress?.type}</span>
-                            </span>
-                            <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
-                                {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
-                            </span>
+                <div className="border-b border-gray-100 px-4 py-3 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft size={18} /></button>
+                        <div className="flex-1">
+                            <h1 className="text-sm md:text-base font-black uppercase tracking-tight">Wishlist</h1>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase transform -translate-y-0.5">{wishlistItems.length} Items</p>
                         </div>
                     </div>
-                    <ChevronDown size={14} className="text-gray-400" />
+
+                    <button
+                        onClick={() => navigate('/cart')}
+                        className="relative p-2 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shadow-sm transition-transform active:scale-90"
+                    >
+                        <ShoppingBag size={18} className="text-gray-800" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                                {cartCount}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
 
@@ -58,17 +54,18 @@ const WishlistPage = () => {
                 onClose={() => setIsLocationModalOpen(false)}
             />
 
-            <div className="container mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <h1 className="text-xl font-bold uppercase  text-gray-900">Wishlist Items</h1>
-                    <p className="text-[13px] font-bold text-gray-400 mt-1 uppercase ">{wishlistItems.length} Items</p>
+            <div className="container mx-auto px-2 py-2 md:px-4 md:py-8">
+                {/* Desktop-only title if needed, or keeping it clean for mobile */}
+                <div className="hidden md:flex flex-col mb-8 px-2 md:px-0">
+                    <h1 className="text-base md:text-xl font-black uppercase text-gray-900 tracking-tighter">Wishlist Items</h1>
+                    <p className="text-[10px] md:text-[13px] font-bold text-gray-400 uppercase transform -translate-y-0.5">{wishlistItems.length} Items</p>
                 </div>
 
                 {wishlistItems.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-6 gap-y-6 md:gap-y-10">
                         {wishlistItems.map((product) => (
                             <div key={product.id} className="group flex flex-col">
-                                <div className="relative aspect-[3/4] rounded-[24px] overflow-hidden mb-4 bg-white border border-gray-100 shadow-sm group-hover:shadow-md transition-all">
+                                <div className="relative aspect-[3/4.2] rounded-2xl md:rounded-[24px] overflow-hidden mb-2 md:mb-4 bg-white border border-gray-100/50 shadow-sm group-hover:shadow-md transition-all">
                                     <img
                                         src={product.image}
                                         alt={product.name}
@@ -79,7 +76,7 @@ const WishlistPage = () => {
                                     {/* Click Collect Connect Banner */}
                                     {product.tryAndBuy && (
                                         <div className="absolute bottom-0 left-0 w-full">
-                                            <div className="bg-black/80 backdrop-blur-sm text-white text-[9px] font-bold px-4 py-2 flex items-center justify-center uppercase  text-center">
+                                            <div className="bg-black/80 backdrop-blur-sm text-white text-[8px] md:text-[9px] font-bold px-2 md:px-4 py-1.5 md:py-2 flex items-center justify-center uppercase text-center">
                                                 Click Connect Collect
                                             </div>
                                         </div>
@@ -88,22 +85,23 @@ const WishlistPage = () => {
                                     {/* Remove Icon (Filled Heart) */}
                                     <button
                                         onClick={() => toggleWishlist(product)}
-                                        className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-90"
+                                        className="absolute bottom-2 md:bottom-4 right-2 md:right-4 w-7 md:w-10 h-7 md:h-10 bg-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-90"
                                     >
-                                        <Heart size={20} className="fill-red-500 text-red-500" />
+                                        <Heart size={14} className="fill-red-500 text-red-500 md:hidden" />
+                                        <Heart size={20} className="fill-red-500 text-red-500 hidden md:block" />
                                     </button>
                                 </div>
 
-                                <div className="px-1 flex-1">
-                                    <div className="text-[11px] font-bold text-gray-400 uppercase  mb-0.5">{product.brand}</div>
-                                    <h3 className="text-[13px] font-bold text-gray-800 leading-tight line-clamp-1 mb-2">{product.name}</h3>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="text-[14px] font-bold text-black">₹{product.discountedPrice || product.price}</span>
+                                <div className="px-0.5 flex-1">
+                                    <div className="text-[8px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0">{product.brand}</div>
+                                    <h3 className="text-[11px] md:text-[13px] font-bold text-gray-800 leading-tight line-clamp-1 mb-0.5 md:mb-1">{product.name}</h3>
+                                    <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                                        <span className="text-[12px] md:text-[14px] font-extrabold text-black">₹{product.discountedPrice || product.price}</span>
                                         {product.originalPrice && product.originalPrice > (product.discountedPrice || product.price) && (
                                             <>
-                                                <span className="text-[12px] font-bold text-gray-400 line-through">₹{product.originalPrice}</span>
+                                                <span className="text-[9px] md:text-[12px] font-bold text-gray-400 line-through">₹{product.originalPrice}</span>
                                                 {product.discount && (
-                                                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                                    <span className="text-[8px] md:text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1 md:px-2 py-0.5 rounded-full">
                                                         {product.discount}
                                                     </span>
                                                 )}
@@ -114,9 +112,9 @@ const WishlistPage = () => {
                                     <button
                                         onClick={() => handleAddToCart(product)}
                                         disabled={addedItems[product.id]}
-                                        className={`w-full py-3 border rounded-xl text-[12px] font-bold uppercase  transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${addedItems[product.id] ? 'bg-black text-white border-black cursor-default' : 'bg-white border-gray-200 hover:border-black hover:bg-black hover:text-white'}`}
+                                        className={`w-full py-1.5 md:py-3 border-2 rounded-lg md:rounded-xl text-[10px] md:text-[12px] font-black uppercase tracking-tight transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${addedItems[product.id] ? 'bg-black text-white border-black cursor-default' : 'bg-white border-black/80 hover:border-black hover:bg-black hover:text-white'}`}
                                     >
-                                        {addedItems[product.id] ? 'Added to Cart' : 'Add to Cart'}
+                                        {addedItems[product.id] ? 'Added' : 'Move to Cart'}
                                     </button>
                                 </div>
                             </div>

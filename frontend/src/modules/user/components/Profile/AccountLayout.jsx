@@ -43,7 +43,7 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
                             <MapPin size={16} className="text-gray-900 shrink-0" />
                             <div className="flex flex-col min-w-0">
                                 <span className="text-[12px] font-bold leading-tight flex items-center gap-2 text-gray-900">
-                                    {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[9px] font-normal uppercase  text-gray-500">{activeAddress?.type}</span>
+                                    {activeAddress ? activeAddress.name : 'Select Location'} <span className="text-[10px] font-medium text-gray-500">{activeAddress?.type}</span>
                                 </span>
                                 <span className="text-[10px] font-medium truncate max-w-[200px] text-gray-500">
                                     {activeAddress ? `${activeAddress.address}, ${activeAddress.city}` : 'Add an address to see delivery info'}
@@ -63,7 +63,7 @@ const AccountLayout = ({ children, isMenuPage = false, hideHeader = false }) => 
                         >
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <h1 className="font-bold text-xl text-gray-900 uppercase ">{getPageTitle()}</h1>
+                        <h1 className="font-bold text-xl text-gray-900">{getPageTitle()}</h1>
                     </div>
                 )}
 

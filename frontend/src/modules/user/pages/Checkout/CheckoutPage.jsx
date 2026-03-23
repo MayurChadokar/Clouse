@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LocationModal from '../../components/Header/LocationModal';
+import CouponsModal from '../../components/Checkout/CouponsModal';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
@@ -36,6 +37,7 @@ const CheckoutPage = () => {
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [showSizeModal, setShowSizeModal] = useState(null); // productId for which to show modal
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [isCouponsModalOpen, setIsCouponsModalOpen] = useState(false);
     const [deliveryType, setDeliveryType] = useState('check_and_buy');
 
     useEffect(() => {
@@ -298,7 +300,15 @@ const CheckoutPage = () => {
                                 <span className="text-sm font-bold uppercase ">Apply Coupon</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold uppercase text-[#9CA3AF] hover:text-black">view all</span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCouponsModalOpen(true);
+                                    }}
+                                    className="text-[11px] font-bold uppercase text-[#9CA3AF] hover:text-[#9F1239] transition-colors"
+                                >
+                                    view all
+                                </button>
                                 <ChevronRight size={18} className={`text-gray-400 transition-transform ${isCouponOpen ? 'rotate-90' : ''}`} />
                             </div>
                         </div>
@@ -451,7 +461,7 @@ const CheckoutPage = () => {
             </div>
 
             {/* Sticky Mobile Footer */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] px-4 py-4 md:py-6 z-[1001]">
+            <div className="fixed bottom-16 md:bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] px-4 py-4 md:py-6 z-[10000] safe-area-bottom">
                 <div className="max-w-[500px] mx-auto space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
@@ -489,6 +499,18 @@ const CheckoutPage = () => {
             <LocationModal
                 isOpen={isLocationModalOpen}
                 onClose={() => setIsLocationModalOpen(false)}
+            />
+
+            {/* Available Coupons Modal */}
+            <CouponsModal
+                isOpen={isCouponsModalOpen}
+                onClose={() => setIsCouponsModalOpen(false)}
+                onApply={(code) => {
+                    setCouponCode(code);
+                    handleApplyCoupon(code);
+                    setIsCouponsModalOpen(false);
+                }}
+                cartTotal={totalPrice}
             />
 
             {/* Global Custom Styles */}

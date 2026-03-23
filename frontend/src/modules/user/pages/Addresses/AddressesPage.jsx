@@ -421,7 +421,7 @@ const AddressesPage = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" className="w-full h-16 bg-black text-white rounded-2xl font-bold uppercase mt-8 shadow-2xl hover:bg-gray-50 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <button type="submit" className="w-full h-16 bg-black text-white rounded-2xl font-bold uppercase mt-8 shadow-2xl hover:bg-gray-900 transition-all hover:scale-[1.02] active:scale-[0.98]">
                                 Save Address
                             </button>
                         </form>
@@ -481,7 +481,7 @@ const AddressesPage = () => {
                                 </div>
                             </div>
                         ))}
-                        <button onClick={() => setView('map')} className="md:col-span-1 h-[200px] border-2 border-dashed border-gray-100 rounded-[28px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-black hover:text-black transition-all bg-gray-500">
+                        <button onClick={() => setView('map')} className="md:col-span-1 h-[200px] border-2 border-dashed border-gray-100 rounded-[28px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-black hover:text-black transition-all bg-gray-50">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                                 <Plus size={24} />
                             </div>

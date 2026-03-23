@@ -112,28 +112,34 @@ const DeliveryLayout = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+        <div className="flex items-center gap-3 px-4 py-3">
+          {/* Hamburger Icon */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all active:scale-95 border border-black/5"
+            aria-label="Open menu">
+            <FiMenu className="text-gray-800 text-xl" />
+          </button>
+
           {/* Logo */}
           <Link
             to="/delivery/dashboard"
-            className="flex items-center flex-shrink-0 relative z-10">
-            <span className="text-primary-600 font-bold text-lg sm:text-xl ">
-              CLOUSE
-            </span>
+            className="no-underline group shrink-0">
+            <h1 className="text-[20px] font-bold drop-shadow-md transition-all duration-500 text-gray-900 group-hover:text-black">
+                Clothify<span className="text-black text-[24px] leading-none group-hover:text-gray-900">.</span>
+            </h1>
           </Link>
 
-          <div
-            className="flex items-center gap-2"
-            style={{ marginLeft: "30px" }}>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100"
-              aria-label="Open menu">
-              <FiMenu className="text-gray-700 text-xl" />
-            </button>
-            <FiTruck className="text-primary-600 text-xl" />
-            <h1 className="text-lg font-bold text-gray-800">Clouse Delivery Partner</h1>
+          {/* Partner Info */}
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center shadow-lg transform rotate-3 active:rotate-0 transition-transform">
+              <FiTruck className="text-white text-lg" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-[13px] font-black text-gray-900 leading-none">Delivery</h1>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">Partner</span>
+            </div>
           </div>
         </div>
       </header>

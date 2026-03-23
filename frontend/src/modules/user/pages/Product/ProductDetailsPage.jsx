@@ -142,12 +142,12 @@ const ProductDetailsPage = () => {
         <div className="bg-white text-gray-900 min-h-screen pb-20 overflow-x-hidden">
             {/* Universal Header - Mimics Mobile View for consistency */}
             <div className="md:hidden sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-gray-200 shadow-sm">
-                <div className="container mx-auto flex items-center justify-between px-4 py-4">
+                <div className="container mx-auto flex items-center justify-between px-4 py-2">
                     <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors shrink-0">
                         <ChevronLeft size={24} className="text-gray-900" />
                     </button>
                     <div className="flex-1 flex justify-center">
-                        <h1 className="text-sm font-bold uppercase  truncate max-w-[150px]">{product.brand}</h1>
+                        <h1 className="text-sm font-semibold truncate max-w-[150px]">{product.brand}</h1>
                     </div>
                     <div className="flex items-center gap-3 md:gap-4 shrink-0">
                         <button
@@ -170,17 +170,17 @@ const ProductDetailsPage = () => {
                 <div className="border-t border-gray-200">
                     <div
                         onClick={() => setIsLocationModalOpen(true)}
-                        className="container mx-auto flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-all font-bold"
+                        className="container mx-auto flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 transition-all font-bold"
                     >
                         <div className="flex items-center gap-3 overflow-hidden">
                             <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                                 <MapPin size={14} className="text-gray-900" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[11px] font-bold leading-tight flex items-center gap-2 text-gray-900 uppercase ">
+                                <span className="text-[11px] font-bold leading-tight flex items-center gap-2 text-gray-900">
                                     {activeAddress ? activeAddress.name : 'Select Location'}
                                     {activeAddress?.type && (
-                                        <span className="text-[8px] font-bold bg-black text-white px-1.5 py-0.5 rounded uppercase er">{activeAddress.type}</span>
+                                        <span className="text-[8px] font-bold bg-black text-white px-1.5 py-0.5 rounded uppercase">{activeAddress.type}</span>
                                     )}
                                 </span>
                                 <span className="text-[10px] font-bold truncate max-w-[200px] md:max-w-none text-gray-500">
@@ -207,7 +207,7 @@ const ProductDetailsPage = () => {
                 }}
             />
 
-            <div className="container mx-auto px-4 py-4 md:py-6">
+            <div className="container mx-auto px-4 py-2 md:py-6">
                 <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
 
                     {/* Left: Image Gallery */}
@@ -226,15 +226,15 @@ const ProductDetailsPage = () => {
                         </div>
 
                         {/* Main Image - Compact on Mobile */}
-                        <div className="relative aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] lg:max-h-[600px] lg:max-w-[480px] lg:mx-auto w-full rounded-xl md:rounded-[40px] overflow-hidden bg-gray-50 shadow-sm md:shadow-2xl group border border-gray-100 md:border-gray-200">
+                        <div className="relative aspect-square md:aspect-[3/4] lg:aspect-[4/5] lg:max-h-[600px] lg:max-w-[480px] lg:mx-auto w-full rounded-xl md:rounded-[40px] overflow-hidden bg-gray-50 shadow-sm md:shadow-2xl group border border-gray-100 md:border-gray-200">
                             <img src={productImages[activeImg]} alt={product.name} className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
 
                             {/* Tags/Badges - Smaller on Mobile */}
                             <div className="absolute top-3 left-3 md:top-6 md:left-6 flex flex-col gap-1.5 md:gap-2">
-                                <div className="bg-white text-gray-900 text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase shadow-md border border-gray-200">
+                                <div className="bg-white text-gray-900 text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-md border border-gray-200">
                                     New Arrival
                                 </div>
-                                <div className="bg-black text-white text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase shadow-md">
+                                <div className="bg-black text-white text-[8px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-md">
                                     Top Rated
                                 </div>
                             </div>
@@ -276,9 +276,9 @@ const ProductDetailsPage = () => {
 
                     {/* Right: Product Info */}
                     <div className="flex-1 w-full max-w-2xl">
-                        <div className="mb-6">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <h2 className="text-[13px] font-bold text-black uppercase ">{product.brand}</h2>
+                        <div className="mb-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <h2 className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">{product.brand}</h2>
                                 <div className="hidden md:flex items-center gap-4">
                                     <button className="p-2 hover:bg-gray-100 rounded-full transition-colors"><Share2 size={20} className="text-gray-900" /></button>
                                     <button
@@ -289,7 +289,7 @@ const ProductDetailsPage = () => {
                                     </button>
                                 </div>
                             </div>
-                            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-4 uppercase ">{product.name}</h1>
+                            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-3">{product.name}</h1>
 
                             <div className="flex items-center gap-4 mb-2">
                                 <span className="text-3xl font-bold text-gray-900">
@@ -314,25 +314,25 @@ const ProductDetailsPage = () => {
                         </div>
 
                         {/* Size Selection */}
-                        <div className="mb-8">
-                            <div className="flex justify-between items-end mb-5">
-                                <h3 className="text-[12px] font-bold uppercase  text-gray-900 flex items-center gap-2">
-                                    Select Size <Info size={14} className="text-black" />
+                        <div className="mb-6">
+                            <div className="flex justify-between items-end mb-4">
+                                <h3 className="text-[12px] font-bold text-gray-900 flex items-center gap-2">
+                                    Select Size <Info size={14} className="text-gray-400" />
                                 </h3>
                                 <button
                                     onClick={() => setIsSizeChartOpen(true)}
-                                    className="text-[11px] font-bold text-black uppercase  border-b border-black pb-0.5 hover:text-[#fae588] transition-colors"
+                                    className="text-[11px] font-semibold text-black border-b border-black pb-0.5 hover:text-gray-600 transition-colors"
                                 >
                                     Size Chart
                                 </button>
                             </div>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap gap-2.5">
                                 {sizes.map((size) => (
                                     <button
                                         key={size}
                                         onClick={() => setSelectedSize(size)}
-                                        className={`min-w-[56px] h-14 md:min-w-[64px] rounded-2xl flex items-center justify-center font-bold text-[15px] transition-all relative ${selectedSize === size
-                                            ? 'bg-black text-white shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-110'
+                                        className={`min-w-[48px] h-12 md:min-w-[64px] md:h-14 rounded-2xl flex items-center justify-center font-bold text-[14px] transition-all relative ${selectedSize === size
+                                            ? 'bg-black text-white shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-105'
                                             : 'bg-gray-50 border border-gray-200 text-gray-900 hover:border-black'
                                             }`}
                                     >
@@ -353,29 +353,29 @@ const ProductDetailsPage = () => {
                         </div>
 
                         {/* Actions - Inline */}
-                        <div className="flex gap-4 mb-6">
+                        <div className="flex gap-3 mb-5">
                             <button
                                 onClick={handleAddToCart}
-                                className="flex-[3] h-16 bg-black text-white rounded-[20px] font-bold text-[14px] uppercase  flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.2)] hover:bg-[#c39e2e]"
+                                className="flex-[3] h-14 bg-black text-white rounded-[18px] font-bold text-[14px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.2)] hover:bg-[#c39e2e]"
                             >
-                                <ShoppingCart size={20} />
+                                <ShoppingCart size={18} />
                                 Add to Cart
                             </button>
                             <button
                                 onClick={() => toggleWishlist(product)}
-                                className={`flex-1 h-16 rounded-[20px] font-bold text-[14px] uppercase  flex items-center justify-center gap-2 transition-all border ${isInWishlist(product?.id)
+                                className={`flex-1 h-14 rounded-[18px] font-bold text-[14px] flex items-center justify-center gap-2 transition-all border ${isInWishlist(product?.id)
                                     ? 'bg-black/10 border-black text-black'
                                     : 'bg-gray-50 border-gray-200 text-gray-900 hover:border-black'
                                     }`}
                             >
-                                <Heart size={20} className={isInWishlist(product?.id) ? 'fill-[#D4AF37]' : ''} />
+                                <Heart size={18} className={isInWishlist(product?.id) ? 'fill-[#D4AF37]' : ''} />
                                 <span className="hidden md:inline">Wishlist</span>
                             </button>
                         </div>
 
                         {/* Vendor Info Section */}
                         {product.vendorId && (
-                            <div className="mb-8 p-5 bg-gray-50 rounded-3xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-black transition-all group">
+                            <div className="mb-6 p-4 bg-gray-50 rounded-[24px] border border-gray-200 shadow-sm flex items-center justify-between hover:border-black transition-all group">
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
                                         {product.vendorId.storeLogo ? (
@@ -392,11 +392,11 @@ const ProductDetailsPage = () => {
                                         <div className="absolute -bottom-1 -right-1 bg-black w-4 h-4 rounded-full border-2 border-[#1a1a1a] shadow-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase  mb-1">Sold By</p>
+                                        <p className="text-[10px] font-bold text-gray-400 mb-1">Sold By</p>
                                         <h4 className="text-[16px] font-bold text-gray-900 group-hover:text-black transition-colors">{product.vendorId.storeName}</h4>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <MapPin size={10} className="text-black" />
-                                            <p className="text-[11px] font-bold text-gray-500 uppercase ">
+                                            <p className="text-[11px] font-bold text-gray-500">
                                                 {product.vendorId.address?.city ? `${product.vendorId.address.city}, ${product.vendorId.address.state}` : 'Verified Vendor'}
                                             </p>
                                         </div>
@@ -413,19 +413,19 @@ const ProductDetailsPage = () => {
 
 
                         {/* USP Features */}
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                                <Truck className="text-black shrink-0" size={24} />
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="flex items-start gap-2.5 p-3.5 bg-gray-50 rounded-[20px] border border-gray-200">
+                                <Truck className="text-black shrink-0" size={20} />
                                 <div>
-                                    <h4 className="text-[12px] font-bold uppercase  text-gray-900">Free Delivery</h4>
-                                    <p className="text-[10px] font-bold text-gray-500">On all orders above ₹999</p>
+                                    <h4 className="text-[11px] font-bold text-gray-900">Free Delivery</h4>
+                                    <p className="text-[9px] font-semibold text-gray-500">Above ₹999</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                                <RotateCcw className="text-black shrink-0" size={24} />
+                            <div className="flex items-start gap-2.5 p-3.5 bg-gray-50 rounded-[20px] border border-gray-200">
+                                <RotateCcw className="text-black shrink-0" size={20} />
                                 <div>
-                                    <h4 className="text-[12px] font-bold uppercase  text-gray-900">Easy Returns</h4>
-                                    <p className="text-[10px] font-bold text-gray-500">14 days exchange policy</p>
+                                    <h4 className="text-[11px] font-bold text-gray-900">Easy Returns</h4>
+                                    <p className="text-[9px] font-bold text-gray-500">14 days policy</p>
                                 </div>
                             </div>
                         </div>
@@ -576,7 +576,7 @@ const ProductDetailsPage = () => {
                             <h4 className="text-gray-900 text-[14px] font-bold uppercase ">Success!</h4>
                             <p className="text-gray-600 text-[11px] font-bold">Your product has been added to cart</p>
                         </div>
-                         <Link
+                        <Link
                             to="/cart"
                             className="bg-black text-white px-4 py-2 rounded-xl text-[11px] font-bold uppercase  hover:bg-white hover:text-black transition-colors no-underline"
                         >

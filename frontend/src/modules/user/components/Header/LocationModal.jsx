@@ -108,7 +108,7 @@ const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
         if (onClose) onClose();
     };
 
-    const [selectedAddressId, setSelectedAddressId] = useState(activeAddress?.id || null);
+    const [selectedAddressId, setSelectedAddressId] = useState(activeAddress?.id || activeAddress?._id || null);
 
     // Map State
     const [view, setView] = useState('list'); // 'list' | 'map'
@@ -126,7 +126,7 @@ const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
 
     // Update selection when activeAddress changes
     useEffect(() => {
-        if (activeAddress) setSelectedAddressId(activeAddress.id);
+        if (activeAddress) setSelectedAddressId(activeAddress.id || activeAddress._id);
     }, [activeAddress]);
 
     if (!isModalOpen) return null;
@@ -310,18 +310,20 @@ const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
                                             </button>
                                         </div>
                                     ) : (
-                                        addresses.map((addr) => (
+                                        addresses.map((addr) => {
+                                            const addrId = addr.id || addr._id;
+                                            return (
                                             <div
-                                                key={addr.id}
-                                                onClick={() => setSelectedAddressId(addr.id)}
-                                                className={`relative p-5 bg-white rounded-[24px] border-2 cursor-pointer transition-all duration-300 active:scale-[0.99] group ${selectedAddressId === addr.id ? 'border-black shadow-[0_8px_16px_rgba(212,175,55,0.1)]' : 'border-transparent shadow-sm hover:shadow-md hover:border-gray-200'}`}
+                                                key={addrId}
+                                                onClick={() => setSelectedAddressId(addrId)}
+                                                className={`relative p-5 bg-white rounded-[24px] border-2 cursor-pointer transition-all duration-300 active:scale-[0.99] group ${String(selectedAddressId) === String(addrId) ? 'border-black shadow-[0_8px_16px_rgba(212,175,55,0.1)]' : 'border-transparent shadow-sm hover:shadow-md hover:border-gray-200'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div className="flex items-center gap-2">
                                                         <h4 className="text-[15px] font-bold text-black">{addr.name}</h4>
                                                         <span className="bg-white text-[#878787] border border-gray-100 text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg">{addr.type}</span>
                                                     </div>
-                                                    {selectedAddressId === addr.id && (
+                                                    {String(selectedAddressId) === String(addrId) && (
                                                         <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
                                                             <CheckCircle2 size={14} className="text-black" strokeWidth={2.5} />
                                                         </div>
@@ -337,7 +339,8 @@ const LocationModal = ({ isOpen, onClose, isMandatory = false }) => {
                                                     </span>
                                                 </div>
                                             </div>
-                                        ))
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>

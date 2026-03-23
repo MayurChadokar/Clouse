@@ -61,7 +61,7 @@ const CartDrawer = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={toggleCart}
-            className="fixed inset-0 bg-black/50 z-[10000]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000]"
           />
 
           {/* Cart Drawer */}
@@ -79,7 +79,7 @@ const CartDrawer = () => {
               }
             }}
             style={{ willChange: "transform", transform: "translateZ(0)" }}
-            className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000] flex flex-col">
+            className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000] flex flex-col backdrop-blur-xl lg:bg-white/95">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">Shopping Cart</h2>

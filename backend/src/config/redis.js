@@ -1,32 +1,40 @@
 import { createClient } from 'redis';
 
+const IS_REDIS_CONFIGURED = !!(process.env.REDIS_URL || process.env.REDIS_HOST);
+
 const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`;
 
-const redisClient = createClient({
-    url: redisUrl,
-    password: process.env.REDIS_PASSWORD || undefined
-});
+let redisClient = null;
 
-redisClient.on('error', (err) => {
-    console.error('❌ Redis Client Error:', err);
-});
+if (IS_REDIS_CONFIGURED) {
+    redisClient = createClient({
+        url: redisUrl,
+        password: process.env.REDIS_PASSWORD || undefined
+    });
 
-redisClient.on('connect', () => {
-    console.log('📡 Redis client connecting...');
-});
+    redisClient.on('error', (err) => {
+        console.error('❌ Redis Client Error:', err);
+    });
 
-redisClient.on('ready', () => {
-    console.log('✅ Redis client ready and connected');
-});
+    redisClient.on('connect', () => {
+        console.log('📡 Redis client connecting...');
+    });
+
+    redisClient.on('ready', () => {
+        console.log('✅ Redis client ready and connected');
+    });
+}
 
 export const connectRedis = async () => {
+    if (!IS_REDIS_CONFIGURED) {
+        console.log('ℹ️  Redis not configured. Skipping connection.');
+        return;
+    }
+    
     try {
         await redisClient.connect();
     } catch (error) {
         console.error('❌ Failed to connect to Redis:', error.message);
-        // We don't necessarily want to crash the whole app if Redis fails, 
-        // but for high-performance apps, it might be critical.
-        // For now, we'll just log the error.
     }
 };
 

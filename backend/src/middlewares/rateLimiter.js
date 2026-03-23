@@ -4,25 +4,42 @@ import redisClient from '../config/redis.js';
 
 const IS_DEV = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
 
+// Check if Redis should be used (if explicitly configured AND client exists)
+const useRedis = !!(redisClient && (process.env.REDIS_URL || process.env.REDIS_HOST));
+
 // Helper to create a store with a unique prefix
-const createStore = (prefix) => new RedisStore({
-    sendCommand: async (...args) => {
-        // Wait for Redis to be ready (up to 30 seconds)
-        let retries = 0;
-        while (!redisClient?.isReady && retries < 300) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            retries++;
+const createStore = (prefix) => {
+    if (!useRedis) {
+        if (IS_DEV) {
+            console.log(`ℹ️  Redis not configured for ${prefix}. Using default MemoryStore.`);
         }
+        return undefined; // Falls back to express-rate-limit's default MemoryStore
+    }
 
-        if (!redisClient?.isReady) {
-            console.error(`❌ Redis connection timed out for ${prefix}. Initializing with local store...`);
-            return null;
-        }
+    try {
+        return new RedisStore({
+            sendCommand: async (...args) => {
+                // Wait for Redis to be ready (up to 5 seconds)
+                let retries = 0;
+                while (!redisClient?.isReady && retries < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    retries++;
+                }
 
-        return redisClient.sendCommand(args);
-    },
-    prefix: prefix,
-});
+                if (!redisClient?.isReady) {
+                    console.error(`❌ Redis connection timed out for ${prefix}.`);
+                    throw new Error("Redis connection timed out");
+                }
+
+                return redisClient.sendCommand(args);
+            },
+            prefix: prefix,
+        });
+    } catch (err) {
+        console.error(`❌ Failed to initialize RedisStore for ${prefix}:`, err.message);
+        return undefined;
+    }
+};
 
 // General API rate limiter
 export const apiLimiter = rateLimit({
@@ -48,7 +65,7 @@ export const authLimiter = rateLimit({
 export const otpLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: IS_DEV ? 10000 : 3,
-    message: { success: false, message: 'Too many OTP requests, please wait a minute.' },
+    message: { success: false, message: { success: false, message: 'Too many OTP requests, please wait a minute.' } },
     store: createStore('rl-otp:'),
 });
 

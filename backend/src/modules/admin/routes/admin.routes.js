@@ -187,7 +187,7 @@ router.delete('/support/ticket-types/:id', ...adminAuth, checkPermission('suppor
 router.get('/reviews', ...adminAuth, checkPermission('products_manage'), reviewController.getAllReviews);
 router.patch('/reviews/:id/status', ...adminAuth, checkPermission('products_manage'), reviewController.updateReviewStatus);
 router.delete('/reviews/:id', ...adminAuth, checkPermission('products_manage'), reviewController.deleteReview);
-router.post('/uploads/image', ...adminAuth, uploadController.uploadImage);
+router.post('/uploads/image', ...adminAuth, uploadSingle('image'), uploadController.uploadImage);
 
 // ─── Attribute Management ─────────────────────────────────────────────────────
 router.get('/attributes', ...adminAuth, checkPermission('attributes_manage'), attributeController.getAllAttributes);

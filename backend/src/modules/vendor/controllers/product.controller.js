@@ -6,6 +6,7 @@ import Admin from '../../../models/Admin.model.js';
 import { createNotification } from '../../../services/notification.service.js';
 import { emitEvent } from '../../../services/socket.service.js';
 import { slugify } from '../../../utils/slugify.js';
+import { clearCachePattern, deleteCache } from '../../../utils/cache.js';
 
 const deriveStockStatus = (stockQuantity = 0, lowStockThreshold = 10) => {
     if (stockQuantity <= 0) return 'out_of_stock';
@@ -260,18 +261,20 @@ export const createProduct = asyncHandler(async (req, res) => {
         slug,
         vendorId: req.user.id,
         ...rest,
-        vendorPrice: vendorPrice, // This is what the vendor wants to be paid
-        originalPrice: Number(rest.originalPrice ?? 0), // MRP
-        price: 0, // Admin will set the final customer price including margin
+        vendorPrice: vendorPrice,
+        originalPrice: Number(rest.originalPrice ?? 0),
+        price: 0,
         variants: normalizedVariants,
         faqs: sanitizeFaqs(rest.faqs),
         stockQuantity: finalStockQuantity,
         lowStockThreshold,
         stock,
         approvalStatus: 'pending',
-        isActive: false, // Hidden until approved
+        isActive: false,
         isVisible: false,
     });
+
+    await clearCachePattern('products:list:*');
 
     // Notify all active admins about new product approval request
     try {
@@ -358,6 +361,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     );
     await product.save();
 
+    await clearCachePattern('products:list:*');
+
     // Real-time: notify admin panel about the product update
     emitEvent('admin_products', 'product_updated_by_vendor', {
         productId: String(product._id),
@@ -373,6 +378,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 export const deleteProduct = asyncHandler(async (req, res) => {
     const product = await Product.findOneAndDelete({ _id: req.params.id, vendorId: req.user.id });
     if (!product) throw new ApiError(404, 'Product not found or access denied.');
+    await clearCachePattern('products:list:*');
     res.status(200).json(new ApiResponse(200, null, 'Product deleted.'));
 });
 
@@ -394,6 +400,8 @@ export const updateStock = asyncHandler(async (req, res) => {
     product.stockQuantity = numericStockQuantity;
     product.stock = deriveStockStatus(numericStockQuantity, product.lowStockThreshold);
     await product.save();
+
+    await clearCachePattern('products:list:*');
 
     res.status(200).json(new ApiResponse(200, product, 'Stock updated.'));
 });

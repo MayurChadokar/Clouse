@@ -199,7 +199,7 @@ const resolveOrderItemVariantKey = (product, orderItem) => {
 
 // POST /api/user/orders
 export const placeOrder = asyncHandler(async (req, res) => {
-    const { items, shippingAddress, paymentMethod, couponCode, shippingOption, orderType, deliveryType } = req.body;
+    const { items, shippingAddress, paymentMethod, couponCode, shippingOption, orderType, deliveryType, deviceToken } = req.body;
 
     // Validate order type
     const allowedOrderTypes = ['check_and_buy', 'try_and_buy'];
@@ -422,28 +422,27 @@ export const placeOrder = asyncHandler(async (req, res) => {
                 estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // +5 days
                 idempotencyKey: idempotencyKey || undefined,
                 idempotencyScope: idempotencyKey ? idempotencyScope : undefined,
+                deviceToken: deviceToken || undefined,
             }], { session });
+
             order = createdOrder;
 
             // Notify vendors in real-time
             const vendorsToNotify = Object.keys(vendorMap);
-            await Promise.all(vendorsToNotify.map(async (vid) => {
-                emitEvent(`vendor_${vid}`, 'order_created', {
-                    orderId: order.orderId,
-                    total: order.total,
-                    items: vendorMap[vid].items.map(item => ({ name: item.name, quantity: item.quantity })),
-                    message: `You have received a new ${orderType.replace(/_/g, ' ')} order.`
-                });
-                
+            vendorsToNotify.forEach(async (vid) => {
                 await createNotification({
                     recipientId: vid,
                     recipientType: 'vendor',
-                    title: 'New Order Received',
-                    message: `You have a new ${orderType.replace(/_/g, ' ')} order #${order.orderId}`,
+                    title: 'New Order Received!',
+                    message: `You have a new ${orderType?.replace(/_/g, ' ') || 'order'} of Rs.${order.total}. Click to view details.`,
                     type: 'order',
-                    data: { orderId: order.orderId, sound: 'new_order' }
+                    data: {
+                        orderId: String(order.orderId),
+                        total: String(order.total),
+                        items: JSON.stringify(vendorMap[vid].items.map((item) => ({ name: item.name, quantity: item.quantity }))),
+                    },
                 });
-            }));
+            });
 
             // 7. Deduct stock atomically to prevent oversell under concurrent checkout.
             for (const item of enrichedItems) {
@@ -802,7 +801,6 @@ export const createReturnRequest = asyncHandler(async (req, res) => {
                     returnRequestId: String(request._id),
                     orderId: String(order.orderId),
                     vendorId: String(vendorId),
-                    sound: 'alert'
                 },
             })
         )

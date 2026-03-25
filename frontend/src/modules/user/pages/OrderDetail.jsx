@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import PageTransition from '../../../shared/components/PageTransition';
 import Badge from '../../../shared/components/Badge';
 import LazyImage from '../../../shared/components/LazyImage';
+import socketService from '../../../shared/utils/socket';
 
 const MobileOrderDetail = () => {
   const { orderId } = useParams();
@@ -46,6 +47,35 @@ const MobileOrderDetail = () => {
       mounted = false;
     };
   }, [order, orderId, fetchOrderById]);
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    socketService.connect();
+    socketService.joinRoom(`order_${orderId}`);
+
+    const handleUpdate = (data) => {
+      // For both orderRoom and direct user room messages
+      if (!data.orderId || String(data.orderId) === String(orderId)) {
+        console.log('📦 Order update received via socket:', data);
+        fetchOrderById(orderId);
+      }
+    };
+
+    socketService.on('order_status_updated', handleUpdate);
+    socketService.on('rider_assigned', handleUpdate);
+    socketService.on('rider_nearby', (data) => {
+        toast.success('🛵 Your rider is nearby!');
+        handleUpdate(data);
+    });
+
+    return () => {
+      socketService.leaveRoom(`order_${orderId}`);
+      socketService.off('order_status_updated');
+      socketService.off('rider_assigned');
+      socketService.off('rider_nearby');
+    };
+  }, [orderId, fetchOrderById]);
 
   useEffect(() => {
     if (!isResolving && !order) {
@@ -190,6 +220,35 @@ const MobileOrderDetail = () => {
             </div>
 
             <div className="px-4 py-4 space-y-4">
+              {/* Delivery OTP Card */}
+              {['assigned', 'picked_up', 'out_for_delivery'].includes(order.status) && order.deliveryOtpDebug && (
+                <div className="bg-indigo-600 rounded-2xl p-5 text-white shadow-lg overflow-hidden relative">
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">Security Code</p>
+                        <h3 className="text-lg font-bold">Delivery OTP</h3>
+                      </div>
+                      <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+                        <FiPackage className="text-xl" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mb-4">
+                      {order.deliveryOtpDebug.split('').map((digit, i) => (
+                        <div key={i} className="flex-1 bg-white/10 border border-white/20 rounded-xl py-3 text-center text-2xl font-black backdrop-blur-sm">
+                          {digit}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-indigo-100 text-[10px] leading-tight">
+                      Please share this code with the delivery partner only after you have received and verified your items.
+                    </p>
+                  </div>
+                  {/* Decorative circles */}
+                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+                  <div className="absolute -left-4 -top-4 w-16 h-16 bg-white/5 rounded-full blur-xl" />
+                </div>
+              )}
               {/* Order Items */}
               <div className="glass-card rounded-2xl p-4">
                 <h2 className="text-base font-bold text-gray-800 mb-4">Order Items</h2>

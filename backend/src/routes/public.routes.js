@@ -261,13 +261,29 @@ router.get('/products/:id', getProductDetail);
 
 // GET /api/categories (public)
 router.get('/categories/all', asyncHandler(async (req, res) => {
+    const cacheKey = 'categories:all';
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, 'Categories fetched (from cache).'));
+    }
+
     const categories = await Category.find({ isActive: true }).sort({ order: 1 });
+    await setCache(cacheKey, categories, 3600); // 1 hour
+
     res.status(200).json(new ApiResponse(200, categories, 'Categories fetched.'));
 }));
 
 // GET /api/brands (public)
 router.get('/brands/all', asyncHandler(async (req, res) => {
+    const cacheKey = 'brands:all';
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, 'Brands fetched (from cache).'));
+    }
+
     const brands = await Brand.find({ isActive: true }).sort({ name: 1 });
+    await setCache(cacheKey, brands, 3600); // 1 hour
+
     res.status(200).json(new ApiResponse(200, brands, 'Brands fetched.'));
 }));
 
@@ -473,6 +489,12 @@ router.post('/shipping/estimate', asyncHandler(async (req, res) => {
 // GET /api/banners
 router.get('/banners', asyncHandler(async (req, res) => {
     const { type } = req.query;
+    const cacheKey = `banners:${type || 'all'}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, 'Banners fetched (from cache).'));
+    }
+
     const now = new Date();
     const filter = {
         isActive: true,
@@ -483,12 +505,20 @@ router.get('/banners', asyncHandler(async (req, res) => {
     };
     if (type) filter.type = type;
     const banners = await Banner.find(filter).sort({ order: 1 });
+    await setCache(cacheKey, banners, 1800); // 30 minutes
+
     res.status(200).json(new ApiResponse(200, banners, 'Banners fetched.'));
 }));
 
 // GET /api/campaigns
 router.get('/campaigns', asyncHandler(async (req, res) => {
     const { type, limit = 20 } = req.query;
+    const cacheKey = `campaigns:${type || 'all'}:${limit}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, 'Campaigns fetched (from cache).'));
+    }
+
     const parsedLimit = Math.max(parseInt(limit, 10) || 20, 1);
     const now = new Date();
 
@@ -505,6 +535,8 @@ router.get('/campaigns', asyncHandler(async (req, res) => {
         .select('name slug type route discountType discountValue startDate endDate bannerConfig')
         .sort({ createdAt: -1 })
         .limit(parsedLimit);
+
+    await setCache(cacheKey, campaigns, 1800); // 30 minutes
 
     res.status(200).json(new ApiResponse(200, campaigns, 'Campaigns fetched.'));
 }));

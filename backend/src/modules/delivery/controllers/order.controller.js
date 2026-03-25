@@ -21,11 +21,10 @@ const hashDeliveryOtp = (otp) => {
 };
 
 const generateDeliveryOtp = () => {
-    if (String(process.env.NODE_ENV).toLowerCase() !== 'production') {
-        return '123456';
-    }
+    // Always generate a random 6-digit OTP for security and testing
     return String(Math.floor(100000 + Math.random() * 900000));
 };
+
 
 const getCustomerEmail = (order) => {
     return (
@@ -294,7 +293,7 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
         query.$or.push({ _id: req.params.id });
     }
 
-    const order = await Order.findOne(query).select('+deliveryOtpHash +deliveryOtpExpiry +deliveryOtpSentAt +deliveryOtpAttempts +deliveryOtpDebug');
+    const order = await Order.findOne(query).select('+deliveryOtpHash +deliveryOtpExpiry +deliveryOtpSentAt +deliveryOtpAttempts +deliveryOtpDebug +deviceToken');
     if (!order) throw new ApiError(404, 'Order not found or not assigned to you.');
 
     // Server-side transition guard
@@ -312,10 +311,9 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
     }
 
     if (status === 'picked_up') {
-        if (!pickupPhoto) {
-            throw new ApiError(400, 'Pickup photo is mandatory as proof.');
+        if (pickupPhoto) {
+            order.pickupPhoto = pickupPhoto;
         }
-        order.pickupPhoto = pickupPhoto;
 
         // Generate and Send Delivery OTP at Pickup
         const generatedOtp = generateDeliveryOtp();
@@ -361,8 +359,8 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
             throw new ApiError(400, 'Delivery OTP has expired. Please resend OTP.');
         }
 
-        if (!deliveryPhoto) {
-            throw new ApiError(400, 'Delivery photo is mandatory as proof.');
+        if (deliveryPhoto) {
+            order.deliveryPhoto = deliveryPhoto;
         }
 
         const isMatch = order.deliveryOtpHash === hashDeliveryOtp(normalizedOtp);
@@ -432,7 +430,7 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
     await order.save();
 
     const statusNotificationTasks = [];
-    if (order.userId) {
+    if (order.userId || order.deviceToken) {
         statusNotificationTasks.push(
             createNotification({
                 recipientId: order.userId,
@@ -443,6 +441,7 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
                         ? `Your order ${order.orderId} has been delivered.`
                         : `Your order ${order.orderId} is out for delivery.`,
                 type: 'order',
+                token: order.deviceToken,
                 data: {
                     orderId: String(order.orderId || order._id),
                     status: String(status),
@@ -450,6 +449,7 @@ export const updateDeliveryStatus = asyncHandler(async (req, res) => {
             })
         );
     }
+
 
     const vendorIds = [
         ...new Set(
@@ -660,16 +660,18 @@ export const updateReturnStatus = asyncHandler(async (req, res) => {
     if (!returnReq) throw new ApiError(404, 'Return request not found.');
 
     if (status === 'picked_up') {
-        if (!pickupPhoto) throw new ApiError(400, 'Pickup photo is required.');
+        if (pickupPhoto) {
+            returnReq.pickupPhoto = pickupPhoto;
+        }
         returnReq.status = 'processing'; // Assuming 'processing' covers picking up and en-route
         returnReq.pickupPhoto = pickupPhoto;
         
         emitEvent(`user_${returnReq.userId?._id}`, 'return_picked_up', { returnId: returnReq._id });
         emitEvent(`vendor_${returnReq.vendorId}`, 'return_picked_up', { returnId: returnReq._id });
     } else if (status === 'completed') {
-        if (!deliveryPhoto) throw new ApiError(400, 'Delivery photo is required.');
-        returnReq.status = 'completed';
-        returnReq.deliveryPhoto = deliveryPhoto;
+        if (deliveryPhoto) {
+            returnReq.deliveryPhoto = deliveryPhoto;
+        }
 
         // On completion, vendor might need to verify before refunding, but standard is marked completed
         emitEvent(`user_${returnReq.userId?._id}`, 'return_completed', { returnId: returnReq._id });

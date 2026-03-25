@@ -50,7 +50,6 @@ export const register = asyncHandler(async (req, res) => {
                     vendorId: String(vendor._id),
                     vendorEmail: vendor.email,
                     status: vendor.status,
-                    sound: 'alert'
                 },
             })
         )

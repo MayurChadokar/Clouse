@@ -58,7 +58,18 @@ const orderSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'accepted', 'ready_for_pickup', 'assigned', 'picked_up', 'out_for_delivery', 'delivered', 'cancelled', 'return requested'],
+            enum: [
+                'pending',           // Initial placement
+                'accepted',          // Vendor accepted
+                'ready_for_pickup',  // Vendor marked ready + uploaded photo
+                'searching',         // System searching for riders
+                'assigned',          // Rider claimed order
+                'picked_up',         // Rider picked up + OTP generated
+                'out_for_delivery',  // Rider out for delivery
+                'delivered',         // Order completed + user verified
+                'cancelled',         // Cancelled by any party or timeout
+                'return requested'   // Customer requested return
+            ],
             default: 'pending',
             index: true,
         },
@@ -72,8 +83,9 @@ const orderSchema = new mongoose.Schema(
             enum: ['online'],
             default: 'online',
         },
-        pickupPhoto: { type: String },
-        deliveryPhoto: { type: String },
+        readyPhoto: String,    // Proof of being ready from vendor
+        deliveryPhoto: String, // Final delivery proof photo
+        customerReceiptPhoto: String, // Optional user-side receipt verification
         pickupLocation: {
             type: { type: String, enum: ['Point'], default: 'Point' },
             coordinates: { type: [Number], default: [0, 0] },
@@ -103,6 +115,11 @@ const orderSchema = new mongoose.Schema(
         deliveryOtpVerifiedAt: Date,
         deliveryOtpAttempts: { type: Number, default: 0, select: false },
         estimatedDelivery: Date,
+        vendorAcceptedAt: Date,
+        readyAt: Date,
+        searchStartedAt: Date,
+        assignedAt: Date,
+        pickedUpAt: Date,
         deliveredAt: Date,
         isCashSettled: { type: Boolean, default: false },
         settledAt: Date,
@@ -111,9 +128,11 @@ const orderSchema = new mongoose.Schema(
         isDeleted: { type: Boolean, default: false, index: true },
         deletedAt: Date,
         deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+        deviceToken: { type: String }, // Store guest/user device token for status updates if not logged in
     },
     { timestamps: true }
 );
+
 
 // Prevent duplicate order creation for the same retry key per actor (user/guest).
 orderSchema.index(
@@ -127,6 +146,20 @@ orderSchema.index(
         },
     }
 );
+
+orderSchema.methods.generateDeliveryOtp = function () {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.deliveryOtpHash = otp;
+    this.deliveryOtpDebug = otp;
+    this.deliveryOtpSentAt = new Date();
+    this.deliveryOtpExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000); 
+    return otp;
+};
+
+orderSchema.methods.compareDeliveryOtp = function (otp) {
+    if (!this.deliveryOtpHash) return false;
+    return String(this.deliveryOtpHash) === String(otp) || String(this.deliveryOtpDebug) === String(otp);
+};
 
 const Order = mongoose.model('Order', orderSchema);
 export { Order };

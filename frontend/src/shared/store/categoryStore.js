@@ -31,10 +31,20 @@ export const useCategoryStore = create(
           const response = isAdminArea
             ? await getAllCategories()
             : await getPublicCategories();
-          const normalizedCategories = (response?.data || []).map(cat => ({
-            ...cat,
-            id: cat._id // Ensure UI compatibility by aliasing _id to id
-          }));
+          const normalizedCategories = (response?.data || []).map(cat => {
+            let image = cat.image;
+            if (image && !image.startsWith('http') && image.includes('150?text=')) {
+              image = 'https://placehold.co/' + image;
+            } else if (image && !image.startsWith('http') && !image.startsWith('/')) {
+              image = `https://placehold.co/150?text=${encodeURIComponent(cat.name)}`;
+            }
+            
+            return {
+              ...cat,
+              image,
+              id: cat._id // Ensure UI compatibility by aliasing _id to id
+            };
+          });
           set({ categories: normalizedCategories, isLoading: false });
         } catch (error) {
           set({ isLoading: false });

@@ -177,8 +177,8 @@ export const getVendorOrderById = (id) =>
  * @param {string} orderId  — the order's _id or orderId
  * @param {'pending'|'processing'|'shipped'|'delivered'|'cancelled'} status
  */
-export const updateVendorOrderStatus = (orderId, status) =>
-    api.patch(`/vendor/orders/${orderId}/status`, { status });
+export const updateVendorOrderStatus = (orderId, status, extra = {}) =>
+    api.patch(`/vendor/orders/${orderId}/status`, { status, ...extra });
 
 /**
  * Get customers for the authenticated vendor

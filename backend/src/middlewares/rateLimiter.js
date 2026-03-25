@@ -21,17 +21,24 @@ const createStore = (prefix) => {
             sendCommand: async (...args) => {
                 // Wait for Redis to be ready (up to 15 seconds)
                 let retries = 0;
-                while (!redisClient?.isReady && retries < 150) {
+                while (redisClient?.status !== 'ready' && retries < 150) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                     retries++;
                 }
 
-                if (!redisClient?.isReady) {
-                    console.error(`❌ Redis connection timed out for ${prefix}. (Ready: ${redisClient?.isReady}, Open: ${redisClient?.isOpen})`);
-                    throw new Error("Redis connection timed out");
+                if (redisClient?.status !== 'ready') {
+                    // Log once to avoid spamming
+                    if (retries === 1) {
+                        console.error(`❌ Redis unavailable for ${prefix}. Status: ${redisClient?.status}`);
+                    }
+                    // Return a fake value to skip rate limiting for this request
+                    return 0; 
                 }
 
-                return redisClient.sendCommand(args);
+                // ioredis sendCommand expects ([cmd, ...args]) or just (cmd)
+                // rate-limit-redis sends (cmd, ...args)
+                const [command, ...params] = args;
+                return redisClient.call(command, params);
             },
             prefix: prefix,
         });

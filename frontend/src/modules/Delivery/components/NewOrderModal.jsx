@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMapPin, FiPackage, FiClock, FiX, FiNavigation, FiZap, FiTarget } from 'react-icons/fi';
 import { formatPrice } from '../../../shared/utils/helpers';
@@ -5,6 +6,31 @@ import SwipeToAccept from './SwipeToAccept';
 import { createPortal } from 'react-dom';
 
 const NewOrderModal = ({ order, isOpen, onClose, onAccept, isAccepting }) => {
+    const buzzerRef = useRef(null);
+
+    // Play buzzer sound when modal opens, stop when it closes
+    useEffect(() => {
+        if (isOpen && order) {
+            try {
+                const audio = new Audio('/sounds/mgs_codec.mp3');
+                audio.loop = true;
+                audio.play().catch(e => console.warn('Buzzer playback blocked:', e.message));
+                buzzerRef.current = audio;
+            } catch (e) {
+                console.warn('Buzzer init failed:', e);
+            }
+        }
+        return () => {
+            if (buzzerRef.current) {
+                try {
+                    buzzerRef.current.pause();
+                    buzzerRef.current.currentTime = 0;
+                } catch (e) {}
+                buzzerRef.current = null;
+            }
+        };
+    }, [isOpen, order]);
+
     // Safety guard
     if (!order && isOpen) return null;
 

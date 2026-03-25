@@ -81,10 +81,9 @@ const redirectTo = (path) => {
 
 const getScopeFromUrl = (url = '') => {
   const normalizedUrl = url.toLowerCase();
-  // Match prefix anywhere in the string, handles 'admin/path' and '/admin/path'
-  if (normalizedUrl.includes('admin')) return 'admin';
-  if (normalizedUrl.includes('vendor')) return 'vendor';
-  if (normalizedUrl.includes('delivery')) return 'delivery';
+  if (normalizedUrl.includes('/admin')) return 'admin';
+  if (normalizedUrl.includes('/vendor')) return 'vendor';
+  if (normalizedUrl.includes('/delivery')) return 'delivery';
   return 'user';
 };
 

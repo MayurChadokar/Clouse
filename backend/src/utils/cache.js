@@ -26,9 +26,7 @@ export const setCache = async (key, value, ttlInSeconds = 3600) => {
     if (!redisClient) return false; // Skip if Redis is not configured
 
     try {
-        await redisClient.set(key, JSON.stringify(value), {
-            EX: ttlInSeconds
-        });
+        await redisClient.set(key, JSON.stringify(value), 'EX', ttlInSeconds);
         return true;
     } catch (error) {
         console.error(`❌ Cache set failed for ${key}:`, error.message);

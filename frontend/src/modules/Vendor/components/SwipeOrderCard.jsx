@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { FiPackage, FiArrowRight, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { FiPackage, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { formatPrice } from '../../../shared/utils/helpers';
 import { useVendorAuthStore } from '../store/vendorAuthStore';
 import toast from 'react-hot-toast';
@@ -30,27 +30,30 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
     const displayAmount = vendorItem?.subtotal ?? order.totalAmount ?? order.total ?? 0;
     const orderId = order.orderId ?? order._id;
 
-    const nextStatus = ['pending', 'accepted', 'processing'].includes(currentStatus) ? 'ready_for_pickup' : null;
-    const nextActionLabel = 'Mark Ready';
+    // Logic for next state
+    const nextStatus = currentStatus === 'pending' ? 'accepted' : 
+                      (currentStatus === 'accepted' || currentStatus === 'processing') ? 'ready_for_pickup' : null;
+    
+    const nextActionLabel = nextStatus === 'accepted' ? 'Accept Order' : 'Mark Ready';
 
     const handleDragEnd = async (event, info) => {
         if (info.offset.x >= 180 && !isUpdating && nextStatus) {
             setIsUpdating(true);
             try {
-                const res = await updateOrderStatus(orderId, nextStatus);
+                const res = await updateOrderStatus(orderId, nextStatus, {});
                 if (res.success) {
                     setIsSuccess(true);
-                    toast.success(`Order marked as ${nextStatus.replace(/_/g, ' ')}!`);
+                    toast.success(`Order #${orderId} is now ${nextStatus.replace(/_/g, ' ')}!`);
                     if (onStatusUpdate) onStatusUpdate(orderId, nextStatus);
                 }
             } catch (err) {
                 toast.error(err?.response?.data?.message || 'Failed to update status');
-                x.set(0); // Reset swipe
+                x.set(0); 
             } finally {
                 setIsUpdating(false);
             }
         } else {
-            x.set(0); // Reset if not far enough
+            x.set(0);
         }
     };
 
@@ -75,11 +78,9 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
         );
     }
 
-
-
     return (
         <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow">
-            <div className="p-4 pb-12">
+            <div className="p-4 pb-14">
                 <div className="flex justify-between items-start mb-2">
                     <div>
                         <p className="font-bold text-gray-800">{orderId}</p>
@@ -114,7 +115,7 @@ const SwipeOrderCard = ({ order, onStatusUpdate }) => {
                         style={{ opacity: successOpacity }}
                         className="text-[10px] font-bold text-green-600 uppercase  flex items-center gap-2 mx-auto absolute inset-0 flex items-center justify-center p-0"
                     >
-                        Confirmed! <FiCheckCircle />
+                        Success! <FiCheckCircle />
                     </motion.p>
                 </motion.div>
 

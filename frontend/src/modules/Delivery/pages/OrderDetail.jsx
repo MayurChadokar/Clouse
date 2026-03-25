@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,53 +18,17 @@ import {
   FiShield,
   FiMap,
   FiTarget,
-  FiXCircle
+  FiXCircle,
+  FiImage,
+  FiToggleLeft,
+  FiToggleRight
 } from 'react-icons/fi';
 import PageTransition from '../../../shared/components/PageTransition';
 import { formatPrice } from '../../../shared/utils/helpers';
 import toast from 'react-hot-toast';
 import { useDeliveryAuthStore } from '../store/deliveryStore';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import socketService from '../../../shared/utils/socket';
-
-// Fix for default marker icon issues in Leaflet with React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom icons
-const riderIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
-  iconSize: [35, 35],
-  iconAnchor: [17, 35],
-  popupAnchor: [0, -35],
-});
-
-const customerIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/1275/1275210.png',
-  iconSize: [35, 35],
-  iconAnchor: [17, 35],
-  popupAnchor: [0, -35],
-});
-
-const ChangeView = ({ center }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (center && Array.isArray(center) && center.length === 2 && center[0] !== null && center[1] !== null) {
-      try {
-        map.setView(center);
-      } catch (err) {
-        console.warn("Map view update failed:", err);
-      }
-    }
-  }, [center, map]);
-  return null;
-};
+import TrackingMap from '../../../shared/components/TrackingMap';
 
 const DeliveryOrderDetail = () => {
   const { id } = useParams();
@@ -79,15 +43,38 @@ const DeliveryOrderDetail = () => {
     updateOrderStatus,
     acceptReturn,
     updateReturnStatus,
+    markArrivedAtCustomer,
+    getCompanyQR,
+    deliveryBoy,
   } = useDeliveryAuthStore();
   
   const [order, setOrder] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [deliveryOtp, setDeliveryOtp] = useState('');
   const [deliveryPhoto, setDeliveryPhoto] = useState(null);
+  const [openBoxPhoto, setOpenBoxPhoto] = useState(null);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [hasArrived, setHasArrived] = useState(false);
+  const [codMethod, setCodMethod] = useState(null); // 'cash' | 'qr'
+  const [companyQR, setCompanyQR] = useState(null);
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const openBoxInputRef = useRef(null);
+  const deliveryPhotoInputRef = useRef(null);
 
   const isReturn = order?.type === 'return';
+  const isCod = order?.paymentMethod === 'cod' || order?.paymentMethod === 'cash';
+
+  // Determine tracking phase
+  const getTrackingPhase = () => {
+    if (!order) return null;
+    const s = order.status;
+    if (s === 'assigned' || s === 'accepted') return 'to_vendor';
+    if (s === 'picked-up' || s === 'picked_up' || s === 'out-for-delivery' || s === 'out_for_delivery') return 'to_customer';
+    return null;
+  };
+
+  const trackingPhase = getTrackingPhase();
 
   const loadOrder = async () => {
     try {
@@ -100,10 +87,45 @@ const DeliveryOrderDetail = () => {
     }
   };
 
+  // Watch current location for live tracking
+  useEffect(() => {
+    if (!deliveryBoy?.id || !order) return;
+    let watchId = null;
+    
+    if (trackingPhase) {
+      watchId = navigator.geolocation?.watchPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          setCurrentLocation({ lat, lng });
+          // Emit location to socket for order room
+          if (socketService.socket) {
+            socketService.socket.emit('update_location', {
+              lat, lng,
+              deliveryBoyId: deliveryBoy.id,
+              orderId: order.orderId || order.id,
+              phase: trackingPhase,
+            });
+          }
+        },
+        (err) => console.warn('Geolocation error:', err.message),
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+    }
+
+    return () => {
+      if (watchId !== null) navigator.geolocation?.clearWatch(watchId);
+    };
+  }, [deliveryBoy?.id, order?.id, trackingPhase]);
+
   useEffect(() => {
     loadOrder();
     socketService.connect();
     socketService.joinRoom('delivery_partners');
+
+    // Join order-specific socket room
+    if (id) {
+      socketService.joinRoom(`order_${id}`);
+    }
 
     const handleUpdate = (data) => {
       if (String(data.orderId || data.id) === String(id)) {
@@ -124,6 +146,7 @@ const DeliveryOrderDetail = () => {
       socketService.off('order_status_updated');
       socketService.off('return_status_updated');
       socketService.off('order_taken');
+      if (id) socketService.leaveRoom?.(`order_${id}`);
     };
   }, [id]);
 
@@ -181,11 +204,7 @@ const DeliveryOrderDetail = () => {
   };
 
   const handleCompleteReturn = async () => {
-    if (!deliveryPhoto) {
-      toast.error('Please capture/upload return proof photo');
-      return;
-    }
-    await handleUpdateStatus('completed', 'Return delivered to vendor!', { deliveryPhoto });
+    await handleUpdateStatus('completed', 'Return delivered to vendor!');
   };
 
   const handleCompleteOrder = async () => {
@@ -193,18 +212,65 @@ const DeliveryOrderDetail = () => {
       toast.error('Please enter valid 6-digit OTP');
       return;
     }
-    if (!deliveryPhoto) {
-      toast.error('Delivery photo is required for proof');
+
+    // For COD, require either cash or qr method selected
+    if (isCod && !codMethod) {
+      toast.error('Please select payment collection method (Cash or QR)');
       return;
     }
 
     try {
-      const updated = await completeOrder(order.id, deliveryOtp.trim(), deliveryPhoto);
+      const options = {};
+      if (openBoxPhoto) options.openBoxPhoto = openBoxPhoto;
+      if (deliveryPhoto) options.deliveryPhoto = deliveryPhoto;
+      if (isCod && codMethod) options.codCollectionMethod = codMethod;
+
+      const updated = await completeOrder(order.id, deliveryOtp.trim(), options);
       setOrder(updated);
       setDeliveryOtp('');
-      setDeliveryPhoto(null);
       toast.success('Done! Earning credited to your wallet.');
     } catch(err) {}
+  };
+
+  const handleMarkArrived = async () => {
+    if (!order) return;
+    try {
+      const updated = await markArrivedAtCustomer(order.id);
+      setOrder(updated);
+      setHasArrived(true);
+      toast.success('Arrival marked! Customer has been notified with OTP.');
+    } catch(err) {
+      toast.error('Failed to mark arrival');
+    }
+  };
+
+  const handleLoadCompanyQR = async () => {
+    if (companyQR) return; // Already loaded
+    setIsLoadingQR(true);
+    try {
+      const data = await getCompanyQR(order.id);
+      setCompanyQR(data);
+    } catch(err) {
+      toast.error('Company QR not available. Please collect cash.');
+    } finally {
+      setIsLoadingQR(false);
+    }
+  };
+
+  const handleOpenBoxCapture = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setOpenBoxPhoto(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeliveryPhotoCapture = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setDeliveryPhoto(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleResendOtp = async () => {
@@ -219,10 +285,29 @@ const DeliveryOrderDetail = () => {
   };
 
   const openInGoogleMaps = (lat, lng) => {
-    const latitude = lat || order.latitude;
-    const longitude = lng || order.longitude;
-    if (!latitude || !longitude) return;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`, '_blank');
+    let destLat, destLng;
+    
+    if (lat && lng) {
+      destLat = lat;
+      destLng = lng;
+    } else if (trackingPhase === 'to_vendor') {
+      // Navigate to vendor/pickup location
+      const pickupCoords = order?.pickupLocation?.coordinates;
+      if (Array.isArray(pickupCoords) && pickupCoords.length === 2 && pickupCoords[0] !== 0) {
+        destLat = pickupCoords[1];
+        destLng = pickupCoords[0];
+      }
+    } else {
+      // Navigate to customer/dropoff location
+      destLat = order.latitude;
+      destLng = order.longitude;
+    }
+    
+    if (!destLat || !destLng) {
+      toast.error('Destination coordinates not available');
+      return;
+    }
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
   };
 
   if (isLoadingOrder) {
@@ -251,315 +336,241 @@ const DeliveryOrderDetail = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[#F8FAFC] pb-20">
-        {/* Premium Header */}
-        <div className="bg-[#0F172A] pt-28 pb-24 px-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10 flex items-center gap-4">
-             <button onClick={() => navigate('/delivery/orders')} className="w-10 h-10 rounded-xl bg-slate-800/50 border border-slate-700 flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
-                <FiArrowLeft size={20} />
-             </button>
-             <div className="flex-1">
-                <span className="text-indigo-400 text-[10px] font-black uppercase tracking-widest block mb-1">Details & Route</span>
-                <h1 className="text-xl font-black text-white tracking-tight">{isReturn ? 'Return' : 'Order'} #{order.id.slice(-8)}</h1>
-             </div>
-             <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter border ${getStatusColor(order.status)} pb-1`}>
-                {order.status.replace(/-/g, ' ')}
-             </div>
-          </div>
-        </div>
-
-        {/* Floating Content Body */}
-        <div className="px-6 -mt-12 relative z-20 space-y-4">
-          
-          {/* Action Hub (Sticky Status Controls) */}
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100">
-             {/* Pending Status */}
-             {(order.status === 'pending' || order.status === 'approved') && (
-                <button 
-                  onClick={handleAcceptTask} 
-                  disabled={isUpdatingOrderStatus} 
-                  className={`w-full ${isReturn ? 'bg-orange-600' : 'bg-[#0F172A]'} text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-slate-200`}
-                >
-                   {isUpdatingOrderStatus ? 'Accepting...' : isReturn ? 'Accept Return Pickup' : 'Start Acceptance'}
-                </button>
-             )}
-
-             {/* Pickup Mode (Assigned/Accepted) */}
-             {(order.status === 'assigned' || order.status === 'accepted' || (isReturn && order.status === 'processing')) && (
-                <div className="space-y-4">
-                   <div className={`flex items-center gap-2 mb-2 p-3 ${isReturn ? 'bg-orange-50 border-orange-100 text-orange-700' : 'bg-amber-50 border-amber-100 text-amber-700'} rounded-2xl border`}>
-                      <FiPackage className={isReturn ? 'text-orange-500' : 'text-amber-500'} />
-                      <p className="text-[11px] font-black uppercase tracking-tighter">Current Task: Confirm Item Pickup</p>
-                   </div>
-                   <div className="relative group">
-                      <input 
-                         type="file" accept="image/*" capture="environment" 
-                         onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onloadend = () => handleUpdateStatus('picked_up', 'Items Verified!', { pickupPhoto: reader.result });
-                            reader.readAsDataURL(file);
-                         }} 
-                         className="hidden" id="pickup-photo" 
-                      />
-                      <label htmlFor="pickup-photo" className={`w-full flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed ${isReturn ? 'border-orange-200 hover:border-orange-500 bg-orange-50/50' : 'border-slate-200 hover:border-indigo-500 bg-slate-50'} rounded-3xl cursor-pointer transition-all`}>
-                         <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-400">
-                            <FiCamera size={24} />
-                         </div>
-                         <div className="text-center">
-                            <p className="text-sm font-black text-slate-900">Take Pickup Photo</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Proof of Items Verification</p>
-                         </div>
-                      </label>
-                   </div>
-                </div>
-             )}
-
-             {/* Return Completion Mode (No OTP for returns, just photo) */}
-             {isReturn && order.status === 'picked_up' && (
-                <div className="space-y-5">
-                   <div className="bg-emerald-50 rounded-3xl p-5 border-2 border-emerald-200 text-center">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Return to Vendor</p>
-                      <h2 className="text-lg font-black text-emerald-900">Deliver to Store</h2>
-                      <div className="flex items-center justify-center gap-2 mt-2 text-[10px] font-bold text-emerald-700">
-                         <FiShield /> FINAL RETURN PROOF REQUIRED
-                      </div>
-                   </div>
-
-                   <div className="relative group">
-                      <input 
-                         type="file" accept="image/*" capture="environment" 
-                         onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onloadend = () => setDeliveryPhoto(reader.result);
-                            reader.readAsDataURL(file);
-                         }} 
-                         className="hidden" id="return-proof" 
-                      />
-                      <label htmlFor="return-proof" className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${deliveryPhoto ? 'bg-emerald-50 border-emerald-500' : 'bg-slate-50 border-slate-200 hover:border-indigo-500'}`}>
-                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${deliveryPhoto ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 shadow-sm'}`}>
-                            {deliveryPhoto ? <FiCheckCircle size={24} /> : <FiCamera size={24} />}
-                         </div>
-                         <div className="flex-1">
-                            <p className="text-sm font-black text-slate-900">{deliveryPhoto ? 'Proof Captured' : 'Take Vendor Photo'}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">{deliveryPhoto ? 'Proof Attached Successfully' : 'Proof of Return Handover'}</p>
-                         </div>
-                      </label>
-                   </div>
-
-                   <button 
-                     onClick={handleCompleteReturn} 
-                     disabled={isUpdatingOrderStatus || !deliveryPhoto} 
-                     className="w-full h-14 bg-emerald-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 disabled:opacity-50"
-                   >
-                     {isUpdatingOrderStatus ? 'Finishing...' : 'Complete Return'}
-                   </button>
-                </div>
-             )}
-
-             {/* Standard Order Delivery Flow */}
-             {!isReturn && order.status === 'picked-up' && (
-                <button onClick={() => handleUpdateStatus('out_for_delivery', 'Live Tracking Active!')} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center justify-center gap-3 animate-pulse">
-                   <FiNavigation /> Set Out For Delivery
-                </button>
-             )}
-
-             {!isReturn && (order.status === 'out-for-delivery' || order.status === 'picked-up') && (
-                <div className="space-y-5">
-                   {(order.paymentMethod === 'cod' || order.paymentMethod === 'cash') && (
-                      <div className="bg-amber-50 rounded-3xl p-5 border-2 border-amber-200 text-center">
-                         <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Cash Collection</p>
-                         <h2 className="text-3xl font-black text-amber-900">{formatPrice(order.total)}</h2>
-                         <div className="flex items-center justify-center gap-2 mt-2 text-[10px] font-bold text-amber-700">
-                            <FiShield /> SECURE CASH ON DELIVERY
-                         </div>
-                      </div>
-                   )}
-
-                   <div className="relative">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Enter Customer OTP</p>
-                      <input 
-                         type="numeric" maxLength={6} value={deliveryOtp}
-                         onChange={(e) => setDeliveryOtp(e.target.value.replace(/\D/g, ''))}
-                         placeholder="••••••"
-                         className="w-full h-16 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center text-3xl font-black tracking-[0.5em] text-indigo-600 focus:border-indigo-500 focus:outline-none placeholder:text-slate-200"
-                      />
-                   </div>
-
-                   <div className="relative group">
-                      <input 
-                         type="file" accept="image/*" capture="environment" 
-                         onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onloadend = () => setDeliveryPhoto(reader.result);
-                            reader.readAsDataURL(file);
-                         }} 
-                         className="hidden" id="delivery-proof" 
-                      />
-                      <label htmlFor="delivery-proof" className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${deliveryPhoto ? 'bg-emerald-50 border-emerald-500' : 'bg-slate-50 border-slate-200 hover:border-indigo-500'}`}>
-                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${deliveryPhoto ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 shadow-sm'}`}>
-                            {deliveryPhoto ? <FiCheckCircle size={24} /> : <FiCamera size={24} />}
-                         </div>
-                         <div className="flex-1">
-                            <p className="text-sm font-black text-slate-900">{deliveryPhoto ? 'Proof Captured' : 'Take Delivery Photo'}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">{deliveryPhoto ? 'Proof Attached Successfully' : 'Proof of Handover'}</p>
-                         </div>
-                      </label>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-3 pt-2">
-                       <button onClick={handleResendOtp} disabled={isResendingOtp} className="h-14 bg-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-500 hover:bg-slate-200 tracking-widest">Resend OTP</button>
-                       <button onClick={handleCompleteOrder} disabled={deliveryOtp.length !== 6 || !deliveryPhoto} className="h-14 bg-emerald-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 disabled:opacity-50">Finish Job</button>
-                   </div>
-                </div>
-             )}
-          </motion.div>
-
-          {/* Contact & Map Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-             {/* Main Contact Card (Customer for orders, Customer for return pickup) */}
-             <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-4 mb-6">
-                   <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
-                      <FiUser size={28} />
-                   </div>
-                   <div className="flex-1">
-                      <h3 className="font-black text-slate-900 text-lg">{order.customer || 'Client'}</h3>
-                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Customer</p>
-                   </div>
-                   {order.phone && (
-                      <button onClick={() => window.open(`tel:${order.phone}`, '_self')} className="w-12 h-12 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200 flex items-center justify-center text-white">
-                         <FiPhone size={20} />
-                      </button>
-                   )}
-                </div>
-                
-                <div className="space-y-4">
-                   <div className="flex items-start gap-3">
-                      <div className="mt-1 text-indigo-500"><FiMapPin size={18} /></div>
-                      <div className="flex-1">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination Address</p>
-                         <p className="text-sm text-slate-800 font-bold leading-relaxed">{order.address || 'Address unavailable'}</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-6 pt-2">
-                      <div className="flex items-center gap-2">
-                         <FiNavigation className="text-emerald-500" />
-                         <span className="text-sm font-black text-slate-900">{order.distance || '2.4 km'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                         <FiClock className="text-amber-500" />
-                         <span className="text-sm font-black text-slate-900">{order.estimatedTime || '15 min'}</span>
-                      </div>
-                   </div>
-                </div>
-             </div>
-
-             {/* Live Track / Map Card */}
-             <div className="bg-white rounded-[32px] p-4 shadow-sm border border-slate-100 h-[300px] overflow-hidden relative">
-                <MapContainer
-                  center={[order.latitude || 20.5937, order.longitude || 78.9629]}
-                  zoom={14}
-                  style={{ height: '100%', width: '100%', borderRadius: '24px' }}
-                  zoomControl={false}
-                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {/* Rider Location */}
-                  {order.deliveryBoyId?.currentLocation?.coordinates && (
-                    <Marker
-                      position={[order.deliveryBoyId.currentLocation.coordinates[1], order.deliveryBoyId.currentLocation.coordinates[0]]}
-                      icon={riderIcon}
+      <div className="h-screen w-full bg-[#F8FAFC] flex flex-col relative overflow-hidden">
+        
+        {/* TOP LAYER: Immersive Map / Route Backdrop */}
+        <div className="absolute inset-x-0 top-0 h-[60%] z-0">
+           {(() => {
+                  const pickupCoords = order.pickupLocation?.coordinates;
+                  const vendorLoc = Array.isArray(pickupCoords) && pickupCoords.length === 2 && pickupCoords[0] !== 0
+                    ? { lat: pickupCoords[1], lng: pickupCoords[0] } : null;
+                  
+                  const customerLoc = order.latitude && order.longitude 
+                    ? { lat: Number(order.latitude), lng: Number(order.longitude) } : null;
+                  
+                  const riderLoc = currentLocation 
+                    ? { lat: currentLocation.lat, lng: currentLocation.lng }
+                    : order.deliveryBoyId?.currentLocation?.coordinates 
+                      ? { lat: order.deliveryBoyId.currentLocation.coordinates[1], lng: order.deliveryBoyId.currentLocation.coordinates[0] } 
+                      : null;
+                  
+                  return (
+                    <TrackingMap 
+                       deliveryLocation={riderLoc}
+                       customerLocation={customerLoc}
+                       vendorLocation={vendorLoc}
+                       followMode={true}
                     />
-                  )}
-                  {/* Customer/Target Location */}
-                  {order.latitude && order.longitude && (
-                     <Marker position={[order.latitude, order.longitude]} icon={customerIcon} />
-                  )}
-                  <ChangeView center={order.deliveryBoyId?.currentLocation?.coordinates ? [order.deliveryBoyId.currentLocation.coordinates[1], order.deliveryBoyId.currentLocation.coordinates[0]] : [order.latitude, order.longitude]} />
-                </MapContainer>
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[80%] z-[1000]">
-                   <button onClick={() => openInGoogleMaps()} className="w-full bg-[#0F172A] text-white py-3 rounded-2xl shadow-xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                      <FiMap size={14} /> Navigate Now
-                   </button>
-                </div>
-             </div>
-          </div>
-
-          {/* Try & Buy / Check & Buy Mode Instructions */}
-          {order.orderType && order.orderType !== 'standard' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[#0F172A] rounded-[32px] p-6 text-white overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-              <div className="relative z-10 flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center shadow-lg">
-                  <FiPackage size={24} />
-                </div>
-                <div>
-                  <h3 className="font-black text-lg uppercase tracking-tight">{order.orderType.replace(/_/g, ' ')} MODE</h3>
-                  <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">Special Handling Required</p>
-                </div>
+                  );
+           })()}
+           
+           {/* Dark Gradient Overlay for the top */}
+           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+           
+           {/* Floating Map Controls */}
+           <div className="absolute top-6 left-6 right-6 z-[1001] flex justify-between items-center">
+              <button 
+                onClick={() => navigate('/delivery/orders')} 
+                className="w-12 h-12 rounded-2xl bg-white/90 backdrop-blur shadow-2xl flex items-center justify-center text-slate-800 hover:scale-105 active:scale-95 transition-transform"
+              >
+                 <FiArrowLeft size={20} />
+              </button>
+              
+              <div className="flex flex-col items-end gap-2">
+                 <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur bg-white/90 border-2 ${getStatusColor(order.status)}`}>
+                    {order.status.replace(/-/g, ' ')}
+                 </div>
+                 {trackingPhase && (
+                    <div className="bg-indigo-600/90 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5">
+                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                       {trackingPhase === 'to_vendor' ? 'En route to store' : 'Delivering to customer'}
+                    </div>
+                 )}
               </div>
-              <div className="relative z-10 bg-white/10 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
-                {order.orderType === 'try_and_buy' ? (
-                  <p className="text-sm text-slate-200 leading-relaxed font-medium">
-                    Please allow the customer to <span className="text-indigo-300 font-black">TRY</span> the products. Wait for 5-10 mins for their final decision before confirming delivery.
-                  </p>
-                ) : (
-                  <p className="text-sm text-slate-200 leading-relaxed font-medium">
-                    Please allow the customer to <span className="text-indigo-300 font-black">INSPECT</span> items. Confirm physical quality satisfaction before completion.
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
+           </div>
 
-          {/* Item List / Manifest Card */}
-          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100">
-             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-slate-900 font-black text-lg flex items-center gap-2">
-                   <FiPackage className="text-indigo-500" /> Manifest
-                </h3>
-                <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                   {order.items?.length || 0} Products
-                </span>
-             </div>
-             
-             <div className="space-y-4">
-                {(order.items || []).map((item, i) => (
-                   <div key={i} className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <div>
-                         <p className="font-black text-slate-800 text-sm">{item.name || 'Fashion Pack'}</p>
-                         <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Qty: {item.quantity || 1}</p>
-                      </div>
-                      <p className="font-black text-slate-900 text-sm">{formatPrice(item.price || 0)}</p>
-                   </div>
-                ))}
-             </div>
-
-             <div className="mt-8 space-y-3 pt-6 border-t border-slate-100">
-                <div className="flex justify-between items-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
-                   <span>Fee & Tax</span>
-                   <span>{formatPrice((order.deliveryFee || 0) + (order.tax || 0))}</span>
-                </div>
-                {order.discount > 0 && (
-                   <div className="flex justify-between items-center text-red-500 font-bold text-[10px] uppercase tracking-widest">
-                      <span>Discount</span>
-                      <span>-{formatPrice(order.discount)}</span>
-                   </div>
-                )}
-                <div className="flex justify-between items-center text-slate-900 font-black text-xl">
-                   <span>Final Checkout</span>
-                   <span className="text-indigo-600 underline underline-offset-4 decoration-2">{formatPrice(order.total)}</span>
-                </div>
-             </div>
-          </div>
-
+           {/* Floating Navigation Button */}
+           <div className="absolute bottom-32 right-6 z-[1001]">
+              <button 
+                onClick={() => openInGoogleMaps()}
+                className="w-14 h-14 rounded-2xl bg-[#0F172A] text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+                title="Google Maps Navigation"
+              >
+                 <FiNavigation size={24} />
+              </button>
+           </div>
         </div>
+
+        {/* BOTTOM LAYER: Draggable / Scrollable Detail Sheet */}
+        <motion.div 
+           initial={{ y: '30%' }}
+           animate={{ y: 0 }}
+           className="mt-[50%] h-[50%] flex-1 bg-white rounded-t-[40px] shadow-[0_-15px_60px_-15px_rgba(0,0,0,0.1)] z-10 flex flex-col border-t border-slate-100 overflow-hidden"
+        >
+           {/* Draggable Handle Indicator */}
+           <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-4 shrink-0 shadow-inner" />
+
+           {/* Scrollable Content Container */}
+           <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
+              
+              {/* Primary Interaction Area */}
+              <div className="mb-8">
+                 <div className="flex items-center justify-between mb-6">
+                    <div>
+                       <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                          {isReturn ? `Return #${order.id.slice(-6)}` : `Order #${order.id.slice(-6)}`}
+                       </h2>
+                       <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Assignment Details</p>
+                    </div>
+                    {order.phone && (
+                       <button onClick={() => window.open(`tel:${order.phone}`, '_self')} className="w-14 h-14 rounded-2xl bg-emerald-500 shadow-xl shadow-emerald-200 flex items-center justify-center text-white active:scale-90 transition-transform">
+                          <FiPhone size={24} />
+                       </button>
+                    )}
+                 </div>
+
+                 {/* Role Switch: Target Info */}
+                 <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                       <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-indigo-500 shadow-sm mb-3">
+                          <FiUser size={16} />
+                       </div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{isReturn ? 'Deliver to' : 'Pick from'}</p>
+                       <p className="text-sm font-black text-slate-900 truncate">{isReturn ? (order.vendorName || 'Vendor') : 'Store'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                       <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-emerald-500 shadow-sm mb-3">
+                          <FiTarget size={16} />
+                       </div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{isReturn ? 'Pickup from' : 'Deliver to'}</p>
+                       <p className="text-sm font-black text-slate-900 truncate">{order.customer || 'Customer'}</p>
+                    </div>
+                 </div>
+
+                 {/* Status Action Buttons (Floating Panel Style) */}
+                 <div className="space-y-4">
+                    {/* Accept Order */}
+                    {(order.status === 'pending' || order.status === 'approved') && (
+                       <button 
+                         onClick={handleAcceptTask} 
+                         disabled={isUpdatingOrderStatus} 
+                         className={`w-full ${isReturn ? 'bg-orange-600' : 'bg-[#0F172A]'} text-white py-5 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl active:scale-95 transition-all`}
+                       >
+                          {isUpdatingOrderStatus ? 'Accepting...' : 'Accept Assignment'}
+                       </button>
+                    )}
+
+                    {/* Navigation Phase: To Store/Customer */}
+                    {(order.status === 'assigned' || order.status === 'accepted' || (isReturn && order.status === 'processing')) && (
+                       <button 
+                         onClick={() => handleUpdateStatus('picked_up', 'Items Verified & Picked Up!')}
+                         disabled={isUpdatingOrderStatus}
+                         className="w-full flex items-center justify-between p-2 pl-4 bg-emerald-500 text-white rounded-[24px] shadow-xl shadow-emerald-200 active:scale-[0.98] transition-all group"
+                       >
+                          <div className="text-left">
+                             <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Arrival at Pickup</p>
+                             <p className="text-sm font-black">Confirm Picked Up</p>
+                          </div>
+                          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                             <FiCheckCircle size={24} />
+                          </div>
+                       </button>
+                    )}
+
+                    {/* Out for Delivery Phase */}
+                    {!isReturn && order.status === 'picked-up' && !hasArrived && (
+                       <button 
+                         onClick={() => handleUpdateStatus('out_for_delivery', 'Live Tracking Active!')} 
+                         className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 active:scale-[0.98]"
+                       >
+                          <FiNavigation size={20} /> Start Delivery Route
+                       </button>
+                    )}
+
+                    {/* Completion Phase: OTP & Photos */}
+                    {!isReturn && (order.status === 'out-for-delivery' || (order.status === 'picked-up' && hasArrived)) && (
+                       <div className="space-y-6">
+                            {!hasArrived && (
+                              <button onClick={handleMarkArrived} className="w-full bg-amber-500 text-white py-5 rounded-[24px] font-black text-sm uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                                 <FiTarget size={20} /> I have Arrived
+                              </button>
+                           )}
+
+                           {hasArrived && (
+                             <div className="space-y-6 animate-in slide-in-from-bottom duration-500">
+                                {/* OTP Input Panel */}
+                                <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 text-center">
+                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Verification Code from Customer</p>
+                                   <input 
+                                      type="numeric" maxLength={6} value={deliveryOtp}
+                                      onChange={(e) => setDeliveryOtp(e.target.value.replace(/\D/g, ''))}
+                                      placeholder="••••••"
+                                      className="w-full h-20 bg-white border-2 border-slate-100 rounded-3xl text-center text-4xl font-black tracking-[0.5em] text-indigo-600 focus:border-indigo-500 focus:outline-none shadow-inner"
+                                   />
+                                   <button onClick={handleResendOtp} disabled={isResendingOtp} className="mt-4 text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:underline px-4 py-2">
+                                      Resend OTP
+                                   </button>
+                                </div>
+
+                                {/* COD & Method Selector */}
+                                {isCod && (
+                                   <div className="bg-emerald-50 p-6 rounded-[32px] border-2 border-emerald-100">
+                                      <p className="text-[10px] font-black text-emerald-600 uppercase mb-2 text-center">Collection Amount</p>
+                                      <h2 className="text-4xl font-black text-emerald-900 text-center mb-6">{formatPrice(order.total)}</h2>
+                                      <div className="grid grid-cols-2 gap-4">
+                                         <button onClick={() => setCodMethod('cash')} className={`py-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] transition-all border-2 ${codMethod === 'cash' ? 'bg-emerald-600 text-white border-emerald-600 scale-105 shadow-xl shadow-emerald-200' : 'bg-white text-emerald-600 border-emerald-100'}`}>
+                                            <FiDollarSign size={20} /> Direct Cash
+                                         </button>
+                                         <button onClick={() => {setCodMethod('qr'); handleLoadCompanyQR();}} className={`py-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] transition-all border-2 ${codMethod === 'qr' ? 'bg-indigo-600 text-white border-indigo-600 scale-105 shadow-xl shadow-indigo-100' : 'bg-white text-indigo-600 border-indigo-100'}`}>
+                                            <FiCreditCard size={20} /> Show QR
+                                         </button>
+                                      </div>
+                                   </div>
+                                )}
+
+                                <button onClick={handleCompleteOrder} disabled={deliveryOtp.length !== 6 || isUpdatingOrderStatus || (isCod && !codMethod)} className="w-full bg-[#0F172A] text-white py-6 rounded-[24px] font-black text-base uppercase tracking-widest shadow-2xl disabled:opacity-30">
+                                   Finish & Credit Earning
+                                </button>
+                             </div>
+                           )}
+                       </div>
+                    )}
+                 </div>
+              </div>
+
+              {/* Information Manifest */}
+              <div className="space-y-4">
+                 <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                    <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                       <FiMapPin className="text-indigo-500" /> Delivery Spot
+                    </h3>
+                    <p className="text-sm text-slate-700 font-bold leading-relaxed">{order.address}</p>
+                 </div>
+
+                 <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                    <div className="flex items-center justify-between mb-4">
+                       <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest flex items-center gap-2">
+                          <FiPackage className="text-indigo-500" /> Manifest
+                       </h3>
+                       <span className="text-[10px] font-black text-slate-400">{order.items?.length} ITEMS</span>
+                    </div>
+                    <div className="space-y-3">
+                       {order.items?.map((it, i) => (
+                          <div key={i} className="flex justify-between items-center text-sm font-bold text-slate-800">
+                             <span className="truncate max-w-[70%]">{it.name} <span className="text-slate-400 font-medium">x{it.quantity}</span></span>
+                             <span>{formatPrice(it.price * it.quantity)}</span>
+                          </div>
+                       ))}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-slate-200 flex justify-between items-center">
+                       <span className="text-[11px] font-black text-slate-400 uppercase">Grand Total</span>
+                       <span className="text-xl font-black text-indigo-600">{formatPrice(order.total)}</span>
+                    </div>
+                 </div>
+              </div>
+
+           </div>
+        </motion.div>
       </div>
     </PageTransition>
   );

@@ -1,51 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Package, Truck, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Package, Truck, MapPin, Clock, Shield } from 'lucide-react';
 import { useOrderStore } from '../../../../shared/store/orderStore';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-
-// Fix for default marker icon issues in Leaflet with React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom delivery boy icon
-const deliveryIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
-    iconSize: [35, 35],
-    iconAnchor: [17, 35],
-    popupAnchor: [0, -35],
-});
-
-const ChangeView = ({ center }) => {
-    const map = useMap();
-    useEffect(() => {
-        if (center && Array.isArray(center) && center.length === 2) {
-            map.setView(center);
-        }
-    }, [center, map]);
-    return null;
-};
+import socketService from '../../../../shared/utils/socket';
+import TrackingMap from '../../../../shared/components/TrackingMap';
 
 const TrackOrderPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
-    const { fetchOrderById, fetchPublicTrackingOrder, getOrder } = useOrderStore();
+    const { fetchOrderById, fetchPublicTrackingOrder } = useOrderStore();
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [riderLiveLocation, setRiderLiveLocation] = useState(null);
+    const [riderArrived, setRiderArrived] = useState(false);
 
     const loadOrder = async () => {
         if (!orderId) return;
         try {
             let foundOrder = await fetchOrderById(orderId).catch(() => null);
             if (!foundOrder) {
-                const response = await fetchPublicTrackingOrder(orderId).catch(() => null);
-                foundOrder = response;
+                foundOrder = await fetchPublicTrackingOrder(orderId).catch(() => null);
             }
 
             if (foundOrder) {
@@ -60,247 +35,245 @@ const TrackOrderPage = () => {
 
     useEffect(() => {
         loadOrder();
-    }, [orderId]);
 
-    const status = order?.status?.toLowerCase() || 'pending';
-
-    // Polling for live location if order is shipped/out_for_delivery
-    useEffect(() => {
-        let interval;
-        if (status === 'shipped' || status === 'out_for_delivery') {
-            interval = setInterval(loadOrder, 10000); // Poll every 10 seconds
+        // Socket.io for real-time tracking
+        socketService.connect();
+        if (orderId) {
+            socketService.joinRoom(`order_${orderId}`);
         }
-        return () => {
-            if (interval) clearInterval(interval);
+
+        const handleLocationUpdate = (data) => {
+            console.log('📍 Live Rider Update:', data);
+            setRiderLiveLocation({ lat: data.lat, lng: data.lng });
         };
-    }, [status, orderId]);
+
+        const handleStatusUpdate = (data) => {
+            console.log('📦 Order Status updated:', data);
+            loadOrder();
+        };
+
+        const handleRiderArrived = () => {
+            setRiderArrived(true);
+            loadOrder();
+        };
+
+        socketService.on('location_updated', handleLocationUpdate);
+        socketService.on('order_status_updated', handleStatusUpdate);
+        socketService.on('rider_arrived', handleRiderArrived);
+
+        // Fallback polling (every 30 seconds)
+        const interval = setInterval(loadOrder, 30000);
+
+        return () => {
+            clearInterval(interval);
+            socketService.off('location_updated', handleLocationUpdate);
+            socketService.off('order_status_updated', handleStatusUpdate);
+            socketService.off('rider_arrived', handleRiderArrived);
+        };
+    }, [orderId]);
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white font-sans">
                 <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-                <p className="text-gray-400 font-bold uppercase  text-[10px]">Updating Status...</p>
+                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Locating Order...</p>
             </div>
         );
     }
 
     if (!order) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <p className="text-gray-500 font-bold">Order not found</p>
+            <div className="min-h-screen flex items-center justify-center bg-white p-6 text-center">
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 mb-2">Order Not Found</h2>
+                  <p className="text-sm text-gray-500 mb-6">We couldn't find the order details for tracking.</p>
+                  <button onClick={() => navigate('/home')} className="bg-black text-white px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest">Go Home</button>
+                </div>
             </div>
         );
     }
 
-    const trackingNumber = order.trackingNumber || `TRK${orderId.slice(-8).toUpperCase()}`;
-    const address = order.address || order.shippingAddress;
+    const status = order?.status?.toLowerCase() || 'pending';
+    const trackingNumber = order.trackingNumber || `TRK${String(order.orderId || orderId).slice(-8).toUpperCase()}`;
+    const address = order.shippingAddress;
 
-    // Determine current step based on count of COMPLETED steps
+    // Determine current step
     let currentStep = 1;
-    if (status === 'processing') currentStep = 2;
-    if (status === 'ready_for_pickup') currentStep = 2;
-    if (status === 'shipped' || status === 'out_for_delivery') currentStep = 3;
+    if (['processing', 'ready_for_pickup', 'accepted'].includes(status)) currentStep = 2;
+    if (['shipped', 'out_for_delivery', 'picked_up', 'assigned'].includes(status)) currentStep = 3;
     if (status === 'delivered') currentStep = 4;
     if (status === 'cancelled') currentStep = 0;
 
     const steps = [
-        { label: 'Order Placed', date: order.date || order.createdAt, icon: CheckCircle },
+        { label: 'Order Placed', date: order.createdAt, icon: CheckCircle },
         { label: 'Processing', date: currentStep >= 2 ? 'Completed' : 'Pending', icon: Package },
-        { label: 'Shipped', date: order.shippedDate || (currentStep >= 3 ? 'Completed' : 'Pending'), icon: Truck },
-        { label: 'Delivered', date: order.deliveredDate || (currentStep >= 4 ? 'Completed' : 'Pending'), icon: MapPin },
+        { label: 'Out for Delivery', date: currentStep >= 3 ? 'In Transit' : 'Pending', icon: Truck },
+        { label: 'Delivered', date: status === 'delivered' ? order.deliveredAt : 'Pending', icon: MapPin },
     ];
 
     const getStatusColor = () => {
-        if (status === 'delivered') return 'bg-green-100 text-green-800';
+        if (status === 'delivered') return 'bg-emerald-100 text-emerald-800';
         if (status === 'cancelled') return 'bg-red-100 text-red-800';
-        if (status === 'shipped' || status === 'out_for_delivery') return 'bg-blue-100 text-blue-800';
+        if (['shipped', 'out_for_delivery', 'picked_up', 'assigned'].includes(status)) return 'bg-blue-100 text-blue-800';
         return 'bg-amber-100 text-amber-800';
     };
 
-    const riderLocation = order?.deliveryBoyId?.currentLocation?.coordinates;
-    const hasRiderLocation = Array.isArray(riderLocation) && riderLocation.length === 2;
-    const riderPosition = hasRiderLocation ? [riderLocation[1], riderLocation[0]] : null;
+    // Locations for map
+    const initialRiderLoc = order?.deliveryBoyId?.currentLocation?.coordinates;
+    const deliveryLocation = riderLiveLocation || (Array.isArray(initialRiderLoc) && initialRiderLoc.length === 2 ? { lat: initialRiderLoc[1], lng: initialRiderLoc[0] } : null);
+    
+    // Convert GeoJSON [lng, lat] to {lat, lng}
+    const dropLoc = order?.dropoffLocation?.coordinates;
+    const customerLocation = Array.isArray(dropLoc) && dropLoc.length === 2 && dropLoc[0] !== 0 ? { lat: dropLoc[1], lng: dropLoc[0] } : null;
+
+    const vLoc = order?.pickupLocation?.coordinates;
+    const vendorLocation = Array.isArray(vLoc) && vLoc.length === 2 && vLoc[0] !== 0 ? { lat: vLoc[1], lng: vLoc[0] } : null;
+
+    const formatDate = (date) => {
+        if (!date) return 'Pending';
+        if (date === 'Completed' || date === 'In Transit') return date;
+        const d = new Date(date);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
 
     return (
-        <div className="min-h-screen bg-white pb-20">
-            {/* Header */}
-            <div className="bg-white p-4 flex items-center gap-4 border-b border-gray-100 sticky top-0 z-50">
-                <button onClick={() => navigate(-1)} className="p-2 hover:bg-white hover:text-black rounded-full transition-colors">
+        <div className="h-screen w-full bg-[#F8FAFC] flex flex-col relative overflow-hidden font-sans">
+            
+            {/* BACKDROP: Immersive Live Map */}
+            <div className="absolute inset-0 z-0">
+                <TrackingMap 
+                    deliveryLocation={deliveryLocation}
+                    customerLocation={customerLocation}
+                    vendorLocation={vendorLocation}
+                    followMode={true}
+                />
+                
+                {/* Vignette Overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/30 pointer-events-none" />
+            </div>
+
+            {/* TOP BAR: Floating Status & Navigation */}
+            <div className="absolute top-0 inset-x-0 p-6 z-50 flex items-center justify-between pointer-events-none">
+                <button 
+                  onClick={() => navigate(-1)} 
+                  className="w-12 h-12 rounded-2xl bg-white/90 backdrop-blur shadow-2xl flex items-center justify-center text-slate-800 pointer-events-auto active:scale-95 transition-transform"
+                >
                     <ArrowLeft size={20} />
                 </button>
-                <div>
-                    <h1 className="text-lg font-bold uppercase ">Track Order</h1>
-                    <p className="text-[10px] text-gray-400 font-bold">Order #{order.orderId || orderId}</p>
-                </div>
-                <div className={`ml-auto px-3 py-1 rounded-full text-[10px] font-bold uppercase  ${getStatusColor()}`}>
-                    {status.replace('_', ' ')}
+                
+                <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                    <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur bg-white/90 border-b-2 border-slate-100 ${getStatusColor()}`}>
+                        {status.replace(/_/g, ' ')}
+                    </div>
                 </div>
             </div>
 
-            <div className="p-4 max-w-2xl mx-auto space-y-6">
-                {/* Live Map Tracking */}
-                {(status === 'shipped' || status === 'out_for_delivery') && (
+            {/* FLOATING ACTION CARDS */}
+            <div className="absolute inset-x-0 bottom-0 p-6 z-10 flex flex-col gap-4 max-h-[70%] overflow-y-auto scrollbar-hide">
+                
+                {/* 1. SECURE DELIVERY CODE (OTP) - Highlighted if Out for Delivery */}
+                {(riderArrived || status === 'out_for_delivery' || status === 'picked_up') && order.deliveryOtpDebug && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 h-64 relative z-10"
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="bg-indigo-600 rounded-[32px] p-6 text-white shadow-2xl shadow-indigo-200/50 border border-white/20 relative overflow-hidden"
                     >
-                        {hasRiderLocation ? (
-                            <MapContainer
-                                center={riderPosition}
-                                zoom={15}
-                                style={{ height: '100%', width: '100%' }}
-                                zoomControl={false}
-                            >
-                                <TileLayer
-                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                    attribution='&copy; OpenStreetMap'
-                                />
-                                <Marker position={riderPosition} icon={deliveryIcon}>
-                                    <Popup>
-                                        <div className="text-center">
-                                            <p className="font-bold text-gray-900">{order?.deliveryBoyId?.name || 'Delivery Partner'}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold">Out for Delivery</p>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                                <ChangeView center={riderPosition} />
-                            </MapContainer>
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-emerald-50/30">
-                                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
-                                    <Truck className="text-emerald-600" size={24} />
-                                </div>
-                                <h3 className="font-bold text-gray-900">Tracking Active</h3>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Waiting for live signal...</p>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-
-                {/* Status Timeline */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
-                >
-                    <h2 className="text-sm font-bold uppercase  mb-6 text-gray-400">Order Status</h2>
-                    <div className="relative pl-8 border-l-2 border-gray-100 space-y-8">
-                        {steps.map((step, index) => {
-                            const isCompleted = index < currentStep;
-                            const isCurrent = index === currentStep;
-                            const Icon = step.icon;
-
-                            return (
-                                <div key={index} className="relative">
-                                    <div className={`absolute -left-[41px] top-0 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white ${isCompleted ? 'bg-emerald-500 text-white' : isCurrent ? 'bg-emerald-100 text-emerald-600 ring-4 ring-emerald-50' : 'bg-gray-100 text-gray-400'}`}>
-                                        <Icon size={14} />
-                                    </div>
-                                    <div className={`${isCompleted || isCurrent ? 'opacity-100' : 'opacity-40'}`}>
-                                        <p className="text-sm font-bold text-gray-900">{step.label}</p>
-                                        <p className={`text-[10px] uppercase font-bold mt-1 ${isCompleted ? 'text-emerald-500' : 'text-gray-400'}`}>
-                                            {step.label === 'Delivered' && !isCompleted ? 'Instant (60 Mins)' : step.date}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </motion.div>
-
-                {/* Delivery Partner Info */}
-                {(order.deliveryBoyId || order.assignedDeliveryBoy) && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
-                    >
-                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Delivery Partner</h2>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                                <Truck size={24} />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <Shield size={20} />
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-bold text-gray-900">{order.deliveryBoyId?.name || order.assignedDeliveryBoy?.name}</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase">
-                                    {order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone || 'Contact Partner'}
-                                </p>
+                                <h3 className="font-black text-sm uppercase tracking-tight">Handover OTP</h3>
+                                <p className="text-[9px] text-indigo-100 font-bold uppercase tracking-widest">Share this with the rider</p>
                             </div>
-                            {(order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone) && (
-                                <a
-                                    href={`tel:${order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone}`}
-                                    className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase  hover:bg-emerald-100 transition-colors"
-                                >
-                                    Call
-                                </a>
-                            )}
+                            <div className="bg-white rounded-xl px-4 py-2 shadow-lg">
+                                <span className="text-2xl font-black tracking-widest text-indigo-600">{order.deliveryOtpDebug}</span>
+                            </div>
                         </div>
                     </motion.div>
                 )}
 
-                {/* Tracking Number */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                    <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Tracking Number</h2>
-                    <div className="bg-purple-50 rounded-2xl p-4">
-                        <p className="text-xl font-bold text-purple-900 ">{trackingNumber}</p>
-                    </div>
-                </div>
-
-                {/* Shipping Address */}
-                {address && (
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400 flex items-center gap-2">
-                            <MapPin size={16} /> Shipping Address
-                        </h2>
-                        <div className="bg-white rounded-2xl p-4">
-                            <p className="text-sm font-bold text-gray-900">{address.name}</p>
-                            <p className="text-xs font-medium text-gray-500 mt-1 leading-relaxed">
-                                {address.address}{address.locality ? `, ${address.locality}` : ''} <br />
-                                {[address.city, address.state, address.pincode || address.zipCode].filter(Boolean).join(', ')}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {/* Order Items */}
-                {Array.isArray(order.items) && order.items.length > 0 && (
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h2 className="text-sm font-bold uppercase  mb-4 text-gray-400">Order Items</h2>
-                        <div className="space-y-4">
-                            {order.items.map((item, idx) => (
-                                <div key={idx} className="flex gap-4 items-center bg-white p-3 rounded-2xl">
-                                    <div className="w-16 h-16 bg-white rounded-xl overflow-hidden shrink-0 border border-gray-100">
-                                        <img src={item.image} alt="" className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{item.name}</h4>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">
-                                            Qty: {item.quantity}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Delivery Info */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] uppercase font-bold text-gray-400  mb-1">Delivery Type</p>
-                        <p className="text-lg font-bold text-emerald-600">Instant Delivery (60 Mins)</p>
-                    </div>
-                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500">
-                        <Clock size={24} />
-                    </div>
-                </div>
-
-                <button
-                    onClick={() => navigate(`/orders/${order.orderId || orderId}`)}
-                    className="w-full py-4 bg-black text-white rounded-2xl font-bold text-xs uppercase hover:bg-gray-800 shadow-lg shadow-gray-200"
+                {/* 2. MAIN TRACKING / RIDER CARD */}
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="bg-white rounded-[40px] p-6 shadow-2xl shadow-slate-900/10 border border-slate-100"
                 >
-                    View Order Details
-                </button>
+                    {/* Rider Presence Info */}
+                    {(order.deliveryBoyId || order.assignedDeliveryBoy) ? (
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="relative">
+                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100 overflow-hidden">
+                                     {order.deliveryBoyId?.avatar ? (
+                                        <img src={order.deliveryBoyId.avatar} className="w-full h-full object-cover" alt="Rider" />
+                                     ) : <Truck size={28} />}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Your Delivery Partner</p>
+                                <h3 className="text-lg font-black text-slate-900 leading-tight">{order.deliveryBoyId?.name || order.assignedDeliveryBoy?.name}</h3>
+                                {riderArrived && <span className="text-[10px] font-black text-emerald-500 uppercase">Reached your spot!</span>}
+                            </div>
+                            <button 
+                                onClick={() => window.open(`tel:${order.deliveryBoyId?.phone || order.assignedDeliveryBoy?.phone}`, '_self')}
+                                className="w-12 h-12 rounded-full bg-emerald-500 shadow-xl shadow-emerald-200 flex items-center justify-center text-white active:scale-90 transition-transform"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.81 12.81 0 0 0 .62 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.62A2 2 0 0 1 22 16.92z"></path></svg>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center py-4 text-center">
+                            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 mb-2">
+                                <Clock size={24} className="animate-spin" />
+                            </div>
+                            <h3 className="font-black text-sm text-slate-900">Assigning Rider...</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Our team is finding the nearest partner</p>
+                        </div>
+                    )}
+
+                    {/* Horizontal Progress Timeline */}
+                    <div className="pt-6 border-t border-slate-50">
+                        <div className="flex items-center justify-between mb-8 overflow-x-auto scrollbar-hide gap-4">
+                            {steps.map((step, index) => {
+                                const isCompleted = index < currentStep;
+                                const isCurrent = index === currentStep;
+                                const Icon = step.icon;
+                                return (
+                                    <div key={index} className="flex flex-col items-center shrink-0 min-w-[70px]">
+                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-4 border-white shadow-sm transition-all duration-700 ${isCompleted ? 'bg-emerald-500 text-white' : isCurrent ? 'bg-indigo-600 text-white scale-110 shadow-lg shadow-indigo-100' : 'bg-slate-50 text-slate-300'}`}>
+                                            <Icon size={16} />
+                                        </div>
+                                        <p className={`text-[9px] font-black uppercase mt-3 tracking-tighter ${isCompleted ? 'text-emerald-500' : isCurrent ? 'text-indigo-600' : 'text-slate-300'}`}>{step.label}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Order Details Quick View */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination</p>
+                                <p className="text-xs font-bold text-slate-800 line-clamp-1 truncate max-w-full">{address?.city || 'Your City'}</p>
+                            </div>
+                            <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p>
+                                    <p className="text-xs font-bold text-slate-800">{order.items?.length || 0} Products</p>
+                                </div>
+                                <Package size={20} className="text-indigo-300" />
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => navigate(`/orders/${order.orderId || orderId}`)}
+                            className="w-full mt-6 py-4 bg-[#0F172A] text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                        >
+                            Complete Order Summary
+                        </button>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

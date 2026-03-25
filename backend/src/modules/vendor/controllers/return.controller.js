@@ -250,10 +250,9 @@ export const updateVendorReturnRequestStatus = asyncHandler(async (req, res) => 
                 ];
                 const isSingleVendorOrder = uniqueVendorIds.length <= 1;
 
-                if (status === 'approved' && isSingleVendorOrder && !['cancelled', 'returned'].includes(order.status)) {
-                    order.status = 'returned';
-                    await order.save();
-                }
+                // Do not prematurely set order status to 'returned' upon approval
+                // It will be set when the return is actually 'completed'
+
                 if (status === 'completed') {
                     const stockRestores = (request.items || []).map(async (item) => {
                         const qty = Number(item?.quantity || 0);

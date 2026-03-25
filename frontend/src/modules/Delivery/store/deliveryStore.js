@@ -39,7 +39,7 @@ const toAddressLine = (shippingAddress = {}) => {
   return parts.join(', ');
 };
 
-export const normalizeOrder = (raw) => {
+const normalizeOrder = (raw) => {
   const shippingAddress = raw?.shippingAddress || {};
   const guestInfo = raw?.guestInfo || {};
   const backendStatus = raw?.status || 'pending';
@@ -71,8 +71,8 @@ export const normalizeOrder = (raw) => {
 
   return {
     ...raw,
-    id: String(raw?.orderId || raw?._id || raw?.id || ''),
-    orderId: String(raw?.orderId || raw?._id || raw?.id || ''),
+    id: raw?.orderId || raw?._id || raw?.id,
+    orderId: raw?.orderId || raw?._id || raw?.id,
     customer: shippingAddress?.name || guestInfo?.name || 'Customer',
     phone: shippingAddress?.phone || shippingAddress?.mobile || shippingAddress?.mobileNumber || guestInfo?.phone || raw?.customerPhone || raw?.phone || '',
     email: shippingAddress?.email || guestInfo?.email || raw?.customerEmail || raw?.email || '',
@@ -102,11 +102,10 @@ export const normalizeOrder = (raw) => {
   };
 };
 
-export const normalizeReturn = (raw) => {
+const normalizeReturn = (raw) => {
   if (!raw) return null;
-  const id = String(raw._id || raw.id || '');
+  const id = raw._id || raw.id;
   const status = raw.status || 'approved';
-  const isReturn = true;
   
   // For returns, pickup is from customer, dropoff is to vendor
   const customerAddress = raw.orderId?.shippingAddress || {};
@@ -115,7 +114,6 @@ export const normalizeReturn = (raw) => {
   return {
     ...raw,
     id,
-    isReturn: true,
     type: 'return',
     customer: customerAddress.name || 'Customer',
     phone: customerAddress.phone || customerAddress.mobile || '',
@@ -338,6 +336,77 @@ export const useDeliveryAuthStore = create(
           set({ isUpdatingOrderStatus: false });
           throw error;
         }
+      },
+
+      fetchOrders: async (options = {}) => {
+        set({ isLoadingOrders: true });
+        try {
+          const response = await api.get('/delivery/orders', { params: options });
+          const payload = response?.data ?? response;
+          const orders = (payload?.orders || (Array.isArray(payload) ? payload : [])).map(normalizeOrder);
+          const pagination = payload?.pagination || { total: orders.length, page: 1, limit: 20, pages: 1 };
+          set({ orders, ordersPagination: pagination, isLoadingOrders: false });
+          return orders;
+        } catch (error) {
+          set({ isLoadingOrders: false });
+          throw error;
+        }
+      },
+
+      fetchOrderById: async (id) => {
+        set({ isLoadingOrder: true });
+        try {
+          const response = await api.get(`/delivery/orders/${id}`);
+          const payload = response?.data ?? response;
+          const normalized = normalizeOrder(payload);
+          set({ selectedOrder: normalized, isLoadingOrder: false });
+          return normalized;
+        } catch (error) {
+          set({ isLoadingOrder: false });
+          throw error;
+        }
+      },
+
+      completeOrder: async (id, otp, options = {}) => {
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.patch(`/delivery/orders/${id}/status`, { 
+            status: 'delivered', 
+            otp, 
+            ...options 
+          });
+          const payload = response?.data ?? response;
+          const normalized = normalizeOrder(payload);
+          set({ isUpdatingOrderStatus: false });
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
+        }
+      },
+
+      resendDeliveryOtp: async (id) => {
+        const response = await api.post(`/delivery/orders/${id}/resend-delivery-otp`);
+        return response?.data ?? response;
+      },
+
+      markArrivedAtCustomer: async (id) => {
+        set({ isUpdatingOrderStatus: true });
+        try {
+          const response = await api.post(`/delivery/orders/${id}/arrived`);
+          const payload = response?.data ?? response;
+          const normalized = normalizeOrder(payload);
+          set({ isUpdatingOrderStatus: false });
+          return normalized;
+        } catch (error) {
+          set({ isUpdatingOrderStatus: false });
+          throw error;
+        }
+      },
+
+      getCompanyQR: async (id) => {
+        const response = await api.get(`/delivery/orders/${id}/company-qr`);
+        return response?.data ?? response;
       },
 
       // Return related actions

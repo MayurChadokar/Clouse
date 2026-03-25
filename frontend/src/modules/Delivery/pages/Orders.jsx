@@ -73,9 +73,25 @@ const DeliveryOrders = () => {
     socketService.connect();
     socketService.joinRoom('delivery_partners');
 
-    socketService.on('order_ready_for_pickup', () => {
+    socketService.on('order_ready_for_pickup', (data) => {
       const currentStatus = useDeliveryAuthStore.getState().deliveryBoy?.status;
-      if (filter === 'available' && currentStatus === 'available') loadOrders(currentPage, filter);
+      if (currentStatus === 'available') {
+        // Show popup modal with the new order
+        if (data && (data.orderId || data.id)) {
+          setSelectedNewOrder({
+            id: data.orderId || data.id,
+            orderId: data.orderId || data.id,
+            total: data.total || 0,
+            deliveryFee: data.deliveryFee || 0,
+            customer: data.pickupName || 'Vendor',
+            address: data.address || 'Address available in details',
+            distance: data.distance || '-',
+            estimatedTime: data.estimatedTime || '15 min',
+          });
+          setShowNewOrderModal(true);
+        }
+        if (filter === 'available') loadOrders(currentPage, filter);
+      }
     });
 
     return () => {

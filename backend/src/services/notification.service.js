@@ -1,88 +1,137 @@
 import Notification from '../models/Notification.model.js';
-import User from '../models/User.model.js';
-import Vendor from '../models/Vendor.model.js';
-import Admin from '../models/Admin.model.js';
-import DeliveryBoy from '../models/DeliveryBoy.model.js';
-import admin from '../config/firebase.js';
 import { emitEvent } from './socket.service.js';
+import admin from '../config/firebase.js';
+import { User } from '../models/User.model.js';
+import { Vendor } from '../models/Vendor.model.js';
+import DeliveryBoy from '../models/DeliveryBoy.model.js';
+import { Admin } from '../models/Admin.model.js';
+
+// Helper to safely get messaging instance (prevents crash if firebase not initialized)
+const getMessaging = () => {
+    try {
+        return admin.messaging();
+    } catch (error) {
+        return null;
+    }
+};
 
 /**
- * Create a notification for a user/vendor/delivery/admin
- * @param {Object} options - { recipientId, recipientType, title, message, type, data }
+ * Send a push notification using Firebase Messaging
+ * @param {Array} tokens - Array of FCM registration tokens
+ * @param {Object} payload - { title, body, data, sound }
  */
-export const createNotification = async ({ recipientId, recipientType, title, message, type = 'system', data = {} }) => {
-    // 1. Save to Database
-    const notification = await Notification.create({ recipientId, recipientType, title, message, type, data });
+const sendPushToTokens = async (tokens, { title, body, data = {}, sound = 'default' }) => {
+    if (!tokens || tokens.length === 0) return;
 
-    // 2. Real-time socket updates
-    const room = recipientType === 'admin' ? 'admin' : `${recipientType}_${recipientId}`;
-    emitEvent(room, 'new_notification', notification);
+    const messaging = getMessaging();
+    
+    if (!messaging) {
+        console.warn('⚠️ FCM messaging service not initialized. Skipping push notification.');
+        return;
+    }
 
-    // 3. Send Push Notification via FCM
-    try {
-        let recipient;
-        if (recipientType === 'user') recipient = await User.findById(recipientId);
-        else if (recipientType === 'vendor') recipient = await Vendor.findById(recipientId);
-        else if (recipientType === 'admin') recipient = await Admin.findById(recipientId);
-        else if (recipientType === 'delivery') recipient = await DeliveryBoy.findById(recipientId);
-
-        if (recipient && recipient.fcmTokens && recipient.fcmTokens.length > 0) {
-            // Determine sound based on action or data (for delivery boy sound logic)
-            const sound = data.sound || 'default';
-            
-            const messagePayload = {
-                notification: {
-                    title: title,
-                    body: message,
-                },
-                data: {
-                    ...data,
-                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                },
-                tokens: [...new Set(recipient.fcmTokens)], // Dedupe tokens to avoid multiple pushes for the same device
-                android: {
-                    notification: {
-                        sound: sound,
-                    },
-                },
-                apns: {
-                    payload: {
-                        aps: {
-                            sound: sound,
-                        },
-                    },
-                },
-            };
-
-            const response = await admin.messaging().sendEachForMulticast(messagePayload);
-            console.log(`✅ FCM: Sent ${response.successCount} messages; Failed ${response.failureCount}`);
-            
-            // Optional: Cleanup invalid tokens
-            if (response.failureCount > 0) {
-                const invalidTokens = [];
-                response.responses.forEach((resp, idx) => {
-                    if (!resp.success) {
-                        const errorCode = resp.error.code;
-                        if (errorCode === 'messaging/registration-token-not-registered' || 
-                            errorCode === 'messaging/invalid-registration-token') {
-                            invalidTokens.push(recipient.fcmTokens[idx]);
-                        }
-                    }
-                });
-                
-                if (invalidTokens.length > 0) {
-                    recipient.fcmTokens = recipient.fcmTokens.filter(t => !invalidTokens.includes(t));
-                    await recipient.save();
-                    console.log(`🧹 Cleaned up ${invalidTokens.length} outdated FCM tokens`);
+    const message = {
+        notification: { title, body },
+        data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' }, // Standard for some frameworks
+        tokens,
+        android: {
+            priority: 'high',
+            notification: {
+                sound: sound === 'default' ? 'default' : sound,
+                channelId: sound === 'default' ? 'default_channel' : 'high_priority_channel'
+            }
+        },
+        apns: {
+            payload: {
+                aps: {
+                    sound: sound === 'default' ? 'default' : sound
                 }
             }
         }
+    };
+
+    try {
+        const response = await messaging.sendEachForMulticast(message);
+        
+        if (response.failureCount > 0) {
+            const failedTokens = [];
+            response.responses.forEach((resp, idx) => {
+                if (!resp.success) {
+                    const error = resp.error;
+                    console.warn(`❌ Token failure: ${error.message} (${tokens[idx].substring(0, 10)}...)`);
+                    if (error.code === 'messaging/invalid-registration-token' || 
+                        error.code === 'messaging/registration-token-not-registered') {
+                        failedTokens.push(tokens[idx]);
+                    }
+                }
+            });
+
+            if (failedTokens.length > 0) {
+                console.warn(`🧹 Cleaning up ${failedTokens.length} stale FCM tokens...`);
+                // Update specific models to remove failed tokens? (Can be done async)
+            }
+        }
+
+        console.log(`✅ Push sent: ${response.successCount} success, ${response.failureCount} failed.`);
     } catch (error) {
-        console.error('❌ Error sending FCM notification:', error.message);
+        console.error('❌ FCM Error:', error.message);
+    }
+};
+
+/**
+ * Create a notification for a user/vendor/delivery/admin and trigger Push/Socket
+ * @param {Object} options - { recipientId, recipientType, title, message, type, data, token, tokens }
+ */
+export const createNotification = async ({ recipientId, recipientType, title, message, type = 'system', data = {}, token, tokens }) => {
+    // 1. Persist to DB if recipientId is provided
+    let notification = null;
+    if (recipientId) {
+        notification = await Notification.create({ recipientId, recipientType, title, message, type, data });
+
+        // 2. Real-time socket updates (for active web clients)
+        const room = recipientType === 'admin' ? 'admin' : `${recipientType}_${recipientId}`;
+        emitEvent(room, 'new_notification', notification);
+    }
+
+    // 3. Trigger Push Notification (for mobile/background)
+    try {
+        let pushTokens = [];
+        
+        // Use explicitly provided tokens if available
+        if (tokens && Array.isArray(tokens)) pushTokens = tokens;
+        else if (token) pushTokens = [token];
+        else if (recipientId && recipientType) {
+            // Find tokens from DB if not provided
+            let recipient;
+            switch (recipientType) {
+                case 'admin': recipient = await Admin.findById(recipientId).select('fcmTokens').lean(); break;
+                case 'vendor': recipient = await Vendor.findById(recipientId).select('fcmTokens').lean(); break;
+                case 'delivery': recipient = await DeliveryBoy.findById(recipientId).select('fcmTokens').lean(); break;
+                case 'user': recipient = await User.findById(recipientId).select('fcmTokens').lean(); break;
+                case 'customer': recipient = await User.findById(recipientId).select('fcmTokens').lean(); break;
+            }
+
+            if (recipient && recipient.fcmTokens && recipient.fcmTokens.length > 0) {
+                pushTokens = recipient.fcmTokens.map(t => typeof t === 'string' ? t : t.token);
+            }
+        }
+
+        if (pushTokens.length > 0) {
+            // Custom sound logic (buzzer)
+            let sound = 'default';
+            if ((recipientType === 'vendor' || recipientType === 'delivery') && type === 'order') {
+                sound = 'mgs_codec.mp3'; // The custom buzzer sound file name
+            }
+
+            await sendPushToTokens(pushTokens, { title, body: message, data: { ...data, type }, sound });
+        }
+    } catch (err) {
+        console.error('Failed to trigger push notification:', err.message);
     }
 
     return notification;
 };
+
 
 /**
  * Get unread notifications for a recipient
@@ -99,88 +148,54 @@ export const markAllAsRead = async (recipientId, recipientType) => {
 };
 
 /**
- * Broadcast notifications to multiple roles (users, vendors, delivery)
- * @param {Object} options - { roles, title, message, type, data }
+ * Send a notification to multiple roles/users (Broadcast)
  */
-export const broadcastNotifications = async ({ roles = [], title, message, type = 'broadcast', data = {} }) => {
-    if (!roles.length) return { success: false, message: 'No roles specified' };
-
-    const roleModels = {
-        'customers': User,
-        'user': User,
-        'vendor': Vendor,
-        'delivery': DeliveryBoy,
-        'delivery-boy': DeliveryBoy,
-        'admin': Admin
+export const broadcastNotifications = async ({ roles, title, message, type = 'broadcast', data = {} }) => {
+    const results = {
+        successCount: 0,
+        failureCount: 0,
+        errors: []
     };
 
-    let allTokens = [];
-    let recipientPairs = [];
+    try {
+        const roleModels = {
+            'user': User,
+            'customer': User,
+            'vendor': Vendor,
+            'delivery': DeliveryBoy,
+            'admin': Admin
+        };
 
-    // 1. Gather all recipients and their tokens across requested roles
-    for (const role of roles) {
-        const Model = roleModels[role.toLowerCase()];
-        if (!Model) continue;
+        for (const role of roles) {
+            const Model = roleModels[role.toLowerCase()];
+            if (!Model) continue;
 
-        const recipients = await Model.find({ isActive: true }).select('_id fcmTokens role');
-        
-        for (const recipient of recipients) {
-            if (recipient.fcmTokens && recipient.fcmTokens.length > 0) {
-                allTokens.push(...recipient.fcmTokens);
-            }
-            recipientPairs.push({
-                id: recipient._id,
-                type: role === 'customers' ? 'user' : (role === 'delivery-boy' ? 'delivery' : role)
-            });
-        }
-    }
+            // Fetch all users of this role
+            // Note: For large datasets, this should be chunked or handled by a background job
+            const users = await Model.find({}).select('_id').lean();
 
-    // 2. Create individual DB notifications for each recipient
-    if (recipientPairs.length > 0) {
-        // Chunk database inserts if huge (e.g., 500 at a time)
-        const dbChunks = [];
-        for (let i = 0; i < recipientPairs.length; i += 500) {
-            const chunk = recipientPairs.slice(i, i + 500).map(pair => ({
-                recipientId: pair.id,
-                recipientType: pair.type,
-                title,
-                message,
-                type,
-                data
-            }));
-            dbChunks.push(Notification.insertMany(chunk));
-        }
-        await Promise.all(dbChunks);
-        console.log(`📦 Created ${recipientPairs.length} DB notification records`);
-    }
-
-    // 3. Send Push Notifications in batches of 500 (FCM Multi-cast limit)
-    if (allTokens.length > 0) {
-        const uniqueTokens = [...new Set(allTokens)]; // dedupe
-        console.log(`🚀 Broadcasting to ${uniqueTokens.length} unique FCM tokens...`);
-
-        for (let i = 0; i < uniqueTokens.length; i += 500) {
-            const batch = uniqueTokens.slice(i, i + 500);
-            const messagePayload = {
-                notification: { title, body: message },
-                data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
-                tokens: batch,
-                android: { notification: { sound: 'default' } },
-                apns: { payload: { aps: { sound: 'default' } } },
-            };
-
-            try {
-                const response = await admin.messaging().sendEachForMulticast(messagePayload);
-                console.log(`✅ Batch ${Math.floor(i/500) + 1} sent: ${response.successCount} success, ${response.failureCount} failed.`);
-            } catch (err) {
-                console.error(`❌ Batch send failed:`, err.message);
+            for (const user of users) {
+                try {
+                    await createNotification({
+                        recipientId: user._id,
+                        recipientType: role === 'user' || role === 'customer' ? 'user' : role,
+                        title,
+                        message,
+                        type,
+                        data
+                    });
+                    results.successCount++;
+                } catch (err) {
+                    results.failureCount++;
+                    results.errors.push(`Failed for ${role} ${user._id}: ${err.message}`);
+                }
             }
         }
+    } catch (error) {
+        console.error('❌ Global Broadcast Error:', error.message);
+        throw error;
     }
 
-    return { 
-        success: true, 
-        recipientsCount: recipientPairs.length, 
-        tokensCount: allTokens.length 
-    };
+    return results;
 };
+

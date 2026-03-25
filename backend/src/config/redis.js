@@ -1,57 +1,50 @@
-import { createClient } from 'redis';
+import ioredis from 'ioredis';
 
-const IS_REDIS_CONFIGURED = !!(process.env.REDIS_URL || process.env.REDIS_HOST);
-
-let redisClient = null;
-
-if (IS_REDIS_CONFIGURED) {
-    const config = {
-        password: process.env.REDIS_PASSWORD || undefined,
-        username: process.env.REDIS_USERNAME || 'default',
-    };
-
-    if (process.env.REDIS_URL) {
-        config.url = process.env.REDIS_URL;
-    } else {
-        config.socket = {
-            host: process.env.REDIS_HOST || '127.0.0.1',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-        };
-    }
-
-    redisClient = createClient(config);
-
-    redisClient.on('error', (err) => {
-        console.error('❌ Redis Client Error:', err);
-    });
-
-    redisClient.on('connect', () => {
-        console.log('📡 Redis client connecting...');
-    });
-
-    redisClient.on('ready', () => {
-        console.log('✅ Redis client ready and connected');
-    });
-
-    // Start connection immediately in background to avoid blocking other modules
-    redisClient.connect().catch(() => {
-        // Errors are already handled by the 'error' listener
-    });
-}
-
-export const connectRedis = async () => {
-    if (!IS_REDIS_CONFIGURED) {
-        console.log('ℹ️  Redis not configured. Skipping connection.');
-        return;
-    }
-    
-    try {
-        if (!redisClient.isOpen) {
-            await redisClient.connect();
-        }
-    } catch (error) {
-        console.error('❌ Failed to connect to Redis during explicit call:', error.message);
-    }
+const redisConfig = {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    maxRetriesPerRequest: null, // Critical for BullMQ
 };
 
-export default redisClient;
+const redisConnection = new ioredis({
+    ...redisConfig,
+    retryStrategy: (times) => {
+        // Retry every 2-10 seconds
+        return Math.min(times * 100, 10000);
+    },
+    // Prevent unhandled error event crashes
+    lazyConnect: false, 
+    maxRetriesPerRequest: null,
+});
+
+// A standard, global error handler for the master connection to prevent app crashes
+redisConnection.on('error', (err) => {
+    // Suppress logs unless it's something special, to avoid spam
+    if (err.code !== 'ENOTFOUND' && err.code !== 'ECONNREFUSED') {
+        console.error('❌ Redis Master Connection Error:', err.message);
+    }
+});
+
+const connectRedis = async () => {
+    console.log(`[Redis] Current status: ${redisConnection.status}`);
+    return new Promise((resolve, reject) => {
+        if (redisConnection.status === 'ready') {
+            console.log('✅ Redis Connected for Queues (cached)');
+            return resolve(redisConnection);
+        }
+        
+        redisConnection.once('ready', () => {
+            console.log('✅ Redis Connected for Queues');
+            resolve(redisConnection);
+        });
+        
+        redisConnection.once('error', (err) => {
+            console.error('❌ Redis Connection Error:', err.message);
+            reject(err);
+        });
+    });
+};
+
+export { connectRedis };
+export default redisConnection;

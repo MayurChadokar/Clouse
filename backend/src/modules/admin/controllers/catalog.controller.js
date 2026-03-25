@@ -7,6 +7,7 @@ import Brand from '../../../models/Brand.model.js';
 import Settings from '../../../models/Settings.model.js';
 import { emitEvent } from '../../../services/socket.service.js';
 import { slugify } from '../../../utils/slugify.js';
+import { clearCachePattern, deleteCache } from '../../../utils/cache.js';
 
 const sanitizeFaqs = (faqs) => {
     if (!Array.isArray(faqs)) return [];
@@ -307,6 +308,9 @@ export const createProduct = asyncHandler(async (req, res) => {
         variants: normalizedVariants,
         faqs: sanitizeFaqs(rest.faqs),
     });
+
+    await clearCachePattern('products:list:*');
+
     res.status(201).json(new ApiResponse(201, product, 'Product created.'));
 });
 
@@ -354,6 +358,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
     const product = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!product) throw new ApiError(404, 'Product not found.');
+
+    await clearCachePattern('products:list:*');
+
     res.status(200).json(new ApiResponse(200, product, 'Product updated.'));
 });
 
@@ -381,6 +388,8 @@ export const updateProductStatus = asyncHandler(async (req, res) => {
 
     if (!product) throw new ApiError(404, 'Product not found.');
 
+    await clearCachePattern('products:list:*');
+
     // Real-time: notify the vendor about approval status change
     emitEvent(`vendor_${product.vendorId}`, 'product_approved', {
         productId: String(product._id),
@@ -406,6 +415,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
         { new: true, runValidators: true }
     );
     if (!product) throw new ApiError(404, 'Product not found.');
+    await clearCachePattern('products:list:*');
     res.status(200).json(new ApiResponse(200, null, 'Product disabled.'));
 });
 
@@ -449,6 +459,9 @@ export const createCategory = asyncHandler(async (req, res) => {
     await assertValidCategoryParent({ parentId: rest.parentId });
     const slug = slugify(name);
     const category = await Category.create({ name, slug, ...rest });
+
+    await deleteCache('categories:all');
+
     res.status(201).json(new ApiResponse(201, category, 'Category created.'));
 });
 
@@ -472,6 +485,9 @@ export const updateCategory = asyncHandler(async (req, res) => {
         runValidators: true,
     });
     if (!category) throw new ApiError(404, 'Category not found.');
+
+    await deleteCache('categories:all');
+
     res.status(200).json(new ApiResponse(200, category, 'Category updated.'));
 });
 
@@ -495,6 +511,7 @@ export const deleteCategory = asyncHandler(async (req, res) => {
     }
 
     await Category.findByIdAndDelete(req.params.id);
+    await deleteCache('categories:all');
     res.status(200).json(new ApiResponse(200, null, 'Category deleted.'));
 });
 
@@ -522,6 +539,8 @@ export const reorderCategories = asyncHandler(async (req, res) => {
         await Category.bulkWrite(bulkUpdates);
     }
 
+    await deleteCache('categories:all');
+
     const categories = await Category.find().sort({ order: 1, name: 1 });
     res.status(200).json(new ApiResponse(200, categories, 'Category order updated.'));
 });
@@ -538,6 +557,9 @@ export const createBrand = asyncHandler(async (req, res) => {
     const { name, ...rest } = payload;
     const slug = slugify(name);
     const brand = await Brand.create({ name, slug, ...rest });
+
+    await deleteCache('brands:all');
+
     res.status(201).json(new ApiResponse(201, brand, 'Brand created.'));
 });
 
@@ -550,6 +572,9 @@ export const updateBrand = asyncHandler(async (req, res) => {
 
     const brand = await Brand.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!brand) throw new ApiError(404, 'Brand not found.');
+
+    await deleteCache('brands:all');
+
     res.status(200).json(new ApiResponse(200, brand, 'Brand updated.'));
 });
 
@@ -564,5 +589,6 @@ export const deleteBrand = asyncHandler(async (req, res) => {
     }
 
     await Brand.findByIdAndDelete(req.params.id);
+    await deleteCache('brands:all');
     res.status(200).json(new ApiResponse(200, null, 'Brand deleted.'));
 });

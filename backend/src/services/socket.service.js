@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import DeliveryBoy from '../models/DeliveryBoy.model.js';
+import { db } from '../config/firebase.js';
 
 let io;
 const locationCache = new Map(); // Store { deliveryBoyId: { coordinates: [lng, lat], updatedAt: timestamp } }
@@ -26,6 +27,26 @@ export const initSocket = (server) => {
             console.log(`🏠 Client ${socket.id} joined room: ${room}`);
         });
 
+        // Targeted registration based on ID and role (for targeted notifications)
+        socket.on('delivery_register', (deliveryBoyId) => {
+            const room = `delivery_${deliveryBoyId}`;
+            socket.join(room);
+            socket.join('delivery_partners'); // Global room for new broadcasts
+            console.log(`🚴 Delivery Partner ${deliveryBoyId} registered and joined: ${room}`);
+        });
+
+        socket.on('vendor_register', (vendorId) => {
+            const room = `vendor_${vendorId}`;
+            socket.join(room);
+            console.log(`🏪 Vendor ${vendorId} registered and joined: ${room}`);
+        });
+
+        socket.on('user_register', (userId) => {
+            const room = `user_${userId}`;
+            socket.join(room);
+            console.log(`👤 User ${userId} registered and joined: ${room}`);
+        });
+
         // --- Delivery Tracking System ---
 
         // Join specific order room (for customers tracking an order)
@@ -36,18 +57,41 @@ export const initSocket = (server) => {
         });
 
         // Delivery boy updates their location
-        socket.on('update_location', (payload) => {
+        socket.on('update_location', async (payload) => {
             const { lat, lng, deliveryBoyId, orderId } = payload;
             
             if (!lat || !lng || !deliveryBoyId) return;
 
-            // 1. Update In-Memory Cache for performance
+            // 1. Update In-Memory Cache for performance (Mongo Persistence)
             locationCache.set(deliveryBoyId, {
                 coordinates: [lng, lat], // GeoJSON order
                 updatedAt: Date.now()
             });
 
-            // 2. Broadcast to specific order room (if orderId provided)
+            // 2. Sync to Firebase Realtime Database for high-frequency tracking
+            if (db) {
+                try {
+                    const trackingData = {
+                        lat,
+                        lng,
+                        deliveryBoyId,
+                        timestamp: Date.now(),
+                        status: 'tracking'
+                    };
+
+                    // Update broad tracking for the rider
+                    await db.ref(`delivery_boys/${deliveryBoyId}`).set(trackingData);
+
+                    // Update specific tracking for the order
+                    if (orderId) {
+                        await db.ref(`tracking/${orderId}`).set(trackingData);
+                    }
+                } catch (fbError) {
+                    console.error('❌ Firebase RTDB sync failed:', fbError.message);
+                }
+            }
+
+            // 3. Broadcast to Socket.io rooms (fallback or web support)
             if (orderId) {
                 const room = `order_${orderId}`;
                 io.to(room).emit('location_updated', {
@@ -58,11 +102,11 @@ export const initSocket = (server) => {
                 });
             }
 
-            // 3. Optional: Broadcast to a general delivery partner room for admin tracking
             io.to('admin_tracking').emit('delivery_boy_moved', {
                 lat, lng, deliveryBoyId
             });
         });
+
 
         socket.on('disconnect', () => {
             console.log(`🔌 Client disconnected: ${socket.id}`);

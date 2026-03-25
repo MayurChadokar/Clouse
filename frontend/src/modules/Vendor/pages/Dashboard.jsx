@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,6 +22,8 @@ const VendorDashboard = () => {
   const { vendor, updateLocation } = useVendorAuthStore();
   const [locationLoading, setLocationLoading] = useState(false);
   const { products, total: totalProductsCount, fetchProducts } = useVendorProductStore();
+  const [isBuzzerActive, setIsBuzzerActive] = useState(false);
+  const buzzerRef = useRef(null);
 
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -34,8 +36,25 @@ const VendorDashboard = () => {
 
   const [recentOrders, setRecentOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const buzzerRef = useRef(null);
-  const [isBuzzerActive, setIsBuzzerActive] = useState(false);
+  const startBuzzer = useCallback(() => {
+    if (buzzerRef.current) return;
+    const audio = new Audio('/sounds/mgs_codec.mp3');
+    audio.loop = true;
+    audio.play().catch(err => console.warn('Buzzer playback blocked:', err));
+    buzzerRef.current = audio;
+    setIsBuzzerActive(true);
+  }, []);
+
+  const stopBuzzer = useCallback(() => {
+    if (buzzerRef.current) {
+        try {
+            buzzerRef.current.pause();
+            buzzerRef.current.currentTime = 0;
+        } catch (e) {}
+        buzzerRef.current = null;
+    }
+    setIsBuzzerActive(false);
+  }, []);
 
   const vendorId = vendor?.id || vendor?._id;
 
@@ -128,23 +147,6 @@ const VendorDashboard = () => {
 
     socketService.connect();
     socketService.joinRoom(`vendor_${vendorId}`);
-
-    const startBuzzer = () => {
-      if (buzzerRef.current) return;
-      const audio = new Audio('/sounds/mgs_codec.mp3');
-      audio.loop = true;
-      audio.play().catch(err => console.warn('Buzzer playback blocked:', err));
-      buzzerRef.current = audio;
-      setIsBuzzerActive(true);
-    };
-
-    const stopBuzzer = () => {
-      if (buzzerRef.current) {
-        buzzerRef.current.pause();
-        buzzerRef.current = null;
-      }
-      setIsBuzzerActive(false);
-    };
 
     socketService.on("order_created", (newOrder) => {
       startBuzzer();
@@ -514,13 +516,7 @@ const VendorDashboard = () => {
           <div className="w-3 h-3 bg-white rounded-full animate-ping" />
           <span className="font-black uppercase tracking-widest text-sm text-white">New Order Alert!</span>
           <button 
-            onClick={() => {
-              if (buzzerRef.current) {
-                buzzerRef.current.pause();
-                buzzerRef.current = null;
-              }
-              setIsBuzzerActive(false);
-            }}
+            onClick={stopBuzzer}
             className="bg-white text-red-600 px-4 py-1.5 rounded-xl font-black text-xs uppercase hover:bg-red-50 transition-colors"
           >
             Stop Alarm

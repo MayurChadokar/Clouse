@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 
 if (!serviceAccountPath) {
+
     console.warn('FIREBASE_SERVICE_ACCOUNT_PATH not found in .env. Push notifications will be disabled.');
 } else {
     try {
@@ -19,7 +20,8 @@ if (!serviceAccountPath) {
         if (fs.existsSync(absolutePath)) {
             const serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
             admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
+                credential: admin.credential.cert(serviceAccount),
+                databaseURL: process.env.FIREBASE_DATABASE_URL
             });
             console.log('✅ Firebase Admin initialized successfully');
         } else {
@@ -30,4 +32,10 @@ if (!serviceAccountPath) {
     }
 }
 
+const db = admin.apps.length ? admin.database() : null;
+
+export { db };
 export default admin;
+
+
+

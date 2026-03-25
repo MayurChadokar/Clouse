@@ -5,6 +5,7 @@ import Coupon from '../../../models/Coupon.model.js';
 import Banner from '../../../models/Banner.model.js';
 import Campaign from '../../../models/Campaign.model.js';
 import { slugify } from '../../../utils/slugify.js';
+import { clearCachePattern } from '../../../utils/cache.js';
 
 const COUPON_TYPES = new Set(['percentage', 'fixed', 'freeship']);
 
@@ -129,6 +130,7 @@ const syncCampaignBanner = async (campaign, previousRoute = null) => {
     if (bannerPayload.image) {
         await Banner.create(bannerPayload);
     }
+    await clearCachePattern('banners:*');
 };
 
 const deactivateCampaignBannersByRoutes = async (routes = []) => {
@@ -143,6 +145,7 @@ const deactivateCampaignBannersByRoutes = async (routes = []) => {
         { type: 'promotional', link: { $in: uniqueRoutes } },
         { $set: { isActive: false } }
     );
+    await clearCachePattern('banners:*');
 };
 
 const formatCoupon = (couponDoc) => {
@@ -363,6 +366,7 @@ export const getAllBanners = asyncHandler(async (req, res) => {
 
 export const createBanner = asyncHandler(async (req, res) => {
     const banner = await Banner.create(normalizeBannerPayload(req.body));
+    await clearCachePattern('banners:*');
     return res.status(201).json(new ApiResponse(201, banner, 'Banner created successfully'));
 });
 
@@ -373,6 +377,7 @@ export const updateBanner = asyncHandler(async (req, res) => {
         { new: true }
     );
     if (!banner) throw new ApiError(404, 'Banner not found');
+    await clearCachePattern('banners:*');
     return res.status(200).json(new ApiResponse(200, banner, 'Banner updated successfully'));
 });
 
@@ -396,12 +401,14 @@ export const reorderBanners = asyncHandler(async (req, res) => {
     }
 
     await Banner.bulkWrite(ops, { ordered: true });
+    await clearCachePattern('banners:*');
     return res.status(200).json(new ApiResponse(200, null, 'Banners reordered successfully'));
 });
 
 export const deleteBanner = asyncHandler(async (req, res) => {
     const banner = await Banner.findByIdAndDelete(req.params.id);
     if (!banner) throw new ApiError(404, 'Banner not found');
+    await clearCachePattern('banners:*');
     return res.status(200).json(new ApiResponse(200, null, 'Banner deleted successfully'));
 });
 
@@ -425,6 +432,7 @@ export const createCampaign = asyncHandler(async (req, res) => {
 
     const campaign = await Campaign.create(payload);
     await syncCampaignBanner(campaign);
+    await clearCachePattern('campaigns:*');
     return res.status(201).json(new ApiResponse(201, campaign, 'Campaign created successfully'));
 });
 
@@ -451,6 +459,8 @@ export const updateCampaign = asyncHandler(async (req, res) => {
         await deactivateCampaignBannersByRoutes([existing.route, campaign.route]);
     }
 
+    await clearCachePattern('campaigns:*');
+
     return res.status(200).json(new ApiResponse(200, campaign, 'Campaign updated successfully'));
 });
 
@@ -458,5 +468,6 @@ export const deleteCampaign = asyncHandler(async (req, res) => {
     const campaign = await Campaign.findByIdAndDelete(req.params.id);
     if (!campaign) throw new ApiError(404, 'Campaign not found');
     await deactivateCampaignBannersByRoutes([campaign.route]);
+    await clearCachePattern('campaigns:*');
     return res.status(200).json(new ApiResponse(200, null, 'Campaign deleted successfully'));
 });

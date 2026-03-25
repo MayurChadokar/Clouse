@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiCheckCircle, FiClock, FiPackage, FiTruck, FiMapPin, FiArrowLeft } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiPackage, FiTruck, FiMapPin, FiArrowLeft, FiShield } from 'react-icons/fi';
 import MobileLayout from "../components/Layout/MobileLayout";
 import { useOrderStore } from '../../../shared/store/orderStore';
 import { formatPrice } from '../../../shared/utils/helpers';
@@ -23,6 +23,10 @@ const MobileTrackOrder = () => {
   const { user } = useAuthStore();
   const [isResolving, setIsResolving] = useState(true);
   const [riderLiveLocation, setRiderLiveLocation] = useState(null);
+  const [riderArrived, setRiderArrived] = useState(false);
+  const [deliveryOtp, setDeliveryOtp] = useState(null);
+  const [riderInfo, setRiderInfo] = useState(null);
+  const arrivedAudioRef = useRef(null);
   const order = getOrder(orderId);
   const shippingAddress = order?.shippingAddress || {};
   const orderItems = Array.isArray(order?.items) ? order.items : [];
@@ -81,6 +85,36 @@ const MobileTrackOrder = () => {
         setRiderLiveLocation({ lat: data.lat, lng: data.lng });
     };
 
+    // Listen for rider info when order is picked up
+    const handlePickedUp = (data) => {
+        if (data.orderId === displayOrderId || data.orderId === orderId) {
+            if (data.deliveryBoy) {
+                setRiderInfo(data.deliveryBoy);
+            }
+            if (data.otp) {
+                setDeliveryOtp(data.otp);
+            }
+            fetchOrder();
+        }
+    };
+
+    // Listen for rider arrival — show OTP prominently
+    const handleRiderArrived = (data) => {
+        if (data.orderId === displayOrderId || data.orderId === orderId) {
+            setRiderArrived(true);
+            if (data.deliveryBoy) setRiderInfo(data.deliveryBoy);
+            // Play arrival sound
+            try {
+                const audio = new Audio('/sounds/mgs_codec.mp3');
+                audio.play().catch(() => {});
+                arrivedAudioRef.current = audio;
+            } catch (e) {}
+        }
+    };
+
+    socketService.on('order_picked_up', handlePickedUp);
+    socketService.on('rider_arrived', handleRiderArrived);
+
     // Listen for live location updates from rider
     socketService.on('location_updated', handleLocationUpdate);
 
@@ -95,12 +129,16 @@ const MobileTrackOrder = () => {
       mounted = false;
       clearInterval(pollingInterval);
       socketService.off('order_status_updated', handleStatusUpdate);
-      socketService.off('order_picked_up', handleStatusUpdate);
+      socketService.off('order_picked_up', handlePickedUp);
       socketService.off('order_out_for_delivery', handleStatusUpdate);
       socketService.off('order_delivered', handleStatusUpdate);
       socketService.off('order_updated', handleStatusUpdate);
       socketService.off('order_assigned', handleStatusUpdate);
       socketService.off('location_updated', handleLocationUpdate);
+      socketService.off('rider_arrived', handleRiderArrived);
+      if (arrivedAudioRef.current) {
+        try { arrivedAudioRef.current.pause(); } catch(e) {}
+      }
     };
   }, [orderId, fetchOrderById, fetchPublicTrackingOrder, normalizedStatus, user?.id, displayOrderId]);
 
@@ -272,6 +310,46 @@ const MobileTrackOrder = () => {
           )}
 
           <div className="px-4 py-4 space-y-4">
+
+            {/* Rider Arrived + OTP Display */}
+            {(riderArrived || normalizedStatus === 'out_for_delivery') && deliveryOtp && (
+              <div className="glass-card rounded-2xl p-5 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 shadow-lg animate-pulse-slow">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full mx-auto flex items-center justify-center mb-3">
+                    <FiShield className="text-emerald-600 text-2xl" />
+                  </div>
+                  <h3 className="font-bold text-emerald-900 text-lg mb-1">
+                    {riderArrived ? 'Rider Has Arrived!' : 'Your Delivery OTP'}
+                  </h3>
+                  <p className="text-sm text-emerald-700 mb-4">Share this OTP with the delivery partner to receive your order</p>
+                  <div className="bg-white rounded-2xl py-4 px-6 inline-block shadow-inner border border-emerald-100">
+                    <span className="text-4xl font-black tracking-[0.5em] text-emerald-600">{deliveryOtp}</span>
+                  </div>
+                  <p className="text-xs text-emerald-500 mt-3 font-semibold">Do NOT share with anyone except the delivery partner</p>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Boy Info Card (after pickup) */}
+            {riderInfo && ['picked_up', 'out_for_delivery'].includes(normalizedStatus) && (
+              <div className="glass-card rounded-2xl p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <FiTruck className="text-blue-600 text-xl" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-800">{riderInfo.name || 'Delivery Partner'}</h3>
+                    <p className="text-sm text-gray-500">{riderInfo.phone || ''}</p>
+                  </div>
+                  {riderInfo.phone && (
+                    <a href={`tel:${riderInfo.phone}`} className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-sm">
+                      Call
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Tracking Timeline */}
             <div className="glass-card rounded-2xl p-4">
               <h2 className="text-base font-bold text-gray-800 mb-4">Order Status</h2>
